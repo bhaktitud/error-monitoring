@@ -59,7 +59,7 @@ router.get('/', auth, async (req: any, res) => {
 });
 
 // List member project
-router.get('/projects/:id/members', auth, async (req: any, res) => {
+router.get('/:id/members', auth, async (req: any, res) => {
   const { id } = req.params;
   try {
     const members = await prisma.projectMember.findMany({
@@ -70,6 +70,61 @@ router.get('/projects/:id/members', auth, async (req: any, res) => {
     res.json(members);
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengambil member project' });
+  }
+});
+
+// Invite/tambah member ke project
+router.post('/:id/members', auth, async (req: any, res) => {
+  const { id } = req.params;
+  const { email, role } = req.body;
+  if (!email || !role) return res.status(400).json({ error: 'Email dan role wajib diisi' });
+  try {
+    // Cek apakah requester adalah owner/admin
+    const me = await prisma.projectMember.findFirst({ where: { projectId: id, userId: req.user.userId } });
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) return res.status(403).json({ error: 'Hanya owner/admin yang bisa invite' });
+    // Cari user by email
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({ data: { email, passwordHash: '' } }); // dummy user, password kosong
+    }
+    // Cek apakah sudah jadi member
+    const exist = await prisma.projectMember.findFirst({ where: { projectId: id, userId: user.id } });
+    if (exist) return res.status(409).json({ error: 'User sudah jadi member' });
+    // Tambah member
+    const member = await prisma.projectMember.create({ data: { projectId: id, userId: user.id, role }, include: { user: { select: { id: true, email: true } } } });
+    res.status(201).json(member);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal invite member' });
+  }
+});
+
+// Edit role member
+router.patch('/:id/members/:memberId', auth, async (req: any, res) => {
+  const { id, memberId } = req.params;
+  const { role } = req.body;
+  if (!role) return res.status(400).json({ error: 'Role wajib diisi' });
+  try {
+    // Cek admin/owner
+    const me = await prisma.projectMember.findFirst({ where: { projectId: id, userId: req.user.userId } });
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) return res.status(403).json({ error: 'Hanya owner/admin yang bisa edit role' });
+    const member = await prisma.projectMember.update({ where: { id: memberId }, data: { role }, include: { user: { select: { id: true, email: true } } } });
+    res.json(member);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal update role member' });
+  }
+});
+
+// Hapus member
+router.delete('/:id/members/:memberId', auth, async (req: any, res) => {
+  const { id, memberId } = req.params;
+  try {
+    // Cek admin/owner
+    const me = await prisma.projectMember.findFirst({ where: { projectId: id, userId: req.user.userId } });
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) return res.status(403).json({ error: 'Hanya owner/admin yang bisa hapus member' });
+    await prisma.projectMember.delete({ where: { id: memberId } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal hapus member' });
   }
 });
 

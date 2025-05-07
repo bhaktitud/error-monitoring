@@ -11,7 +11,18 @@ router.post('/register', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Email dan password wajib diisi' });
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(409).json({ error: 'Email sudah terdaftar' });
+    if (existing) {
+      if (existing.passwordHash) {
+        // Sudah pernah register manual
+        return res.status(409).json({ error: 'Email sudah terdaftar' });
+      } else {
+        // User dummy (invite), update password
+        const passwordHash = await bcrypt.hash(password, 10);
+        await prisma.user.update({ where: { email }, data: { passwordHash } });
+        return res.status(201).json({ email });
+      }
+    }
+    // User baru
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({ data: { email, passwordHash } });
     res.status(201).json({ id: user.id, email: user.email });

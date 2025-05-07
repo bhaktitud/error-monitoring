@@ -106,7 +106,12 @@ router.post('/groups/:groupId/comments', auth, async (req: any, res) => {
     const comment = await prisma.errorGroupComment.create({
       data: { groupId, authorId: member.id, content }
     });
-    res.status(201).json(comment);
+    // Ambil komentar lengkap dengan relasi author + user
+    const fullComment = await prisma.errorGroupComment.findUnique({
+      where: { id: comment.id },
+      include: { author: { include: { user: true } } }
+    });
+    res.status(201).json(fullComment);
   } catch {
     res.status(500).json({ error: 'Gagal tambah komentar' });
   }

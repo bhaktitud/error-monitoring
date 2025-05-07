@@ -1,0 +1,17 @@
+{
+  "name": "@bhaktixdev/error-monitor-sdk",
+  "version": "0.1.1",
+  "main": "index.js",
+  "type": "module",
+  "description": "SDK sederhana untuk mengirim error ke Sentry Clone",
+  "keywords": [
+    "sentry",
+    "error monitoring",
+    "sdk"
+  ],
+  "author": "auto-gen",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

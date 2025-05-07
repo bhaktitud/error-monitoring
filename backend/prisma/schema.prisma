@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  projects     Project[] @relation("ProjectOwner")
+  memberships  ProjectMember[]
+}
+
+model Project {
+  id        String         @id @default(uuid())
+  name      String
+  owner     User           @relation("ProjectOwner", fields: [ownerId], references: [id])
+  ownerId   String
+  dsn       String         @unique
+  createdAt DateTime       @default(now())
+  members   ProjectMember[]
+  events    Event[]
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      String   // e.g. 'admin', 'member'
+}
+
+model Event {
+  id         String   @id @default(uuid())
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  String
+  timestamp  DateTime @default(now())
+  errorType  String
+  message    String
+  stacktrace String?
+  userAgent  String?
+} 

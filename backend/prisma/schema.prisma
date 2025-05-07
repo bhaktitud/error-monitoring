@@ -25,6 +25,8 @@ model Project {
   createdAt DateTime       @default(now())
   members   ProjectMember[]
   events    Event[]
+  errorGroups ErrorGroup[]
+  webhooks  Webhook[]
 }
 
 model ProjectMember {
@@ -34,6 +36,38 @@ model ProjectMember {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   role      String   // e.g. 'admin', 'member'
+  errorGroupsAssigned ErrorGroup[] @relation("ProjectMemberAssignedTo")
+  errorGroupCommentsAuthored ErrorGroupComment[] @relation("ProjectMemberCommentAuthor")
+}
+
+model ErrorGroup {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  fingerprint String
+  errorType   String
+  message     String
+  count       Int      @default(1)
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+  status      String   @default("open") // open, resolved, ignored
+  assignedTo  String?  // relasi ke ProjectMember.id (bisa null)
+  assignee    ProjectMember? @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
+  updatedAt   DateTime @updatedAt
+  events      Event[]
+  statusCode  Int?
+  comments    ErrorGroupComment[]
+  @@unique([projectId, fingerprint])
+}
+
+model ErrorGroupComment {
+  id        String   @id @default(uuid())
+  group     ErrorGroup @relation(fields: [groupId], references: [id])
+  groupId   String
+  author    ProjectMember @relation("ProjectMemberCommentAuthor", fields: [authorId], references: [id])
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
 }
 
 model Event {
@@ -45,4 +79,20 @@ model Event {
   message    String
   stacktrace String?
   userAgent  String?
+  group      ErrorGroup? @relation(fields: [groupId], references: [id])
+  groupId    String?
+  statusCode  Int?
+  userContext Json?
+  tags       Json?
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  url       String
+  enabled   Boolean  @default(true)
+  eventType String?  // opsional: 'all', 'error', dsb
+  secret    String?  // opsional: untuk signature
+  createdAt DateTime @default(now())
 } 

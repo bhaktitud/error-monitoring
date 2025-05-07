@@ -2,10 +2,20 @@ import fetch from 'node-fetch';
 
 let DSN = '';
 let API_URL = '';
+let USER = null;
+let TAGS = null;
 
 export function init({ dsn, apiUrl }) {
   DSN = dsn;
   API_URL = apiUrl || 'http://localhost:3000';
+}
+
+export function setUser(user) {
+  USER = user;
+}
+
+export function setTags(tags) {
+  TAGS = tags;
 }
 
 export async function captureException(error, options = {}) {
@@ -15,6 +25,9 @@ export async function captureException(error, options = {}) {
     message: error.message,
     stacktrace: error.stack,
     userAgent: options.userAgent || '',
+    statusCode: options.statusCode || null,
+    userContext: options.userContext || USER,
+    tags: options.tags || TAGS,
   };
   try {
     const res = await fetch(`${API_URL}/api/events`, {

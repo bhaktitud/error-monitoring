@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 
 interface ToastProps {
   message: string;
@@ -8,13 +9,22 @@ interface ToastProps {
 
 export default function Toast({ message, type = 'success', onClose }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 2000);
+    const timer = setTimeout(onClose, 2500);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
-    <div className={`fixed top-6 right-6 z-50 px-4 py-2 rounded shadow text-white ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
-      {message}
+    <div
+      className={`fixed top-8 right-8 z-50 flex items-center space-x-3 px-6 py-4 rounded-xl shadow-lg text-white text-base font-semibold animate-fade-in-up transition-all duration-300
+        ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
+      style={{ minWidth: 260 }}
+    >
+      {type === 'success' ? (
+        <FiCheckCircle className="text-2xl" />
+      ) : (
+        <FiAlertCircle className="text-2xl" />
+      )}
+      <span>{message}</span>
     </div>
   );
 } 

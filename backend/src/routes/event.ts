@@ -1,17 +1,49 @@
 import express from 'express';
 import prisma from '../models/prisma';
 import { sendErrorNotification } from '../utils/email';
+import crypto from 'crypto';
+import axios from 'axios';
 
 const router = express.Router();
 
 // Terima event/error dari SDK
 router.post('/', async (req, res) => {
   const dsn = req.headers['x-dsn'] as string;
-  const { errorType, message, stacktrace, userAgent } = req.body;
+  const { errorType, message, stacktrace, userAgent, statusCode, userContext, tags } = req.body;
   if (!dsn || !errorType || !message) return res.status(400).json({ error: 'Data tidak lengkap' });
   try {
     const project = await prisma.project.findUnique({ where: { dsn } });
     if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
+    // Hitung fingerprint
+    const fingerprint = crypto.createHash('sha256')
+      .update(project.id + errorType + message + (stacktrace || '') + (statusCode || ''))
+      .digest('hex');
+    // Cari atau buat ErrorGroup
+    let group = await prisma.errorGroup.findUnique({
+      where: { projectId_fingerprint: { projectId: project.id, fingerprint } }
+    });
+    if (group) {
+      group = await prisma.errorGroup.update({
+        where: { id: group.id },
+        data: {
+          count: { increment: 1 },
+          lastSeen: new Date(),
+        }
+      });
+    } else {
+      group = await prisma.errorGroup.create({
+        data: {
+          projectId: project.id,
+          fingerprint,
+          errorType,
+          message,
+          count: 1,
+          firstSeen: new Date(),
+          lastSeen: new Date(),
+          statusCode: statusCode ?? null,
+        }
+      });
+    }
     await prisma.event.create({
       data: {
         projectId: project.id,
@@ -19,6 +51,10 @@ router.post('/', async (req, res) => {
         message,
         stacktrace,
         userAgent,
+        groupId: group.id,
+        statusCode: statusCode ?? null,
+        userContext: userContext ?? null,
+        tags: tags ?? null,
       }
     });
     // Kirim email ke owner project
@@ -31,6 +67,28 @@ router.post('/', async (req, res) => {
         errorType,
         new Date().toLocaleString()
       ).catch(() => {});
+    }
+    // Kirim webhook ke endpoint custom user
+    const webhooks = await prisma.webhook.findMany({ where: { projectId: project.id, enabled: true } });
+    for (const webhook of webhooks) {
+      try {
+        const payload = {
+          projectId: project.id,
+          eventId: group.id,
+          errorType,
+          message,
+          statusCode: statusCode ?? null,
+          timestamp: new Date().toISOString(),
+          userContext: userContext ?? null,
+          tags: tags ?? null,
+        };
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (webhook.secret) {
+          const signature = crypto.createHmac('sha256', webhook.secret).update(JSON.stringify(payload)).digest('hex');
+          headers['x-webhook-signature'] = signature;
+        }
+        axios.post(webhook.url, payload, { headers }).catch(() => {});
+      } catch {}
     }
     res.status(201).json({ success: true });
   } catch (err) {

@@ -19,6 +19,8 @@ function auth(req: any, res: any, next: any) {
   }
 }
 
+export { auth };
+
 // Buat project baru
 router.post('/', auth, async (req: any, res) => {
   const { name } = req.body;
@@ -53,6 +55,21 @@ router.get('/', auth, async (req: any, res) => {
     res.json(projects);
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengambil project' });
+  }
+});
+
+// List member project
+router.get('/projects/:id/members', auth, async (req: any, res) => {
+  const { id } = req.params;
+  try {
+    const members = await prisma.projectMember.findMany({
+      where: { projectId: id },
+      include: { user: { select: { id: true, email: true } } },
+      orderBy: { role: 'asc' }
+    });
+    res.json(members);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengambil member project' });
   }
 });
 

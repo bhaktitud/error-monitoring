@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { CookiesProvider } from "next-client-cookies/server";
 import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,12 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className={inter.className}>
-        <CookiesProvider>
-          {children}
-        </CookiesProvider>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <CookiesProvider>
+            {children}
+          </CookiesProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

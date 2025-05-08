@@ -6,6 +6,7 @@ import { useCookies } from 'next-client-cookies';
 import { logout } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import Link from 'next/link';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 interface HeaderProps {
   projectId?: string;
@@ -195,6 +196,9 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
               </div>
             )}
           </div>
+          
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
           
           {/* Profile menu */}
           <div className="relative" ref={profileMenuRef}>

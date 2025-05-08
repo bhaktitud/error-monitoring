@@ -162,7 +162,7 @@ export default function ProfilePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       </div>
     );
@@ -182,11 +182,11 @@ export default function ProfilePage() {
           </Button>
         </div>
         <h1 className="text-2xl font-bold mb-2">Profil Pengguna</h1>
-        <p className="text-gray-500">Kelola informasi profil dan preferensi akun Anda</p>
+        <p className="text-muted-foreground">Kelola informasi profil dan preferensi akun Anda</p>
       </div>
       
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 mb-6 rounded-md">
           {error}
         </div>
       )}
@@ -212,13 +212,13 @@ export default function ProfilePage() {
               
               <div className="mb-4 text-center">
                 <h3 className="font-medium">{profile.name || 'Nama belum diatur'}</h3>
-                <p className="text-sm text-gray-500">{profile.email}</p>
-                {profile.jobTitle && <p className="text-sm text-gray-500">{profile.jobTitle}</p>}
+                <p className="text-sm text-muted-foreground">{profile.email}</p>
+                {profile.jobTitle && <p className="text-sm text-muted-foreground">{profile.jobTitle}</p>}
               </div>
               
               <label className="w-full">
                 <span className="sr-only">Pilih avatar</span>
-                <div className="flex items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-md p-3 hover:border-blue-400 cursor-pointer">
+                <div className="flex items-center justify-center w-full border-2 border-dashed border-input rounded-md p-3 hover:border-primary cursor-pointer">
                   <FiUpload className="mr-2" />
                   <span className="text-sm">Pilih Foto</span>
                   <input
@@ -239,7 +239,7 @@ export default function ProfilePage() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center text-gray-500 mb-1">
+                  <div className="flex items-center text-muted-foreground mb-1">
                     <FiMail className="mr-2" />
                     <span className="text-sm">Email</span>
                   </div>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                 </div>
                 
                 <div>
-                  <div className="flex items-center text-gray-500 mb-1">
+                  <div className="flex items-center text-muted-foreground mb-1">
                     <FiFileText className="mr-2" />
                     <span className="text-sm">Tanggal Bergabung</span>
                   </div>
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                     <Label htmlFor="name">Nama Lengkap</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiUser className="text-gray-400" />
+                        <FiUser className="text-muted-foreground" />
                       </div>
                       <Input
                         id="name"
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                     <Label htmlFor="phoneNumber">Nomor Telepon</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiPhone className="text-gray-400" />
+                        <FiPhone className="text-muted-foreground" />
                       </div>
                       <Input
                         id="phoneNumber"
@@ -353,7 +353,7 @@ export default function ProfilePage() {
                     <Label htmlFor="githubUsername">Username GitHub</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiGithub className="text-gray-400" />
+                        <FiGithub className="text-muted-foreground" />
                       </div>
                       <Input
                         id="githubUsername"
@@ -367,19 +367,19 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-input">
                   <div>
                     <Label htmlFor="timezone">Zona Waktu</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiGlobe className="text-gray-400" />
+                        <FiGlobe className="text-muted-foreground" />
                       </div>
                       <select
                         id="timezone"
                         name="timezone"
                         value={profile.timezone || 'Asia/Jakarta'}
                         onChange={handleChange}
-                        className="pl-10 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="pl-10 w-full p-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-background"
                       >
                         <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
                         <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
@@ -394,14 +394,14 @@ export default function ProfilePage() {
                     <Label htmlFor="language">Bahasa</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiMessageSquare className="text-gray-400" />
+                        <FiMessageSquare className="text-muted-foreground" />
                       </div>
                       <select
                         id="language"
                         name="language"
                         value={profile.language || 'id'}
                         onChange={handleChange}
-                        className="pl-10 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="pl-10 w-full p-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-background"
                       >
                         <option value="id">Bahasa Indonesia</option>
                         <option value="en">English</option>
@@ -410,13 +410,13 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-4 border-t border-input">
                   <h3 className="font-medium mb-3">Preferensi Notifikasi</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label htmlFor="notify-email" className="font-normal">Notifikasi Email</Label>
-                        <p className="text-sm text-gray-500">Terima notifikasi melalui email</p>
+                        <p className="text-sm text-muted-foreground">Terima notifikasi melalui email</p>
                       </div>
                       <Switch
                         id="notify-email"
@@ -428,7 +428,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <Label htmlFor="notify-inapp" className="font-normal">Notifikasi Aplikasi</Label>
-                        <p className="text-sm text-gray-500">Terima notifikasi dalam aplikasi</p>
+                        <p className="text-sm text-muted-foreground">Terima notifikasi dalam aplikasi</p>
                       </div>
                       <Switch
                         id="notify-inapp"
@@ -440,7 +440,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <Label htmlFor="notify-sms" className="font-normal">Notifikasi SMS</Label>
-                        <p className="text-sm text-gray-500">Terima notifikasi melalui SMS</p>
+                        <p className="text-sm text-muted-foreground">Terima notifikasi melalui SMS</p>
                       </div>
                       <Switch
                         id="notify-sms"
@@ -466,7 +466,7 @@ export default function ProfilePage() {
                   >
                     {saving ? (
                       <>
-                        <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                        <span className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></span>
                         Menyimpan...
                       </>
                     ) : (

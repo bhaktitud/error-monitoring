@@ -1,6 +1,11 @@
-import { FC } from 'react';
-import { usePathname } from 'next/navigation';
-import { FiMenu, FiX, FiBell, FiSearch, FiHelpCircle } from 'react-icons/fi';
+import { FC, useState, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { FiMenu, FiX, FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
+import { AuthAPI } from '@/lib/api';
+import { useCookies } from 'next-client-cookies';
+import { logout } from '@/lib/auth';
+import { Avatar, AvatarFallback } from './avatar';
+import Link from 'next/link';
 
 interface HeaderProps {
   projectId?: string;
@@ -10,7 +15,58 @@ interface HeaderProps {
 
 export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpen }) => {
   const pathname = usePathname();
+  const router = useRouter();
+  const cookies = useCookies();
+  const [user, setUser] = useState<{ email: string; name?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showHelpMenu, setShowHelpMenu] = useState(false);
   
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await AuthAPI.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Tutup profile menu jika klik di luar
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+      
+      // Tutup notifications jika klik di luar
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      
+      // Tutup help menu jika klik di luar
+      if (helpMenuRef.current && !helpMenuRef.current.contains(event.target as Node)) {
+        setShowHelpMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const isProjectPage = projectId !== undefined;
   
   // Fungsi untuk mendapatkan judul halaman berdasarkan pathname
@@ -33,6 +89,28 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   };
 
   const pageTitle = getPageTitle();
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    // Redirect ke halaman pencarian dengan query
+    if (projectId) {
+      router.push(`/projects/${projectId}/search?q=${encodeURIComponent(searchQuery)}`);
+    } else {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+  
+  const handleLogout = () => {
+    logout(cookies);
+    router.push('/login');
+  };
+  
+  const getInitials = (email: string) => {
+    if (!email) return 'U';
+    return email.charAt(0).toUpperCase();
+  };
 
   return (
     <header className="bg-white border-b sticky top-0 z-10">
@@ -51,36 +129,112 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Tombol pencarian */}
-          <div className="relative hidden md:flex items-center">
+          {/* Search form */}
+          <form onSubmit={handleSearch} className="relative hidden md:flex items-center">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FiSearch className="text-gray-400 h-4 w-4" />
             </div>
             <input
               type="text"
               placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-60"
             />
-          </div>
+          </form>
           
           {/* Tombol notifikasi */}
-          <button className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 relative">
-            <FiBell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <div className="relative" ref={notificationsRef}>
+            <button 
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 relative"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <FiBell size={20} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            
+            {/* Dropdown notifikasi */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold">Notifikasi</h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="py-8 text-center text-gray-500">
+                    <p>Tidak ada notifikasi baru</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* Tombol bantuan */}
-          <button className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700">
-            <FiHelpCircle size={20} />
-          </button>
+          <div className="relative" ref={helpMenuRef}>
+            <button 
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              onClick={() => setShowHelpMenu(!showHelpMenu)}
+            >
+              <FiHelpCircle size={20} />
+            </button>
+            
+            {/* Dropdown bantuan */}
+            {showHelpMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
+                <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Dokumentasi
+                </a>
+                <a href="https://support.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Bantuan & Dukungan
+                </a>
+                <a href="https://status.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Status Sistem
+                </a>
+              </div>
+            )}
+          </div>
           
-          {/* Avatar user */}
-          <button 
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium"
-            onClick={() => {}}
-          >
-            EM
-          </button>
+          {/* Profile menu */}
+          <div className="relative" ref={profileMenuRef}>
+            <button 
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            >
+              {loading ? 
+                <span className="animate-pulse">...</span> : 
+                user ? getInitials(user.email) : 'EM'
+              }
+            </button>
+            
+            {/* Dropdown profile menu */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
+                {user && (
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-medium">{user.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                )}
+                
+                <Link href="/account/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <FiUser className="inline-block mr-2 h-4 w-4" />
+                  Profil
+                </Link>
+                
+                <Link href="/account/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <FiSettings className="inline-block mr-2 h-4 w-4" />
+                  Pengaturan
+                </Link>
+                
+                <button 
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  onClick={handleLogout}
+                >
+                  <FiLogOut className="inline-block mr-2 h-4 w-4" />
+                  Keluar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

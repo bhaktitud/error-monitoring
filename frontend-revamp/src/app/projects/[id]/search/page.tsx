@@ -6,9 +6,8 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ErrorCard } from '@/components/ui/error-card';
 import { GroupsAPI, EventsAPI } from '@/lib/api';
-import { FiArrowLeft, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch } from 'react-icons/fi';
 
 interface SearchResult {
   id: string;
@@ -154,7 +153,7 @@ export default function SearchPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-medium">
-              {results.length} hasil ditemukan untuk "{queryParam}"
+              {results.length} hasil ditemukan untuk &quot;{queryParam}&quot;
             </h2>
           </div>
 
@@ -204,7 +203,7 @@ export default function SearchPage() {
               </div>
               <h3 className="text-lg font-medium mb-2">Tidak ada hasil</h3>
               <p className="text-gray-500">
-                Tidak ada data yang cocok dengan kata kunci "{queryParam}".
+                Tidak ada data yang cocok dengan kata kunci &quot;{queryParam}&quot;.
               </p>
             </div>
           ) : null}

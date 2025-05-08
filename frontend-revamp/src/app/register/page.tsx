@@ -47,7 +47,7 @@ export default function RegisterPage() {
       // Redirect ke halaman login setelah beberapa detik
       setTimeout(() => {
         router.push('/login');
-      }, 2000);
+      }, 5000); // Ubah jadi 5 detik agar pesan bisa dibaca
     } catch (err) {
       console.error('Error during registration:', err);
       if (err instanceof Error) {
@@ -70,7 +70,10 @@ export default function RegisterPage() {
             </div>
             <h2 className="text-xl font-semibold mb-2">Pendaftaran Berhasil!</h2>
             <p className="text-gray-600 mb-4">
-              Akun Anda telah berhasil dibuat. Anda akan diarahkan ke halaman login dalam beberapa detik.
+              Akun Anda telah berhasil dibuat. Kami telah mengirimkan email verifikasi ke alamat <strong>{email}</strong>.
+            </p>
+            <p className="text-gray-600 mb-6">
+              Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
             </p>
             <Button onClick={() => router.push('/login')} className="w-full">
               Masuk Sekarang

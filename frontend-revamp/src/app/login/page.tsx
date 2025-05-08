@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiLogIn, FiAlertCircle } from 'react-icons/fi';
+import { FiLogIn, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
 import { login } from '@/lib/auth';
 import { useCookies } from 'next-client-cookies';
@@ -17,6 +17,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [needVerification, setNeedVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +31,7 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     setError('');
+    setNeedVerification(false);
 
     try {
       // Memanggil API login
@@ -41,7 +45,13 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Error during login:', err);
       if (err instanceof Error) {
-        setError(err.message);
+        // Cek apakah error karena email belum diverifikasi
+        if (err.message.includes('Email belum diverifikasi')) {
+          setNeedVerification(true);
+          setVerificationEmail(email);
+        } else {
+          setError(err.message);
+        }
       } else {
         setError('Email atau password salah. Silakan coba lagi.');
       }
@@ -49,6 +59,104 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const handleResendVerification = async () => {
+    if (!verificationEmail) return;
+    
+    setResendStatus('sending');
+    
+    try {
+      await AuthAPI.resendVerification(verificationEmail);
+      setResendStatus('success');
+    } catch (err) {
+      console.error('Error resending verification:', err);
+      setResendStatus('error');
+    }
+  };
+
+  // Tampilkan halaman verifikasi jika user belum verifikasi email
+  if (needVerification) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle>Verifikasi Email</CardTitle>
+              <CardDescription>Email Anda belum diverifikasi</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
+                  <div className="flex">
+                    <FiAlertCircle className="text-amber-500 mr-2 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-amber-800 text-sm">
+                        Anda perlu memverifikasi email <strong>{verificationEmail}</strong> sebelum dapat login. 
+                        Silakan cek email Anda untuk link verifikasi atau kirim ulang email verifikasi.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-2">
+                  {resendStatus === 'idle' && (
+                    <Button 
+                      onClick={handleResendVerification} 
+                      className="w-full"
+                    >
+                      Kirim Ulang Email Verifikasi
+                    </Button>
+                  )}
+                  
+                  {resendStatus === 'sending' && (
+                    <Button 
+                      disabled 
+                      className="w-full"
+                    >
+                      Mengirim...
+                    </Button>
+                  )}
+                  
+                  {resendStatus === 'success' && (
+                    <div className="bg-green-50 p-4 rounded-md border border-green-200 mb-3">
+                      <div className="flex">
+                        <FiCheck className="text-green-500 mr-2 mt-1 flex-shrink-0" />
+                        <p className="text-green-800 text-sm">
+                          Email verifikasi telah dikirim. Silakan cek inbox Anda.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {resendStatus === 'error' && (
+                    <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-3">
+                      <div className="flex">
+                        <FiAlertCircle className="text-red-500 mr-2 mt-1 flex-shrink-0" />
+                        <p className="text-red-800 text-sm">
+                          Gagal mengirim email verifikasi. Silakan coba lagi.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setNeedVerification(false);
+                  setResendStatus('idle');
+                }}
+              >
+                Kembali ke Login
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">

@@ -12,6 +12,31 @@ model User {
   email        String    @unique
   passwordHash String
   createdAt    DateTime  @default(now())
+  
+  // Field profil pengguna yang baru
+  name         String?
+  phoneNumber  String?
+  avatar       String?
+  timezone     String?   @default("Asia/Jakarta")
+  language     String?   @default("id")
+  jobTitle     String?
+  department   String?
+  githubUsername String?
+  
+  // Status Verifikasi Email
+  emailVerified  Boolean  @default(false)
+  verificationToken String? // Token untuk verifikasi email
+  verificationTokenExpiry DateTime? // Waktu kedaluwarsa token verifikasi
+  
+  // Field untuk reset password
+  resetPasswordToken String? // Token untuk reset password
+  resetPasswordTokenExpiry DateTime? // Waktu kedaluwarsa token reset password
+  
+  // Preferensi notifikasi
+  notifyEmail  Boolean   @default(true)
+  notifyInApp  Boolean   @default(true)
+  notifySms    Boolean   @default(false)
+  
   projects     Project[] @relation("ProjectOwner")
   memberships  ProjectMember[]
 }

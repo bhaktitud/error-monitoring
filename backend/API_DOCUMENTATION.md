@@ -18,10 +18,40 @@ Dokumentasi berikut menjelaskan endpoint API yang tersedia pada backend aplikasi
   ```json
   {
     "id": "uuid",
-    "email": "user@example.com"
+    "email": "user@example.com",
+    "verificationEmailSent": true
   }
   ```
 - **Response Error**: `400`, `409`, `500`
+
+### Verify Email
+- **URL**: `/api/auth/verify-email?token=<verification_token>`
+- **Method**: `GET`
+- **Response Success**: Redirect ke `/verify-success` di frontend
+- **Response Error**: `400`, `404`, `500`
+  ```json
+  {
+    "error": "Token verifikasi tidak valid"
+  }
+  ```
+
+### Resend Verification Email
+- **URL**: `/api/auth/resend-verification`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "message": "Email verifikasi telah dikirim ulang",
+    "success": true
+  }
+  ```
+- **Response Error**: `400`, `500`
 
 ### Login
 - **URL**: `/api/auth/login`
@@ -39,7 +69,18 @@ Dokumentasi berikut menjelaskan endpoint API yang tersedia pada backend aplikasi
     "token": "jwt_token"
   }
   ```
-- **Response Error**: `400`, `401`, `500`
+- **Response Error**: 
+  - `400`: Input tidak valid
+  - `401`: Kredensial salah
+  - `403`: Email belum diverifikasi
+    ```json
+    {
+      "error": "Email belum diverifikasi",
+      "needVerification": true,
+      "email": "user@example.com"
+    }
+    ```
+  - `500`: Error server
 
 ## Proyek
 

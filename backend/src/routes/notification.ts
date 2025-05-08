@@ -1,9 +1,20 @@
 import express from 'express';
 import prisma from '../models/prisma';
 import { authMiddleware } from '../utils/auth';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const router = express.Router();
+
+// Inisialisasi Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Tipe data untuk log request
+interface RequestLogEntry {
+  method: string;
+  path: string;
+  body: any;
+  timestamp: string;
+}
 
 // Simpan setting notifikasi dalam in-memory untuk prototype
 // Dalam produksi sebaiknya disimpan di database
@@ -26,7 +37,8 @@ const getDefaultSettings = () => ({
   minimumErrorLevel: 'error'
 });
 
-let requestLog = [];
+// Deklarasikan dengan tipe data yang jelas
+let requestLog: RequestLogEntry[] = [];
 
 // Logging middleware untuk mencatat request
 router.use((req, res, next) => {
@@ -202,27 +214,32 @@ router.post('/notifications/projects/:id/test', authMiddleware, async (req, res)
         return res.status(400).json({ error: 'Notifikasi email tidak diaktifkan' });
       }
       
-      // Setup SMTP transporter
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-        port: Number(process.env.SMTP_PORT) || 2525,
-        auth: {
-          user: process.env.SMTP_USER || '',
-          pass: process.env.SMTP_PASS || ''
-        }
-      });
+      // Buat konten email
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">[Test] Notifikasi dari Project ${project.name}</h1>
+          </div>
+          
+          <div style="padding: 20px; border: 1px solid #e5e5e5; border-top: none;">
+            <p>Ini adalah email test dari Sentry Clone</p>
+            <p>Pengaturan notifikasi email untuk project <b>${project.name}</b> telah berhasil dikonfigurasi.</p>
+            <p>Email ini dikirim sebagai konfirmasi bahwa sistem notifikasi berfungsi dengan baik.</p>
+          </div>
+        </div>
+      `;
       
-      // Kirim email test
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'noreply@sentry-clone.com',
+      // Kirim email menggunakan Resend
+      const { data, error } = await resend.emails.send({
+        from: 'Error Monitoring <noreply@errormonitoring.domain>',
         to: project.owner.email,
         subject: `[Test] Notifikasi Error dari Project ${project.name}`,
-        html: `
-          <h2>Ini adalah email test dari Sentry Clone</h2>
-          <p>Pengaturan notifikasi email untuk project <b>${project.name}</b> telah berhasil dikonfigurasi.</p>
-          <p>Email ini dikirim sebagai konfirmasi bahwa sistem notifikasi berfungsi dengan baik.</p>
-        `
+        html: html
       });
+      
+      if (error) {
+        throw new Error(`Error dari Resend: ${error.message}`);
+      }
     } else if (type === 'slack') {
       // Jika slack tidak aktif atau URL tidak ada, kembalikan error
       if (!settings.slack || !settings.slackWebhookUrl) {
@@ -297,27 +314,32 @@ router.post('/projects/:id/notifications/test', authMiddleware, async (req, res)
         return res.status(400).json({ error: 'Notifikasi email tidak diaktifkan' });
       }
       
-      // Setup SMTP transporter
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-        port: Number(process.env.SMTP_PORT) || 2525,
-        auth: {
-          user: process.env.SMTP_USER || '',
-          pass: process.env.SMTP_PASS || ''
-        }
-      });
+      // Buat konten email
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">[Test] Notifikasi dari Project ${project.name}</h1>
+          </div>
+          
+          <div style="padding: 20px; border: 1px solid #e5e5e5; border-top: none;">
+            <p>Ini adalah email test dari Sentry Clone</p>
+            <p>Pengaturan notifikasi email untuk project <b>${project.name}</b> telah berhasil dikonfigurasi.</p>
+            <p>Email ini dikirim sebagai konfirmasi bahwa sistem notifikasi berfungsi dengan baik.</p>
+          </div>
+        </div>
+      `;
       
-      // Kirim email test
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'noreply@sentry-clone.com',
+      // Kirim email menggunakan Resend
+      const { data, error } = await resend.emails.send({
+        from: 'Error Monitoring <noreply@errormonitoring.domain>',
         to: project.owner.email,
         subject: `[Test] Notifikasi Error dari Project ${project.name}`,
-        html: `
-          <h2>Ini adalah email test dari Sentry Clone</h2>
-          <p>Pengaturan notifikasi email untuk project <b>${project.name}</b> telah berhasil dikonfigurasi.</p>
-          <p>Email ini dikirim sebagai konfirmasi bahwa sistem notifikasi berfungsi dengan baik.</p>
-        `
+        html: html
       });
+      
+      if (error) {
+        throw new Error(`Error dari Resend: ${error.message}`);
+      }
     } else if (type === 'slack') {
       // Jika slack tidak aktif atau URL tidak ada, kembalikan error
       if (!settings.slack || !settings.slackWebhookUrl) {
@@ -371,15 +393,30 @@ router.get('/debug-log', (req, res) => {
   });
 });
 
+// Tipe data untuk entry paths
+interface RoutePathEntry {
+  path: string;
+  methods: string[];
+}
+
 router.get('/paths', (req, res) => {
-  const paths = [];
+  const paths: RoutePathEntry[] = [];
   
   // Dapatkan semua path yang terdaftar di router
   router.stack.forEach(layer => {
     if (layer.route) {
       const path = layer.route.path;
-      const methods = Object.keys(layer.route.methods).map(method => method.toUpperCase());
-      paths.push({ path, methods });
+      
+      // Gunakan type assertion karena kita tahu struktur internal Express router
+      const route = layer.route as any;
+      const routeMethods = route.methods ? 
+        Object.keys(route.methods).map(method => method.toUpperCase()) : 
+        [];
+      
+      paths.push({ 
+        path, 
+        methods: routeMethods 
+      });
     }
   });
   

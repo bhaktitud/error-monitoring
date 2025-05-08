@@ -12,6 +12,26 @@ interface Tags {
   [key: string]: unknown;
 }
 
+// Interface untuk user profile yang lengkap
+export interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  phoneNumber?: string;
+  avatar?: string;
+  timezone?: string;
+  language?: string;
+  jobTitle?: string;
+  department?: string;
+  joinedAt?: string;
+  githubUsername?: string;
+  notificationPreferences?: {
+    email: boolean;
+    inApp: boolean;
+    sms: boolean;
+  };
+}
+
 /**
  * Fungsi utility untuk melakukan request ke API
  */
@@ -65,19 +85,69 @@ export const AuthAPI = {
 
   // Register user
   register: async (email: string, password: string) => {
-    return apiRequest<{ id: string; email: string }>('/auth/register', {
+    return apiRequest<{ id: string; email: string; verificationEmailSent: boolean }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   },
 
+  // Resend verification email
+  resendVerification: async (email: string) => {
+    return apiRequest<{ success: boolean; message: string }>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
   // Get current user profile
   getCurrentUser: async () => {
-    return apiRequest<{
-      id: string;
-      email: string;
-      name?: string;
-    }>('/auth/me');
+    return apiRequest<UserProfile>('/auth/me');
+  },
+  
+  // Update user profile
+  updateProfile: async (profileData: Partial<UserProfile>) => {
+    return apiRequest<UserProfile>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(profileData),
+    });
+  },
+  
+  // Update user password
+  updatePassword: async (currentPassword: string, newPassword: string) => {
+    return apiRequest<{ success: boolean }>('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+  
+  // Upload avatar
+  uploadAvatar: async (formData: FormData) => {
+    // Gunakan token secara manual karena FormData
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    
+    const response = await fetch(`${API_BASE_URL}/auth/avatar`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        error: 'Terjadi kesalahan server'
+      }));
+      throw new Error(errorData.error || 'Terjadi kesalahan pada server');
+    }
+    
+    return response.json();
+  },
+  
+  // Send test email
+  sendTestEmail: async () => {
+    return apiRequest<{ success: boolean; message: string }>('/auth/test-email', {
+      method: 'POST',
+    });
   },
 };
 

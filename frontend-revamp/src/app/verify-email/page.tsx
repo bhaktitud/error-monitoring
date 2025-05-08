@@ -1,0 +1,111 @@
+'use client'
+
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { FiAlertCircle, FiCheck, FiLoader } from 'react-icons/fi';
+
+export default function VerifyEmailPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get('token');
+  
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const verifyEmail = async () => {
+      if (!token) {
+        setStatus('error');
+        setErrorMessage('Token verifikasi tidak ditemukan');
+        return;
+      }
+
+      try {
+        // Panggil API untuk verifikasi email
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email?token=${token}`);
+        
+        if (response.ok) {
+          setStatus('success');
+          // Redirect ke halaman sukses setelah berhasil verifikasi
+          setTimeout(() => {
+            router.push('/verify-success');
+          }, 2000);
+        } else {
+          const data = await response.json();
+          setStatus('error');
+          setErrorMessage(data.error || 'Gagal memverifikasi email');
+        }
+      } catch (error) {
+        console.error('Error verifying email:', error);
+        setStatus('error');
+        setErrorMessage('Terjadi kesalahan saat memverifikasi email');
+      }
+    };
+
+    verifyEmail();
+  }, [token, router]);
+
+  // Loading state
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <FiLoader className="text-blue-600 text-xl animate-spin" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Memverifikasi Email Anda</h2>
+            <p className="text-gray-600">
+              Mohon tunggu sementara kami memverifikasi email Anda...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (status === 'error') {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <FiAlertCircle className="text-red-600 text-xl" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Verifikasi Gagal</h2>
+            <p className="text-gray-600 mb-6">
+              {errorMessage || 'Terjadi kesalahan saat memverifikasi email Anda.'}
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => router.push('/login')} 
+                className="w-full"
+              >
+                Kembali ke Login
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Success state (sebentar sebelum redirect ke verify-success)
+  return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <FiCheck className="text-green-600 text-xl" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Email Berhasil Diverifikasi!</h2>
+          <p className="text-gray-600">
+            Kami sedang mengalihkan Anda ke halaman berikutnya...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+} 

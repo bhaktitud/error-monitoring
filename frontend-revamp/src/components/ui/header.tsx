@@ -1,10 +1,10 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { FiMenu, FiX, FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
-import { AuthAPI } from '@/lib/api';
+import { AuthAPI, UserProfile } from '@/lib/api';
 import { useCookies } from 'next-client-cookies';
 import { logout } from '@/lib/auth';
-import { Avatar, AvatarFallback } from './avatar';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import Link from 'next/link';
 
 interface HeaderProps {
@@ -17,7 +17,7 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   const pathname = usePathname();
   const router = useRouter();
   const cookies = useCookies();
-  const [user, setUser] = useState<{ email: string; name?: string } | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -107,7 +107,10 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
     router.push('/login');
   };
   
-  const getInitials = (email: string) => {
+  const getInitials = (email: string, name?: string) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
     if (!email) return 'U';
     return email.charAt(0).toUpperCase();
   };
@@ -196,22 +199,41 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
           {/* Profile menu */}
           <div className="relative" ref={profileMenuRef}>
             <button 
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium"
+              className="flex items-center"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
-              {loading ? 
-                <span className="animate-pulse">...</span> : 
-                user ? getInitials(user.email) : 'EM'
-              }
+              <Avatar className="h-8 w-8">
+                {user?.avatar ? (
+                  <AvatarImage src={user.avatar} alt={user.name || user.email} />
+                ) : null}
+                <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+                  {loading ? '...' : getInitials(user?.email || '', user?.name)}
+                </AvatarFallback>
+              </Avatar>
             </button>
             
             {/* Dropdown profile menu */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
                 {user && (
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium">{user.name || 'User'}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center mb-2">
+                      <Avatar className="h-10 w-10 mr-3">
+                        {user.avatar ? (
+                          <AvatarImage src={user.avatar} alt={user.name || user.email} />
+                        ) : null}
+                        <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+                          {getInitials(user.email, user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{user.name || 'User'}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    {user.jobTitle && (
+                      <p className="text-xs text-gray-500 truncate">{user.jobTitle}</p>
+                    )}
                   </div>
                 )}
                 

@@ -5,7 +5,12 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
   // Rute yang tidak memerlukan autentikasi
-  const isPublicPath = path === '/' || path === '/login' || path === '/register';
+  const isPublicPath = path === '/' || 
+                      path === '/login' || 
+                      path === '/register' ||
+                      path === '/verify-email' ||
+                      path === '/verify-success' ||
+                      path.startsWith('/verify-email'); // Untuk query params
   
   // Cek autentikasi dari token
   const token = request.cookies.get('authToken')?.value || '';
@@ -16,7 +21,9 @@ export function middleware(request: NextRequest) {
   }
   
   // Redirect ke dashboard jika mengakses login/register dengan token
-  if (isPublicPath && path !== '/' && token) {
+  // Kecuali halaman verifikasi email
+  if (isPublicPath && path !== '/' && token && 
+      !path.includes('verify-email') && path !== '/verify-success') {
     return NextResponse.redirect(new URL('/projects', request.url));
   }
   

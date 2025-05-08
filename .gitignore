@@ -4,6 +4,7 @@ node_modules/
 # Env
 .env
 .env.*
+!.env.example
 
 # Mac
 .DS_Store
@@ -23,6 +24,7 @@ node_modules/
 
 # Example
 /example/.env
+!/example/.env.example
 
 # SDK
 /sdk/node_modules/
@@ -33,10 +35,12 @@ node_modules/
 /frontend/.next/
 /frontend/coverage/
 /frontend/.env
+!/frontend/.env.example
 
 # Backend
 /backend/node_modules/
 /backend/dist/
 /backend/coverage/
 /backend/.env
+!/backend/.env.example
 /backend/prisma/dev.db

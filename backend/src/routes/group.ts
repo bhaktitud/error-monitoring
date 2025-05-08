@@ -67,12 +67,37 @@ router.patch('/groups/:groupId/assign', auth, async (req: any, res) => {
   const { groupId } = req.params;
   const { memberId } = req.body; // ProjectMember.id atau null untuk unassign
   try {
-    const group = await prisma.errorGroup.update({
+    // Cari informasi group untuk mendapatkan projectId
+    const group = await prisma.errorGroup.findUnique({ 
+      where: { id: groupId }
+    });
+    
+    if (!group) {
+      return res.status(404).json({ error: 'Group error tidak ditemukan' });
+    }
+    
+    // Cek apakah user yang request adalah admin/owner dari project
+    const requesterMember = await prisma.projectMember.findFirst({ 
+      where: { 
+        projectId: group.projectId, 
+        userId: req.user.userId,
+        role: { in: ['admin', 'owner'] }
+      } 
+    });
+    
+    if (!requesterMember) {
+      return res.status(403).json({ error: 'Hanya admin atau owner yang dapat melakukan assign error' });
+    }
+    
+    // Jika requester adalah admin/owner, lanjutkan proses assign
+    const updatedGroup = await prisma.errorGroup.update({
       where: { id: groupId },
       data: { assignedTo: memberId || null }
     });
-    res.json(group);
-  } catch {
+    
+    res.json(updatedGroup);
+  } catch (err) {
+    console.error('Error assigning group:', err);
     res.status(500).json({ error: 'Gagal assign group' });
   }
 });

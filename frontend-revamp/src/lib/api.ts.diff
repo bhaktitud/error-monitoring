@@ -1,0 +1,18 @@
+// Send error event directly from frontend
+sendEvent: async (dsn: string, eventData: {
+  errorType: string;
+  message: string;
+  stacktrace: string;
+  userAgent?: string;
+  statusCode?: number;
+  userContext?: UserContext;
+  tags?: Tags;
+}) => {
+  return apiRequest<{ success: boolean }>('/events', {
+    method: 'POST',
+    headers: {
+      'X-DSN': dsn
+    },
+    body: JSON.stringify(eventData),
+  });
+}

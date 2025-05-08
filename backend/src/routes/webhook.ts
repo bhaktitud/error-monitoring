@@ -1,5 +1,7 @@
 import express from 'express';
 import prisma from '../models/prisma';
+import crypto from 'crypto';
+import axios from 'axios';
 
 const router = express.Router();
 
@@ -55,6 +57,136 @@ router.delete('/webhooks/:webhookId', async (req, res) => {
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Gagal hapus webhook' });
+  }
+});
+
+// Get webhook delivery logs
+router.get('/webhooks/:webhookId/deliveries', async (req, res) => {
+  const { webhookId } = req.params;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const [deliveries, total] = await Promise.all([
+      prisma.webhookDelivery.findMany({
+        where: { webhookId },
+        orderBy: { sentAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.webhookDelivery.count({ where: { webhookId } }),
+    ]);
+
+    res.json({
+      data: deliveries,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Gagal mengambil log webhook' });
+  }
+});
+
+// Get delivery detail
+router.get('/webhook-deliveries/:deliveryId', async (req, res) => {
+  const { deliveryId } = req.params;
+  try {
+    const delivery = await prisma.webhookDelivery.findUnique({
+      where: { id: deliveryId },
+      include: { webhook: true },
+    });
+    
+    if (!delivery) {
+      return res.status(404).json({ error: 'Log webhook tidak ditemukan' });
+    }
+    
+    res.json(delivery);
+  } catch {
+    res.status(500).json({ error: 'Gagal mengambil detail log webhook' });
+  }
+});
+
+// Retry webhook delivery
+router.post('/webhook-deliveries/:deliveryId/retry', async (req, res) => {
+  const { deliveryId } = req.params;
+  
+  try {
+    const delivery = await prisma.webhookDelivery.findUnique({
+      where: { id: deliveryId },
+      include: { webhook: true },
+    });
+    
+    if (!delivery) {
+      return res.status(404).json({ error: 'Log webhook tidak ditemukan' });
+    }
+    
+    // Parse request body dari log sebelumnya
+    const payload = JSON.parse(delivery.requestBody);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    if (delivery.webhook.secret) {
+      const signature = crypto.createHmac('sha256', delivery.webhook.secret)
+        .update(delivery.requestBody)
+        .digest('hex');
+      headers['x-webhook-signature'] = signature;
+    }
+    
+    // Buat log baru untuk retry
+    const newDelivery = await prisma.webhookDelivery.create({
+      data: {
+        webhookId: delivery.webhookId,
+        eventId: delivery.eventId,
+        requestBody: delivery.requestBody,
+        success: false,
+      },
+    });
+    
+    try {
+      const sentAt = new Date();
+      const response = await axios.post(delivery.webhook.url, payload, { headers });
+      const responseAt = new Date();
+      
+      // Update log dengan response
+      await prisma.webhookDelivery.update({
+        where: { id: newDelivery.id },
+        data: {
+          responseBody: JSON.stringify(response.data),
+          statusCode: response.status,
+          success: true,
+          responseAt,
+        },
+      });
+      
+      res.json({
+        success: true,
+        delivery: await prisma.webhookDelivery.findUnique({ where: { id: newDelivery.id } }),
+      });
+    } catch (error: any) {
+      // Update log dengan error
+      await prisma.webhookDelivery.update({
+        where: { id: newDelivery.id },
+        data: {
+          error: error.message || 'Gagal mengirimkan webhook',
+          statusCode: error.response?.status,
+          success: false,
+          responseBody: error.response ? JSON.stringify(error.response.data) : null,
+          responseAt: new Date(),
+        },
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Gagal mengirim ulang webhook',
+        delivery: await prisma.webhookDelivery.findUnique({ where: { id: newDelivery.id } }),
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memproses permintaan retry' });
   }
 });
 

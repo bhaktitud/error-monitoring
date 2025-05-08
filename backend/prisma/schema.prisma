@@ -95,4 +95,19 @@ model Webhook {
   eventType String?  // opsional: 'all', 'error', dsb
   secret    String?  // opsional: untuk signature
   createdAt DateTime @default(now())
+  deliveries WebhookDelivery[]
+}
+
+model WebhookDelivery {
+  id           String   @id @default(uuid())
+  webhook      Webhook  @relation(fields: [webhookId], references: [id])
+  webhookId    String
+  eventId      String?
+  requestBody  String   // JSON payload yang dikirim
+  responseBody String?  // Response dari webhook endpoint
+  statusCode   Int?     // HTTP status code dari response
+  success      Boolean  // Status keberhasilan pengiriman
+  error        String?  // Error message jika gagal
+  sentAt       DateTime @default(now())
+  responseAt   DateTime?
 } 

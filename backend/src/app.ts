@@ -7,6 +7,8 @@ import projectRoutes from './routes/project';
 import eventRoutes from './routes/event';
 import groupRoutes from './routes/group';
 import webhookRoutes from './routes/webhook';
+import statsRoutes from './routes/stats';
+import notificationRoutes from './routes/notification';
 
 // Import routes (akan dibuat nanti)
 // import authRoutes from './routes/auth';
@@ -26,6 +28,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api', groupRoutes);
 app.use('/api', webhookRoutes);
+app.use('/api', statsRoutes);
+app.use('/api', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('Sentry Clone API running!');

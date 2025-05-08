@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../models/prisma';
+import { auth } from './project';
 
 const router = express.Router();
 
@@ -42,6 +43,25 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Password salah' });
     const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET as string, { expiresIn: '7d' });
     res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Terjadi error pada server' });
+  }
+});
+
+// Get current user info
+router.get('/me', auth, async (req: any, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { id: true, email: true }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User tidak ditemukan' });
+    }
+    
+    res.json(user);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Terjadi error pada server' });

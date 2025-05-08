@@ -87,8 +87,49 @@ router.post('/', async (req, res) => {
           const signature = crypto.createHmac('sha256', webhook.secret).update(JSON.stringify(payload)).digest('hex');
           headers['x-webhook-signature'] = signature;
         }
-        axios.post(webhook.url, payload, { headers }).catch(() => {});
-      } catch {}
+        
+        // Buat log webhook delivery - request
+        const deliveryLog = await prisma.webhookDelivery.create({
+          data: {
+            webhookId: webhook.id,
+            eventId: group.id,
+            requestBody: JSON.stringify(payload),
+            success: false, // Akan diupdate setelah mendapat response
+          },
+        });
+
+        try {
+          const sentAt = new Date();
+          const response = await axios.post(webhook.url, payload, { headers });
+          const responseAt = new Date();
+          
+          // Update log dengan response
+          await prisma.webhookDelivery.update({
+            where: { id: deliveryLog.id },
+            data: {
+              responseBody: JSON.stringify(response.data),
+              statusCode: response.status,
+              success: true,
+              responseAt,
+            },
+          });
+        } catch (error: any) {
+          // Update log dengan error
+          await prisma.webhookDelivery.update({
+            where: { id: deliveryLog.id },
+            data: {
+              error: error.message || 'Gagal mengirimkan webhook',
+              statusCode: error.response?.status,
+              success: false,
+              responseBody: error.response ? JSON.stringify(error.response.data) : null,
+              responseAt: new Date(),
+            },
+          });
+        }
+      } catch (err) {
+        // Error saat membuat atau mengupdate log
+        console.error('Gagal membuat log webhook:', err);
+      }
     }
     res.status(201).json({ success: true });
   } catch (err) {

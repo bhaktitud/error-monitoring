@@ -77,7 +77,7 @@ export default function LoginPage() {
   // Tampilkan halaman verifikasi jika user belum verifikasi email
   if (needVerification) {
     return (
-      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
         <div className="w-full max-w-md">
           <Card>
             <CardHeader>
@@ -86,11 +86,11 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
+                <div className="bg-accent/20 p-4 rounded-md border border-accent">
                   <div className="flex">
-                    <FiAlertCircle className="text-amber-500 mr-2 mt-1 flex-shrink-0" />
+                    <FiAlertCircle className="text-accent-foreground mr-2 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-amber-800 text-sm">
+                      <p className="text-accent-foreground text-sm">
                         Anda perlu memverifikasi email <strong>{verificationEmail}</strong> sebelum dapat login. 
                         Silakan cek email Anda untuk link verifikasi atau kirim ulang email verifikasi.
                       </p>
@@ -118,10 +118,10 @@ export default function LoginPage() {
                   )}
                   
                   {resendStatus === 'success' && (
-                    <div className="bg-green-50 p-4 rounded-md border border-green-200 mb-3">
+                    <div className="bg-primary/20 p-4 rounded-md border border-primary mb-3">
                       <div className="flex">
-                        <FiCheck className="text-green-500 mr-2 mt-1 flex-shrink-0" />
-                        <p className="text-green-800 text-sm">
+                        <FiCheck className="text-primary mr-2 mt-1 flex-shrink-0" />
+                        <p className="text-primary text-sm">
                           Email verifikasi telah dikirim. Silakan cek inbox Anda.
                         </p>
                       </div>
@@ -129,10 +129,10 @@ export default function LoginPage() {
                   )}
                   
                   {resendStatus === 'error' && (
-                    <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-3">
+                    <div className="bg-destructive/20 p-4 rounded-md border border-destructive mb-3">
                       <div className="flex">
-                        <FiAlertCircle className="text-red-500 mr-2 mt-1 flex-shrink-0" />
-                        <p className="text-red-800 text-sm">
+                        <FiAlertCircle className="text-destructive mr-2 mt-1 flex-shrink-0" />
+                        <p className="text-destructive text-sm">
                           Gagal mengirim email verifikasi. Silakan coba lagi.
                         </p>
                       </div>
@@ -159,11 +159,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Error Monitor</h1>
-          <p className="text-gray-600">Masuk ke akun Anda</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Error Monitor</h1>
+          <p className="text-muted-foreground">Masuk ke akun Anda</p>
         </div>
 
         <Card>
@@ -176,20 +176,20 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {error && (
-                <div className="bg-red-50 p-3 rounded-md flex items-start">
-                  <FiAlertCircle className="text-red-500 mt-0.5 mr-2" />
-                  <span className="text-red-600 text-sm">{error}</span>
+                <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                  <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                  <span className="text-destructive text-sm">{error}</span>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="email">
                   Email
                 </label>
                 <input
                   id="email"
                   type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
@@ -199,13 +199,13 @@ export default function LoginPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
                   Password
                 </label>
                 <input
                   id="password"
                   type="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
@@ -222,7 +222,7 @@ export default function LoginPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                     Memproses...
                   </>
                 ) : (
@@ -232,9 +232,9 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-muted-foreground">
                 Belum memiliki akun?{' '}
-                <Link href="/register" className="text-blue-600 hover:underline">
+                <Link href="/register" className="text-primary hover:underline">
                   Daftar sekarang
                 </Link>
               </div>

@@ -117,54 +117,54 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-10">
+    <header className="bg-sidebar border-b border-sidebar-border sticky top-0 z-10">
       <div className="px-6 h-16 flex items-center justify-between">
         <div className="flex items-center">
           {toggleSidebar && (
             <button
               onClick={toggleSidebar}
-              className="mr-4 p-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
+              className="mr-4 p-2 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden"
             >
               {isSidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
             </button>
           )}
           
-          <h1 className="text-lg font-medium text-gray-900">{pageTitle}</h1>
+          <h1 className="text-lg font-medium text-sidebar-foreground">{pageTitle}</h1>
         </div>
         
         <div className="flex items-center space-x-3">
           {/* Search form */}
           <form onSubmit={handleSearch} className="relative hidden md:flex items-center">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400 h-4 w-4" />
+              <FiSearch className="text-sidebar-foreground/60 h-4 w-4" />
             </div>
             <input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-60"
+              className="pl-10 pr-4 py-1.5 text-sm bg-sidebar-accent/20 border border-sidebar-border rounded-md focus:outline-none focus:ring-1 focus:ring-sidebar-primary focus:border-sidebar-primary text-sidebar-foreground w-60"
             />
           </form>
           
           {/* Tombol notifikasi */}
           <div className="relative" ref={notificationsRef}>
             <button 
-              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 relative"
+              className="p-1.5 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground relative"
               onClick={() => setShowNotifications(!showNotifications)}
             >
               <FiBell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
             </button>
             
             {/* Dropdown notifikasi */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <h3 className="text-sm font-semibold">Notifikasi</h3>
+              <div className="absolute right-0 mt-2 w-80 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
+                <div className="px-4 py-2 border-b border-sidebar-border/50">
+                  <h3 className="text-sm font-semibold text-sidebar-foreground">Notifikasi</h3>
                 </div>
                 <div className="max-h-96 overflow-y-auto">
-                  <div className="py-8 text-center text-gray-500">
+                  <div className="py-8 text-center text-sidebar-foreground/60">
                     <p>Tidak ada notifikasi baru</p>
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
           {/* Tombol bantuan */}
           <div className="relative" ref={helpMenuRef}>
             <button 
-              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              className="p-1.5 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setShowHelpMenu(!showHelpMenu)}
             >
               <FiHelpCircle size={20} />
@@ -183,14 +183,14 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
             
             {/* Dropdown bantuan */}
             {showHelpMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
-                <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <div className="absolute right-0 mt-2 w-48 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
+                <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   Dokumentasi
                 </a>
-                <a href="https://support.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <a href="https://support.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   Bantuan & Dukungan
                 </a>
-                <a href="https://status.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <a href="https://status.example.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   Status Sistem
                 </a>
               </div>
@@ -210,7 +210,7 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
                 {user?.avatar ? (
                   <AvatarImage src={user.avatar} alt={user.name || user.email} />
                 ) : null}
-                <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+                <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary font-medium">
                   {loading ? '...' : getInitials(user?.email || '', user?.name)}
                 </AvatarFallback>
               </Avatar>
@@ -218,41 +218,41 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
             
             {/* Dropdown profile menu */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-20">
+              <div className="absolute right-0 mt-2 w-56 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
                 {user && (
-                  <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="px-4 py-3 border-b border-sidebar-border/50">
                     <div className="flex items-center mb-2">
                       <Avatar className="h-10 w-10 mr-3">
                         {user.avatar ? (
                           <AvatarImage src={user.avatar} alt={user.name || user.email} />
                         ) : null}
-                        <AvatarFallback className="bg-blue-100 text-blue-800 font-medium">
+                        <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary font-medium">
                           {getInitials(user.email, user.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{user.name || 'User'}</p>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        <p className="text-sm font-medium text-sidebar-foreground">{user.name || 'User'}</p>
+                        <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
                       </div>
                     </div>
                     {user.jobTitle && (
-                      <p className="text-xs text-gray-500 truncate">{user.jobTitle}</p>
+                      <p className="text-xs text-sidebar-foreground/60 truncate">{user.jobTitle}</p>
                     )}
                   </div>
                 )}
                 
-                <Link href="/account/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <Link href="/account/profile" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   <FiUser className="inline-block mr-2 h-4 w-4" />
                   Profil
                 </Link>
                 
-                <Link href="/account/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <Link href="/account/settings" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   <FiSettings className="inline-block mr-2 h-4 w-4" />
                   Pengaturan
                 </Link>
                 
                 <button 
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-sidebar-accent"
                   onClick={handleLogout}
                 >
                   <FiLogOut className="inline-block mr-2 h-4 w-4" />

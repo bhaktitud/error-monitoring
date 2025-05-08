@@ -1,7 +1,7 @@
 import { FC, ReactNode, useState } from 'react';
 import { SidebarNav } from '@/components/ui/sidebar-nav';
 import { Header } from '@/components/ui/header';
-import { Footer } from '@/components/ui/footer';
+import Footer from '@/components/ui/footer';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,7 +16,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children, projectId 
   };
   
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-background">
       <div className="flex flex-1 h-screen overflow-hidden">
         <div className={`${isSidebarOpen ? 'block' : 'hidden'} lg:block flex-shrink-0`}>
           <SidebarNav projectId={projectId} />

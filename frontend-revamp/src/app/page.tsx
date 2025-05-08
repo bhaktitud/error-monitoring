@@ -25,11 +25,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="flex justify-between items-center px-6 py-4 lg:px-8 bg-white border-b">
+      <header className="flex justify-between items-center px-6 py-4 lg:px-8 bg-background border-b border-border">
         <div className="flex items-center">
-          <span className="text-xl font-bold text-blue-600">Error Monitor</span>
+          <span className="text-xl font-bold text-primary">Error Monitor</span>
         </div>
         <div>
           <Button variant="outline" className="mr-3" onClick={handleLogin}>
@@ -42,12 +42,12 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="px-6 py-16 lg:px-8 bg-gray-50">
+      <section className="px-6 py-16 lg:px-8 bg-muted">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-6">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mb-6">
             Deteksi dan Tangani Error Aplikasi Anda dengan Mudah
           </h1>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-muted-foreground mb-8">
             Pantau, analisis, dan selesaikan error pada aplikasi web dan mobile Anda secara real-time. 
             Berhenti kehilangan pengguna karena bug yang tidak terdeteksi.
           </p>
@@ -67,45 +67,45 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Fitur Utama</h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg border">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <FiAlertTriangle className="text-blue-600 text-2xl" />
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <FiAlertTriangle className="text-primary text-2xl" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Error Monitoring</h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Deteksi dan lacak error secara real-time dari aplikasi Anda. Dapatkan 
                 informasi lengkap tentang error termasuk stack trace dan konteks.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                <FiBarChart className="text-green-600 text-2xl" />
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <FiBarChart className="text-primary text-2xl" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Analisis Terperinci</h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Analisis error dengan detail yang lengkap. Lihat tren error, pengguna yang terdampak, 
                 dan metrik lainnya untuk memahami penyebab masalah.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <FiUsers className="text-purple-600 text-2xl" />
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <FiUsers className="text-primary text-2xl" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Kolaborasi Tim</h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Bekerja sama dengan tim untuk mengatasi error. Tambahkan komentar, 
                 assign error ke anggota tim, dan lacak status penyelesaian.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                <FiShield className="text-orange-600 text-2xl" />
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <FiShield className="text-primary text-2xl" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Integrasi Webhook</h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Integrasikan dengan tools lain melalui webhook. Dapatkan notifikasi 
                 tentang error di Slack, Discord, atau aplikasi lainnya.
               </p>
@@ -115,7 +115,7 @@ export default function LandingPage() {
       </section>
 
       {/* Call to Action */}
-      <section className="px-6 py-16 lg:px-8 bg-blue-600 text-white">
+      <section className="px-6 py-16 lg:px-8 bg-primary text-primary-foreground">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Mulai Pantau Error Aplikasi Anda Hari Ini</h2>
           <p className="text-lg mb-8">
@@ -124,7 +124,7 @@ export default function LandingPage() {
           <Button 
             size="lg" 
             variant="outline" 
-            className="bg-white text-blue-600 hover:bg-blue-50"
+            className="bg-background text-primary hover:bg-muted"
             onClick={handleGetStarted}
           >
             Buat Akun Sekarang
@@ -133,11 +133,11 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 lg:px-8 bg-gray-900 text-gray-400">
+      <footer className="px-6 py-8 lg:px-8 bg-sidebar text-sidebar-foreground">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <span className="text-lg font-semibold text-white">Error Monitor</span>
+              <span className="text-lg font-semibold text-sidebar-primary-foreground">Error Monitor</span>
               <p className="text-sm mt-1">Monitor error aplikasi Anda dengan mudah</p>
             </div>
             <div className="text-sm">

@@ -49,14 +49,14 @@ export default function VerifyEmailPage() {
   // Loading state
   if (status === 'loading') {
     return (
-      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
-            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <FiLoader className="text-blue-600 text-xl animate-spin" />
+          <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
+            <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+              <FiLoader className="text-primary text-xl animate-spin" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Memverifikasi Email Anda</h2>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Mohon tunggu sementara kami memverifikasi email Anda...
             </p>
           </div>
@@ -68,14 +68,14 @@ export default function VerifyEmailPage() {
   // Error state
   if (status === 'error') {
     return (
-      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
-            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <FiAlertCircle className="text-red-600 text-xl" />
+          <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
+            <div className="mx-auto w-12 h-12 bg-destructive/20 rounded-full flex items-center justify-center mb-4">
+              <FiAlertCircle className="text-destructive text-xl" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Verifikasi Gagal</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               {errorMessage || 'Terjadi kesalahan saat memverifikasi email Anda.'}
             </p>
             <div className="space-y-3">
@@ -94,14 +94,14 @@ export default function VerifyEmailPage() {
 
   // Success state (sebentar sebelum redirect ke verify-success)
   return (
-    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
-          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <FiCheck className="text-green-600 text-xl" />
+        <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
+          <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+            <FiCheck className="text-primary text-xl" />
           </div>
           <h2 className="text-xl font-semibold mb-2">Email Berhasil Diverifikasi!</h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Kami sedang mengalihkan Anda ke halaman berikutnya...
           </p>
         </div>

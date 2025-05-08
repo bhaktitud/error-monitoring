@@ -145,13 +145,13 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
   const navGroups = getNavGroups();
 
   return (
-    <div className="w-64 bg-white h-full overflow-y-auto border-r flex flex-col">
-      <div className="py-4 px-4 border-b">
+    <div className="w-64 bg-sidebar h-full overflow-y-auto border-r border-sidebar-border flex flex-col">
+      <div className="py-4 px-4 border-b border-sidebar-border">
         <Link href="/projects" className="flex items-center">
-          <div className="w-8 h-8 bg-blue-600 rounded mr-2 flex items-center justify-center text-white font-bold">
-            EM
+          <div className="w-8 h-8 bg-sidebar-primary rounded mr-2 flex items-center justify-center text-sidebar-primary-foreground font-bold">
+            LR
           </div>
-          <h1 className="text-lg font-bold text-gray-800">Error Monitor</h1>
+          <h1 className="text-lg font-bold text-sidebar-foreground">LogRaven.id</h1>
         </Link>
       </div>
 
@@ -159,7 +159,7 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
         {navGroups.map((group, groupIndex) => (
           <div key={groupIndex} className="mb-3">
             <div
-              className="px-3 py-2 text-xs font-semibold text-gray-400 tracking-wider"
+              className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/50 tracking-wider"
             >
               {group.title}
             </div>
@@ -172,8 +172,8 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
                   className={cn(
                     'flex items-center px-3 py-2 text-sm rounded-md transition-colors',
                     isActive(item.href)
-                      ? 'bg-gray-100 text-gray-900 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50'
                   )}
                 >
                   {item.icon}
@@ -186,34 +186,34 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
       </nav>
 
       {/* User Profile */}
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-4 border-t border-sidebar-border">
         {loading ? (
           <div className="flex items-center px-3 py-2 text-sm">
-            <div className="animate-pulse h-8 w-8 bg-gray-200 rounded-full mr-2"></div>
-            <div className="animate-pulse h-4 w-32 bg-gray-200 rounded"></div>
+            <div className="animate-pulse h-8 w-8 bg-sidebar-accent rounded-full mr-2"></div>
+            <div className="animate-pulse h-4 w-32 bg-sidebar-accent rounded"></div>
           </div>
         ) : user ? (
           <div className="flex items-center">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium mr-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-sidebar-primary/20 text-sidebar-primary font-medium mr-2">
               {user.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">{user.email}</div>
+              <div className="text-sm font-medium text-sidebar-foreground truncate">{user.email}</div>
             </div>
             <Button 
               variant="ghost" 
               size="sm"
-              className="p-1"
+              className="p-1 text-sidebar-foreground/70 hover:text-sidebar-foreground"
               onClick={handleLogout}
             >
-              <FiLogOut className="h-4 w-4 text-gray-500" />
+              <FiLogOut className="h-4 w-4" />
             </Button>
           </div>
         ) : (
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full flex items-center justify-center"
+            className="w-full flex items-center justify-center border-sidebar-border text-sidebar-foreground"
             onClick={() => router.push('/login')}
           >
             Login

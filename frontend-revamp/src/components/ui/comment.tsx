@@ -46,12 +46,12 @@ export const Comment: FC<CommentProps> = ({
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="font-medium">{author.user.email}</div>
-            <p className="mt-1">{content}</p>
+            <div className="font-medium text-foreground">{author.user.email}</div>
+            <p className="mt-1 text-foreground/90">{content}</p>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="text-sm text-gray-500 flex items-center">
+      <CardFooter className="text-sm text-muted-foreground flex items-center">
         <FiClock className="mr-1" />
         <span>{formatDate(createdAt)}</span>
       </CardFooter>

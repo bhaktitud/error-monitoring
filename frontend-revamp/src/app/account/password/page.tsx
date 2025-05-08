@@ -109,17 +109,17 @@ export default function ChangePasswordPage() {
             Kembali ke Profil
           </Button>
           <h1 className="text-2xl font-bold mb-2">Ubah Password</h1>
-          <p className="text-gray-500">Perbarui password akun Anda</p>
+          <p className="text-muted-foreground">Perbarui password akun Anda</p>
         </div>
         
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 p-4 mb-6 rounded-md">
+          <div className="bg-primary/20 border border-primary text-primary p-4 mb-6 rounded-md">
             {success}
           </div>
         )}
@@ -131,7 +131,7 @@ export default function ChangePasswordPage() {
                 <Label htmlFor="currentPassword">Password Saat Ini</Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="text-gray-400" />
+                    <FiLock className="text-muted-foreground" />
                   </div>
                   <Input
                     id="currentPassword"
@@ -143,7 +143,7 @@ export default function ChangePasswordPage() {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
                     {showCurrentPassword ? <FiEyeOff /> : <FiEye />}
@@ -155,7 +155,7 @@ export default function ChangePasswordPage() {
                 <Label htmlFor="newPassword">Password Baru</Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="text-gray-400" />
+                    <FiLock className="text-muted-foreground" />
                   </div>
                   <Input
                     id="newPassword"
@@ -167,13 +167,13 @@ export default function ChangePasswordPage() {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? <FiEyeOff /> : <FiEye />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Password minimal 8 karakter
                 </p>
               </div>
@@ -182,7 +182,7 @@ export default function ChangePasswordPage() {
                 <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="text-gray-400" />
+                    <FiLock className="text-muted-foreground" />
                   </div>
                   <Input
                     id="confirmPassword"
@@ -194,7 +194,7 @@ export default function ChangePasswordPage() {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
@@ -210,7 +210,7 @@ export default function ChangePasswordPage() {
                 >
                   {loading ? (
                     <>
-                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                      <span className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></span>
                       Memperbarui...
                     </>
                   ) : (

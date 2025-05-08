@@ -62,17 +62,17 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
-            <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <FiCheck className="text-green-600 text-xl" />
+          <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
+            <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+              <FiCheck className="text-primary text-xl" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Pendaftaran Berhasil!</h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               Akun Anda telah berhasil dibuat. Kami telah mengirimkan email verifikasi ke alamat <strong>{email}</strong>.
             </p>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
             </p>
             <Button onClick={() => router.push('/login')} className="w-full">
@@ -85,11 +85,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Error Monitor</h1>
-          <p className="text-gray-600">Buat akun baru</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Error Monitor</h1>
+          <p className="text-muted-foreground">Buat akun baru</p>
         </div>
 
         <Card>
@@ -102,20 +102,20 @@ export default function RegisterPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {error && (
-                <div className="bg-red-50 p-3 rounded-md flex items-start">
-                  <FiAlertCircle className="text-red-500 mt-0.5 mr-2" />
-                  <span className="text-red-600 text-sm">{error}</span>
+                <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                  <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                  <span className="text-destructive text-sm">{error}</span>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="email">
                   Email
                 </label>
                 <input
                   id="email"
                   type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
@@ -125,13 +125,13 @@ export default function RegisterPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
                   Password
                 </label>
                 <input
                   id="password"
                   type="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 8 karakter"
@@ -141,13 +141,13 @@ export default function RegisterPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="confirm-password">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirm-password">
                   Konfirmasi Password
                 </label>
                 <input
                   id="confirm-password"
                   type="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Masukkan password lagi"
@@ -164,7 +164,7 @@ export default function RegisterPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                     Memproses...
                   </>
                 ) : (
@@ -174,9 +174,9 @@ export default function RegisterPage() {
                   </>
                 )}
               </Button>
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-muted-foreground">
                 Sudah memiliki akun?{' '}
-                <Link href="/login" className="text-blue-600 hover:underline">
+                <Link href="/login" className="text-primary hover:underline">
                   Masuk sekarang
                 </Link>
               </div>

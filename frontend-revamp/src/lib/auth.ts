@@ -34,4 +34,14 @@ export const isLoggedIn = (): boolean => {
   // Cek token di localStorage
   const token = localStorage.getItem('authToken');
   return !!token;
+};
+
+// Function untuk mendapatkan session (token user)
+export const getSession = async (): Promise<string | null> => {
+  // Pastikan ini dijalankan di browser
+  if (typeof window === 'undefined') return null;
+  
+  // Ambil token dari localStorage
+  const token = localStorage.getItem('authToken');
+  return token;
 }; 

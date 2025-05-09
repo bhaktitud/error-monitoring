@@ -84,10 +84,14 @@ export const AuthAPI = {
   },
 
   // Register user
-  register: async (email: string, password: string) => {
+  register: async (email: string, password: string, inviteToken?: string | null) => {
+    const payload = inviteToken 
+      ? { email, password, inviteToken } 
+      : { email, password };
+      
     return apiRequest<{ id: string; email: string; verificationEmailSent: boolean }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
     });
   },
 
@@ -226,15 +230,73 @@ export const ProjectsAPI = {
   // Invite member to project
   inviteMember: async (projectId: string, email: string, role: string) => {
     return apiRequest<{
-      id: string;
-      role: string;
-      user: {
+      success: boolean;
+      message: string;
+      invite: {
         id: string;
         email: string;
+        role: string;
+        expiresAt: string;
       }
-    }>(`/projects/${projectId}/members`, {
+    }>(`/projects/${projectId}/members/invite`, {
       method: 'POST',
       body: JSON.stringify({ email, role }),
+    });
+  },
+
+  // Accept project invitation
+  acceptInvite: async (token: string, projectId: string, email: string) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      projectId: string;
+      projectName: string;
+      role: string;
+    }>(`/projects/accept-invite`, {
+      method: 'POST',
+      body: JSON.stringify({ token, projectId, email }),
+    });
+  },
+  
+  // Get pending invitations for a project
+  getInvitations: async (projectId: string) => {
+    return apiRequest<Array<{
+      id: string;
+      email: string;
+      role: string;
+      createdAt: string;
+      expiresAt: string;
+      status: string;
+      inviter: {
+        email: string;
+        name: string;
+      }
+    }>>(`/projects/${projectId}/invites`);
+  },
+  
+  // Cancel invitation
+  cancelInvitation: async (projectId: string, inviteId: string) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/projects/${projectId}/invites/${inviteId}`, {
+      method: 'DELETE',
+    });
+  },
+  
+  // Resend invitation
+  resendInvitation: async (projectId: string, inviteId: string) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      invite: {
+        id: string;
+        email: string;
+        role: string;
+        expiresAt: string;
+      }
+    }>(`/projects/${projectId}/invites/${inviteId}/resend`, {
+      method: 'POST',
     });
   },
 

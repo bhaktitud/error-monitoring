@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FiLogIn, FiAlertCircle, FiCheck } from 'react-icons/fi';
@@ -12,6 +12,7 @@ import { useCookies } from 'next-client-cookies';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const cookies = useCookies();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +21,14 @@ export default function LoginPage() {
   const [needVerification, setNeedVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  // Mengambil parameter dari URL jika ada
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +49,21 @@ export default function LoginPage() {
       // Simpan token di localStorage dan cookie
       login(data.token, cookies);
       
-      // Redirect ke halaman projects setelah berhasil login
-      router.push('/projects');
+      // Cek apakah ada invitation yang perlu diproses
+      const inviteParamsStr = sessionStorage.getItem('inviteParams');
+      if (inviteParamsStr) {
+        // Ambil data invite dari sessionStorage
+        const inviteParams = JSON.parse(inviteParamsStr);
+        
+        // Hapus data invite dari sessionStorage
+        sessionStorage.removeItem('inviteParams');
+        
+        // Redirect ke halaman invite untuk menyelesaikan proses
+        router.push(`/invite?token=${inviteParams.token}&projectId=${inviteParams.projectId}&email=${encodeURIComponent(inviteParams.email)}`);
+      } else {
+        // Redirect ke halaman projects setelah berhasil login
+        router.push('/projects');
+      }
     } catch (err) {
       console.error('Error during login:', err);
       if (err instanceof Error) {

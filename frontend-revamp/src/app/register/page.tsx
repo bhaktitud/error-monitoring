@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FiUserPlus, FiAlertCircle, FiCheck } from 'react-icons/fi';
@@ -10,12 +10,30 @@ import { AuthAPI } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [isInvitationRegister, setIsInvitationRegister] = useState(false);
+
+  // Mengambil parameter dari URL jika ada
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    const inviteTokenParam = searchParams.get('inviteToken');
+
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+
+    if (inviteTokenParam) {
+      setInviteToken(inviteTokenParam);
+      setIsInvitationRegister(true);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,15 +57,22 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // Memanggil API register
-      await AuthAPI.register(email, password);
+      // Memanggil API register dengan inviteToken jika ada
+      await AuthAPI.register(email, password, inviteToken);
       
       setSuccess(true);
       
-      // Redirect ke halaman login setelah beberapa detik
-      setTimeout(() => {
-        router.push('/login');
-      }, 5000); // Ubah jadi 5 detik agar pesan bisa dibaca
+      // Jika ada inviteToken, redirect ke halaman project setelah beberapa detik
+      if (isInvitationRegister) {
+        setTimeout(() => {
+          router.push('/projects');
+        }, 5000);
+      } else {
+        // Redirect ke halaman login setelah beberapa detik
+        setTimeout(() => {
+          router.push('/login');
+        }, 5000); // Ubah jadi 5 detik agar pesan bisa dibaca
+      }
     } catch (err) {
       console.error('Error during registration:', err);
       if (err instanceof Error) {
@@ -72,12 +97,25 @@ export default function RegisterPage() {
             <p className="text-muted-foreground mb-4">
               Akun Anda telah berhasil dibuat. Kami telah mengirimkan email verifikasi ke alamat <strong>{email}</strong>.
             </p>
-            <p className="text-muted-foreground mb-6">
-              Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
-            </p>
-            <Button onClick={() => router.push('/login')} className="w-full">
-              Masuk Sekarang
-            </Button>
+            {isInvitationRegister ? (
+              <>
+                <p className="text-muted-foreground mb-6">
+                  Anda telah ditambahkan ke project. Silakan verifikasi email Anda untuk mengakses semua fitur.
+                </p>
+                <Button onClick={() => router.push('/projects')} className="w-full">
+                  Lihat Project
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground mb-6">
+                  Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
+                </p>
+                <Button onClick={() => router.push('/login')} className="w-full">
+                  Masuk Sekarang
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -89,15 +127,22 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">Error Monitor</h1>
-          <p className="text-muted-foreground">Buat akun baru</p>
+          <p className="text-muted-foreground">
+            {isInvitationRegister ? 'Buat akun untuk bergabung ke project' : 'Buat akun baru'}
+          </p>
         </div>
 
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle>Registrasi</CardTitle>
+              <CardTitle>
+                {isInvitationRegister ? 'Registrasi Undangan' : 'Registrasi'}
+              </CardTitle>
               <CardDescription>
-                Daftar untuk menggunakan layanan error monitoring
+                {isInvitationRegister 
+                  ? 'Lengkapi data berikut untuk menerima undangan project'
+                  : 'Daftar untuk menggunakan layanan error monitoring'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -119,9 +164,14 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isInvitationRegister} // Disable jika dari undangan
                   required
                 />
+                {isInvitationRegister && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email tidak dapat diubah karena terkait dengan undangan
+                  </p>
+                )}
               </div>
               
               <div>
@@ -170,7 +220,7 @@ export default function RegisterPage() {
                 ) : (
                   <>
                     <FiUserPlus className="mr-2 h-4 w-4" />
-                    Daftar
+                    {isInvitationRegister ? 'Daftar & Bergabung' : 'Daftar'}
                   </>
                 )}
               </Button>

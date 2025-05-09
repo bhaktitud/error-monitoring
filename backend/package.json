@@ -9,7 +9,10 @@
     "prisma": "prisma",
     "db:reset": "ts-node src/utils/reset-db.ts",
     "db:seed": "ts-node src/utils/db-seed.ts",
-    "db:reset-and-seed": "npm run db:reset && npm run db:seed"
+    "db:reset-and-seed": "npm run db:reset && npm run db:seed",
+    "create:dummy-user": "node scripts/create-dummy-user.js",
+    "create:tester": "ts-node src/utils/create-dummy-user.ts",
+    "send:test-invite": "node scripts/send-test-invite.js"
   },
   "dependencies": {
     "@prisma/client": "^5.12.0",

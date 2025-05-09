@@ -47,7 +47,7 @@ const upload = multer({
 
 // Register
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, inviteToken } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email dan password wajib diisi' });
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -59,6 +59,40 @@ router.post('/register', async (req, res) => {
         // User dummy (invite), update password
         const passwordHash = await bcrypt.hash(password, 10);
         await prisma.user.update({ where: { email }, data: { passwordHash } });
+        
+        // Jika ada inviteToken yang diberikan, cek apakah valid
+        if (inviteToken) {
+          // Cari project invite
+          const invite = await prisma.projectInvite.findFirst({
+            where: {
+              token: inviteToken,
+              email: email,
+              status: 'PENDING'
+            }
+          });
+          
+          if (invite) {
+            // Pastikan token belum expired
+            const { isTokenValid } = require('../utils/token');
+            if (isTokenValid(invite.expiresAt)) {
+              // Tambahkan user sebagai member project
+              await prisma.projectMember.create({
+                data: {
+                  projectId: invite.projectId,
+                  userId: existing.id,
+                  role: invite.role
+                }
+              });
+              
+              // Update status invite
+              await prisma.projectInvite.update({
+                where: { id: invite.id },
+                data: { status: 'ACCEPTED' }
+              });
+            }
+          }
+        }
+        
         return res.status(201).json({ email });
       }
     }
@@ -83,6 +117,39 @@ router.post('/register', async (req, res) => {
         verificationTokenExpiry
       } 
     });
+    
+    // Jika ada inviteToken yang diberikan, cek apakah valid
+    if (inviteToken) {
+      // Cari project invite
+      const invite = await prisma.projectInvite.findFirst({
+        where: {
+          token: inviteToken,
+          email: email,
+          status: 'PENDING'
+        }
+      });
+      
+      if (invite) {
+        // Pastikan token belum expired
+        const { isTokenValid } = require('../utils/token');
+        if (isTokenValid(invite.expiresAt)) {
+          // Tambahkan user sebagai member project
+          await prisma.projectMember.create({
+            data: {
+              projectId: invite.projectId,
+              userId: user.id,
+              role: invite.role
+            }
+          });
+          
+          // Update status invite
+          await prisma.projectInvite.update({
+            where: { id: invite.id },
+            data: { status: 'ACCEPTED' }
+          });
+        }
+      }
+    }
     
     // Buat link verifikasi
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;

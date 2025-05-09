@@ -2,8 +2,12 @@ import express from 'express';
 import prisma from '../models/prisma';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { Resend } from 'resend';
 
 const router = express.Router();
+
+// Inisialisasi Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Middleware autentikasi
 function auth(req: any, res: any, next: any) {
@@ -73,28 +77,415 @@ router.get('/:id/members', auth, async (req: any, res) => {
   }
 });
 
-// Invite/tambah member ke project
-router.post('/:id/members', auth, async (req: any, res) => {
+// Invite member ke project (dengan email)
+router.post('/:id/members/invite', auth, async (req: any, res) => {
   const { id } = req.params;
   const { email, role } = req.body;
-  if (!email || !role) return res.status(400).json({ error: 'Email dan role wajib diisi' });
+  
+  if (!email || !role) {
+    return res.status(400).json({ error: 'Email dan role wajib diisi' });
+  }
+  
   try {
     // Cek apakah requester adalah owner/admin
-    const me = await prisma.projectMember.findFirst({ where: { projectId: id, userId: req.user.userId } });
-    if (!me || (me.role !== 'admin' && me.role !== 'owner')) return res.status(403).json({ error: 'Hanya owner/admin yang bisa invite' });
+    const me = await prisma.projectMember.findFirst({ 
+      where: { projectId: id, userId: req.user.userId } 
+    });
+    
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) {
+      return res.status(403).json({ error: 'Hanya owner/admin yang bisa invite' });
+    }
+    
+    // Ambil detail project
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: { owner: { select: { email: true, name: true } } }
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project tidak ditemukan' });
+    }
+    
+    // Import fungsi token
+    const { generateToken, getVerificationTokenExpiry } = require('../utils/token');
+    // Import template email
+    const { getProjectInviteEmailTemplate } = require('../utils/email-templates');
+    
+    // Buat token invite
+    const inviteToken = generateToken();
+    const inviteTokenExpiry = getVerificationTokenExpiry(); // berlaku 24 jam
+    
     // Cari user by email
     let user = await prisma.user.findUnique({ where: { email } });
+    
     if (!user) {
-      user = await prisma.user.create({ data: { email, passwordHash: '' } }); // dummy user, password kosong
+      // Buat user baru (belum aktif)
+      user = await prisma.user.create({ 
+        data: { 
+          email, 
+          passwordHash: '',
+          emailVerified: false,
+          verificationToken: inviteToken,
+          verificationTokenExpiry: inviteTokenExpiry
+        } 
+      });
+    } else {
+      // Cek apakah sudah jadi member
+      const exist = await prisma.projectMember.findFirst({ 
+        where: { projectId: id, userId: user.id } 
+      });
+      
+      if (exist) {
+        return res.status(409).json({ error: 'User sudah jadi member' });
+      }
     }
-    // Cek apakah sudah jadi member
-    const exist = await prisma.projectMember.findFirst({ where: { projectId: id, userId: user.id } });
-    if (exist) return res.status(409).json({ error: 'User sudah jadi member' });
-    // Tambah member
-    const member = await prisma.projectMember.create({ data: { projectId: id, userId: user.id, role }, include: { user: { select: { id: true, email: true } } } });
-    res.status(201).json(member);
+    
+    // Buat link invite
+    const inviteLink = `${process.env.FRONTEND_URL}/invite?token=${inviteToken}&projectId=${id}&email=${encodeURIComponent(email)}`;
+    
+    // Siapkan email invite
+    const inviterName = req.user.name || req.user.email;
+    const projectName = project.name;
+    const userName = email.split('@')[0];
+    
+    // Gunakan template email
+    const emailHtml = getProjectInviteEmailTemplate(
+      userName,
+      inviterName,
+      projectName,
+      role,
+      inviteLink
+    );
+    
+    // Kirim email invite
+    let emailError = null;
+    
+    try {
+      // Hanya kirim email jika Resend API Key ada
+      if (process.env.RESEND_API_KEY) {
+        const { data, error } = await resend.emails.send({
+          from: 'Error Monitoring <onboarding@resend.dev>',
+          to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
+          subject: `Undangan ke Project ${projectName}`,
+          html: emailHtml
+        });
+        
+        if (error) {
+          console.error('Error sending invite email:', error);
+          emailError = error;
+        }
+      } else {
+        console.log('Skipping email sending in development mode without RESEND_API_KEY');
+        console.log('Would have sent email to:', email);
+        console.log('Invite link:', inviteLink);
+      }
+    } catch (emailErr) {
+      console.error('Exception during email sending:', emailErr);
+      emailError = emailErr;
+    }
+    
+    // Hanya return error jika dalam production mode
+    if (emailError && process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: 'Gagal mengirim email undangan' });
+    }
+    
+    // Simpan data invite ke database (untuk diproses nanti saat user klik link)
+    const projectInvite = await prisma.projectInvite.create({
+      data: {
+        projectId: id,
+        email: email,
+        role: role,
+        token: inviteToken,
+        expiresAt: inviteTokenExpiry,
+        invitedBy: req.user.userId
+      }
+    });
+    
+    res.status(201).json({ 
+      success: true, 
+      message: `Undangan berhasil dikirim ke ${email}`,
+      invite: {
+        id: projectInvite.id,
+        email: projectInvite.email,
+        role: projectInvite.role,
+        expiresAt: projectInvite.expiresAt
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Gagal invite member' });
+    console.error('Error inviting member:', err);
+    res.status(500).json({ error: 'Gagal mengundang member' });
+  }
+});
+
+// Terima undangan project
+router.post('/accept-invite', async (req, res) => {
+  const { token, projectId, email } = req.body;
+  
+  if (!token || !projectId || !email) {
+    return res.status(400).json({ error: 'Token, project ID, dan email wajib diisi' });
+  }
+  
+  try {
+    // Import fungsi token
+    const { isTokenValid } = require('../utils/token');
+    
+    // Cari invite yang sesuai
+    const invite = await prisma.projectInvite.findFirst({
+      where: {
+        token,
+        projectId,
+        email,
+        status: 'PENDING'
+      }
+    });
+    
+    if (!invite) {
+      return res.status(404).json({ error: 'Undangan tidak ditemukan atau sudah tidak berlaku' });
+    }
+    
+    // Cek apakah token masih valid (belum kadaluarsa)
+    if (!isTokenValid(invite.expiresAt)) {
+      await prisma.projectInvite.update({
+        where: { id: invite.id },
+        data: { status: 'EXPIRED' }
+      });
+      return res.status(400).json({ error: 'Undangan sudah kadaluarsa' });
+    }
+    
+    // Cari user dengan email tersebut
+    let user = await prisma.user.findUnique({ where: { email } });
+    
+    // Jika user belum terdaftar (pengguna mengakses link invite tanpa memiliki akun)
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User belum terdaftar',
+        needRegister: true,
+        email,
+        inviteToken: token
+      });
+    }
+    
+    // Cek apakah user sudah menjadi member project
+    const existingMember = await prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId: user.id
+      }
+    });
+    
+    if (existingMember) {
+      // Update status invite
+      await prisma.projectInvite.update({
+        where: { id: invite.id },
+        data: { status: 'ACCEPTED' }
+      });
+      
+      return res.status(409).json({ 
+        error: 'Anda sudah menjadi member project ini',
+        alreadyMember: true
+      });
+    }
+    
+    // Tambahkan user sebagai member project
+    const member = await prisma.projectMember.create({
+      data: {
+        projectId,
+        userId: user.id,
+        role: invite.role
+      }
+    });
+    
+    // Update status invite
+    await prisma.projectInvite.update({
+      where: { id: invite.id },
+      data: { status: 'ACCEPTED' }
+    });
+    
+    // Ambil detail project
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { name: true }
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: `Anda telah berhasil bergabung dengan project ${project?.name}`,
+      projectId,
+      projectName: project?.name,
+      role: invite.role
+    });
+  } catch (err) {
+    console.error('Error accepting invite:', err);
+    res.status(500).json({ error: 'Terjadi kesalahan saat menerima undangan' });
+  }
+});
+
+// List semua undangan yang pending
+router.get('/:id/invites', auth, async (req: any, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Cek apakah requester adalah owner/admin
+    const me = await prisma.projectMember.findFirst({ 
+      where: { projectId: id, userId: req.user.userId } 
+    });
+    
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) {
+      return res.status(403).json({ error: 'Hanya owner/admin yang bisa melihat daftar undangan' });
+    }
+    
+    // Ambil semua undangan yang pending
+    const invites = await prisma.projectInvite.findMany({
+      where: { 
+        projectId: id,
+        status: 'PENDING'
+      },
+      include: {
+        inviter: {
+          select: { email: true, name: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.json(invites);
+  } catch (err) {
+    console.error('Error fetching invites:', err);
+    res.status(500).json({ error: 'Gagal mengambil data undangan' });
+  }
+});
+
+// Batalkan undangan
+router.delete('/:id/invites/:inviteId', auth, async (req: any, res) => {
+  const { id, inviteId } = req.params;
+  
+  try {
+    // Cek apakah requester adalah owner/admin
+    const me = await prisma.projectMember.findFirst({ 
+      where: { projectId: id, userId: req.user.userId } 
+    });
+    
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) {
+      return res.status(403).json({ error: 'Hanya owner/admin yang bisa membatalkan undangan' });
+    }
+    
+    // Update status invite menjadi CANCELLED
+    await prisma.projectInvite.update({
+      where: { id: inviteId },
+      data: { status: 'CANCELLED' }
+    });
+    
+    res.json({ success: true, message: 'Undangan berhasil dibatalkan' });
+  } catch (err) {
+    console.error('Error cancelling invite:', err);
+    res.status(500).json({ error: 'Gagal membatalkan undangan' });
+  }
+});
+
+// Kirim ulang undangan
+router.post('/:id/invites/:inviteId/resend', auth, async (req: any, res) => {
+  const { id, inviteId } = req.params;
+  
+  try {
+    // Cek apakah requester adalah owner/admin
+    const me = await prisma.projectMember.findFirst({ 
+      where: { projectId: id, userId: req.user.userId } 
+    });
+    
+    if (!me || (me.role !== 'admin' && me.role !== 'owner')) {
+      return res.status(403).json({ error: 'Hanya owner/admin yang bisa mengirim ulang undangan' });
+    }
+    
+    // Cari data undangan
+    const invite = await prisma.projectInvite.findUnique({
+      where: { id: inviteId },
+      include: { project: true }
+    });
+    
+    if (!invite || invite.status !== 'PENDING') {
+      return res.status(404).json({ error: 'Undangan tidak ditemukan atau sudah tidak berlaku' });
+    }
+    
+    // Import fungsi token
+    const { getVerificationTokenExpiry } = require('../utils/token');
+    // Import template email
+    const { getProjectInviteEmailTemplate } = require('../utils/email-templates');
+    
+    // Update expiry time (perpanjang 24 jam dari sekarang)
+    const newExpiryTime = getVerificationTokenExpiry();
+    await prisma.projectInvite.update({
+      where: { id: inviteId },
+      data: { expiresAt: newExpiryTime }
+    });
+    
+    // Buat link invite
+    const inviteLink = `${process.env.FRONTEND_URL}/invite?token=${invite.token}&projectId=${id}&email=${encodeURIComponent(invite.email)}`;
+    
+    // Ambil info inviter (pengirim)
+    const inviter = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { name: true, email: true }
+    });
+    
+    // Siapkan email invite
+    const inviterName = inviter?.name || inviter?.email || 'Admin';
+    const projectName = invite.project.name;
+    const userName = invite.email.split('@')[0];
+    
+    // Gunakan template email
+    const emailHtml = getProjectInviteEmailTemplate(
+      userName,
+      inviterName,
+      projectName,
+      invite.role,
+      inviteLink
+    );
+    
+    // Kirim email invite
+    let emailError = null;
+    
+    try {
+      // Hanya kirim email jika Resend API Key ada
+      if (process.env.RESEND_API_KEY) {
+        const { data, error } = await resend.emails.send({
+          from: 'Error Monitoring <onboarding@resend.dev>',
+          to: process.env.NODE_ENV === 'production' ? invite.email : 'delivered@resend.dev',
+          subject: `Pengingat: Undangan ke Project ${projectName}`,
+          html: emailHtml
+        });
+        
+        if (error) {
+          console.error('Error sending invite email:', error);
+          emailError = error;
+        }
+      } else {
+        console.log('Skipping email sending in development mode without RESEND_API_KEY');
+        console.log('Would have sent email to:', invite.email);
+        console.log('Invite link:', inviteLink);
+      }
+    } catch (emailErr) {
+      console.error('Exception during email sending:', emailErr);
+      emailError = emailErr;
+    }
+    
+    // Hanya return error jika dalam production mode
+    if (emailError && process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: 'Gagal mengirim email undangan' });
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      message: `Undangan berhasil dikirim ulang ke ${invite.email}`,
+      invite: {
+        id: invite.id,
+        email: invite.email,
+        role: invite.role,
+        expiresAt: newExpiryTime
+      }
+    });
+  } catch (err) {
+    console.error('Error resending invite:', err);
+    res.status(500).json({ error: 'Gagal mengirim ulang undangan' });
   }
 });
 

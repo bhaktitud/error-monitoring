@@ -39,6 +39,7 @@ model User {
   
   projects     Project[] @relation("ProjectOwner")
   memberships  ProjectMember[]
+  sentInvitations ProjectInvite[] @relation("InviteSender")
 }
 
 model Project {
@@ -52,6 +53,7 @@ model Project {
   events    Event[]
   errorGroups ErrorGroup[]
   webhooks  Webhook[]
+  invites   ProjectInvite[]
 }
 
 model ProjectMember {
@@ -63,6 +65,24 @@ model ProjectMember {
   role      String   // e.g. 'admin', 'member'
   errorGroupsAssigned ErrorGroup[] @relation("ProjectMemberAssignedTo")
   errorGroupCommentsAuthored ErrorGroupComment[] @relation("ProjectMemberCommentAuthor")
+}
+
+// Model untuk undangan project
+model ProjectInvite {
+  id            String    @id @default(uuid())
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  email         String
+  role          String
+  token         String    @unique
+  status        String    @default("PENDING") // PENDING, ACCEPTED, EXPIRED, CANCELLED
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  invitedBy     String
+  inviter       User      @relation("InviteSender", fields: [invitedBy], references: [id])
+  
+  @@index([token])
+  @@index([email, projectId])
 }
 
 model ErrorGroup {

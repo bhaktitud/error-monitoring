@@ -111,14 +111,14 @@ export default function StatsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p>Memuat statistik...</p>
           </div>
         ) : stats ? (
@@ -127,7 +127,7 @@ export default function StatsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Total Error Groups</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Error Groups</h3>
                   <div className="flex items-end justify-between">
                     <div className="text-3xl font-bold">{stats.totalGroups}</div>
                     <Badge variant={stats.totalGroups > 0 ? 'destructive' : 'outline'}>
@@ -139,29 +139,29 @@ export default function StatsPage() {
               
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Total Error Events</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Error Events</h3>
                   <div className="flex items-end justify-between">
                     <div className="text-3xl font-bold">{stats.totalEvents}</div>
-                    <FiBarChart className="h-6 w-6 text-gray-400" />
+                    <FiBarChart className="h-6 w-6 text-muted-foreground" />
                   </div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Status Error Groups</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Status Error Groups</h3>
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col items-center">
-                      <span className="text-xl font-bold text-red-500">{stats.openGroups}</span>
-                      <span className="text-xs text-gray-500">Open</span>
+                      <span className="text-xl font-bold text-destructive">{stats.openGroups}</span>
+                      <span className="text-xs text-muted-foreground">Open</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-xl font-bold text-green-500">{stats.resolvedGroups}</span>
-                      <span className="text-xs text-gray-500">Resolved</span>
+                      <span className="text-xl font-bold text-success">{stats.resolvedGroups}</span>
+                      <span className="text-xs text-muted-foreground">Resolved</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-xl font-bold text-gray-500">{stats.ignoredGroups}</span>
-                      <span className="text-xs text-gray-500">Ignored</span>
+                      <span className="text-xl font-bold text-muted-foreground">{stats.ignoredGroups}</span>
+                      <span className="text-xs text-muted-foreground">Ignored</span>
                     </div>
                   </div>
                 </CardContent>
@@ -180,12 +180,12 @@ export default function StatsPage() {
                   {stats.eventsByHour.map((item, index) => (
                     <div key={index} className="flex-1 flex flex-col items-center">
                       <div 
-                        className="w-full bg-blue-500 rounded-t"
+                        className="w-full bg-primary rounded-t"
                         style={{ 
                           height: `${item.count > 0 ? (item.count / Math.max(...stats.eventsByHour.map(i => i.count))) * 180 : 0}px` 
                         }}
                       ></div>
-                      <div className="text-xs mt-2 text-gray-600">{item.hour}</div>
+                      <div className="text-xs mt-2 text-muted-foreground">{item.hour}</div>
                     </div>
                   ))}
                 </div>
@@ -202,7 +202,7 @@ export default function StatsPage() {
                   </h3>
                   
                   {browserDistribution.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       Tidak ada data
                     </div>
                   ) : (
@@ -210,7 +210,7 @@ export default function StatsPage() {
                       {browserDistribution.map((item, index) => (
                         <li key={index} className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                            <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
                             <span>{item.name}</span>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -232,7 +232,7 @@ export default function StatsPage() {
                   </h3>
                   
                   {osDistribution.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       Tidak ada data
                     </div>
                   ) : (
@@ -240,7 +240,7 @@ export default function StatsPage() {
                       {osDistribution.map((item, index) => (
                         <li key={index} className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                            <div className="w-3 h-3 rounded-full bg-success mr-2"></div>
                             <span>{item.name}</span>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -256,20 +256,14 @@ export default function StatsPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-              <FiBarChart className="h-6 w-6 text-gray-500" />
+          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-muted mb-4">
+              <FiBarChart className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="font-medium text-lg mb-2">Tidak ada data statistik</h3>
-            <p className="text-gray-500 mb-4">
-              Data statistik akan muncul setelah error dilaporkan oleh aplikasi Anda.
+            <h3 className="font-medium text-lg mb-2">Belum ada data statistik</h3>
+            <p className="text-muted-foreground mb-4">
+              Data statistik akan muncul setelah aplikasi Anda mulai mengirim error.
             </p>
-            <Button 
-              variant="outline" 
-              onClick={() => router.push(`/projects/${projectId}/settings`)}
-            >
-              Lihat Panduan Integrasi
-            </Button>
           </div>
         )}
       </div>

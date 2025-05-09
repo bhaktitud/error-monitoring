@@ -86,7 +86,7 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-accent/20 p-4 rounded-md border border-accent">
+                <div className="bg-accent p-4 rounded-md border border-accent">
                   <div className="flex">
                     <FiAlertCircle className="text-accent-foreground mr-2 mt-1 flex-shrink-0" />
                     <div>
@@ -118,10 +118,10 @@ export default function LoginPage() {
                   )}
                   
                   {resendStatus === 'success' && (
-                    <div className="bg-primary/20 p-4 rounded-md border border-primary mb-3">
+                    <div className="bg-success/10 p-4 rounded-md border border-success mb-3">
                       <div className="flex">
-                        <FiCheck className="text-primary mr-2 mt-1 flex-shrink-0" />
-                        <p className="text-primary text-sm">
+                        <FiCheck className="text-success mr-2 mt-1 flex-shrink-0" />
+                        <p className="text-success-foreground text-sm">
                           Email verifikasi telah dikirim. Silakan cek inbox Anda.
                         </p>
                       </div>
@@ -212,6 +212,11 @@ export default function LoginPage() {
                   disabled={isSubmitting}
                   required
                 />
+                <div className="mt-1 text-right">
+                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                    Lupa Password?
+                  </Link>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">

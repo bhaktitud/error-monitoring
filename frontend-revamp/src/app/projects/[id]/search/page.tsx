@@ -127,7 +127,7 @@ export default function SearchPage() {
             <form onSubmit={handleFormSubmit} className="flex gap-2">
               <div className="relative flex-grow">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="text-gray-400 h-4 w-4" />
+                  <FiSearch className="text-muted-foreground h-4 w-4" />
                 </div>
                 <Input
                   type="text"
@@ -145,7 +145,7 @@ export default function SearchPage() {
         </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
@@ -159,7 +159,7 @@ export default function SearchPage() {
 
           {loading ? (
             <div className="text-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
               <p>Mencari...</p>
             </div>
           ) : results.length > 0 ? (
@@ -167,28 +167,28 @@ export default function SearchPage() {
               {results.map((result) => (
                 <div 
                   key={`${result.type}-${result.id}`}
-                  className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => handleResultClick(result)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium text-blue-600">{result.title}</h3>
-                      <p className="text-gray-800 mt-1">{result.message}</p>
+                      <h3 className="font-medium text-primary">{result.title}</h3>
+                      <p className="text-foreground mt-1">{result.message}</p>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(result.timestamp).toLocaleString('id-ID')}
                       </span>
                       {result.status && (
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 ${
-                          result.status === 'open' ? 'bg-red-100 text-red-800' :
-                          result.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
+                          result.status === 'open' ? 'bg-destructive/20 text-destructive' :
+                          result.status === 'resolved' ? 'bg-success/20 text-success-foreground' :
+                          'bg-muted text-muted-foreground'
                         }`}>
                           {result.status.charAt(0).toUpperCase() + result.status.slice(1)}
                         </span>
                       )}
-                      <span className="text-xs text-gray-500 mt-1">
+                      <span className="text-xs text-muted-foreground mt-1">
                         {result.type === 'group' ? 'Error Group' : 'Error Event'}
                       </span>
                     </div>
@@ -197,12 +197,12 @@ export default function SearchPage() {
               ))}
             </div>
           ) : queryParam ? (
-            <div className="text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-                <FiSearch className="h-6 w-6 text-gray-500" />
+            <div className="text-center p-12 bg-muted rounded-lg border border-border">
+              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-card mb-4">
+                <FiSearch className="h-6 w-6 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-medium mb-2">Tidak ada hasil</h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Tidak ada data yang cocok dengan kata kunci &quot;{queryParam}&quot;.
               </p>
             </div>

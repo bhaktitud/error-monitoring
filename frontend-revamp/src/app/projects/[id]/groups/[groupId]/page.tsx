@@ -16,7 +16,7 @@ interface UserContext {
 }
 
 interface Tags {
-  [key: string]: string;
+  [key: string]: unknown;
 }
 
 interface Event {
@@ -271,14 +271,14 @@ export default function ErrorGroupPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          <div className="mb-4 p-3 bg-destructive/20 border border-destructive text-destructive rounded-md">
             {error}
           </div>
         )}
         
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">{errorGroup.errorType}</h1>
-          <p className="text-gray-700 mb-4">{errorGroup.message}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{errorGroup.errorType}</h1>
+          <p className="text-foreground mb-4">{errorGroup.message}</p>
           
           <div className="flex flex-wrap items-center gap-4 mb-6">
             <Badge variant={
@@ -289,20 +289,20 @@ export default function ErrorGroupPage() {
                errorGroup.status === 'resolved' ? 'Selesai' : 'Diabaikan'}
             </Badge>
             
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               {errorGroup.count} kemunculan
             </div>
             
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Pertama: {formatDate(errorGroup.firstSeen)}
             </div>
             
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Terakhir: {formatDate(errorGroup.lastSeen)}
             </div>
             
             {errorGroup.statusCode && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Status code: {errorGroup.statusCode}
               </div>
             )}
@@ -348,11 +348,11 @@ export default function ErrorGroupPage() {
                 
                 {loadingEvents ? (
                   <div className="text-center py-12">
-                    <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-500">Memuat events...</p>
+                    <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Memuat events...</p>
                   </div>
                 ) : events.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12 text-muted-foreground">
                     Tidak ada event
                   </div>
                 ) : (
@@ -367,7 +367,7 @@ export default function ErrorGroupPage() {
                         userAgent={event.userAgent}
                         statusCode={event.statusCode}
                         userContext={event.userContext}
-                        tags={event.tags}
+                        tags={event.tags as Record<string, string>}
                       />
                     ))}
                   </div>
@@ -386,14 +386,14 @@ export default function ErrorGroupPage() {
                 
                 {loadingMembers ? (
                   <div className="text-center py-4">
-                    <div className="animate-spin h-5 w-5 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <div className="animate-spin h-5 w-5 border-3 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
                     <p className="text-sm">Memuat anggota tim...</p>
                   </div>
                 ) : (
                   <div>
                     <div className="mb-2">
                       <select 
-                        className="w-full p-2 border border-gray-300 rounded-md mb-2"
+                        className="w-full p-2 border border-input rounded-md mb-2"
                         value={selectedMember || ''}
                         onChange={(e) => setSelectedMember(e.target.value || null)}
                       >
@@ -414,7 +414,7 @@ export default function ErrorGroupPage() {
                     >
                       {submittingAssign ? (
                         <>
-                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                          <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                           Menyimpan...
                         </>
                       ) : (
@@ -423,7 +423,7 @@ export default function ErrorGroupPage() {
                     </Button>
                     
                     {errorGroup.assignedTo && members.length > 0 && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm">
+                      <div className="mt-4 p-3 bg-primary/20 rounded-md text-sm">
                         <div className="font-medium mb-1">Saat ini di-assign ke:</div>
                         <div>
                           {members.find(m => m.id === errorGroup.assignedTo)?.user.email || 'Unknown'}
@@ -435,7 +435,7 @@ export default function ErrorGroupPage() {
               </CardContent>
             </Card>
             
-            <div className="bg-white rounded-lg border p-4">
+            <div className="bg-card rounded-lg border p-4">
               <h2 className="text-lg font-semibold mb-4 flex items-center">
                 <FiMessageCircle className="mr-2 h-5 w-5" />
                 Komentar
@@ -443,20 +443,20 @@ export default function ErrorGroupPage() {
               
               {loadingComments ? (
                 <div className="text-center py-4">
-                  <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                  <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
                   <p className="text-sm">Memuat komentar...</p>
                 </div>
               ) : (
                 <>
                   <div className="mb-4">
                     {comments.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">
-                        Belum ada komentar
+                      <div className="text-center py-6 text-muted-foreground">
+                        Belum ada komentar.
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {comments.map((comment) => (
-                          <Comment
+                          <Comment 
                             key={comment.id}
                             id={comment.id}
                             content={comment.content}
@@ -470,8 +470,7 @@ export default function ErrorGroupPage() {
                   
                   <form onSubmit={handleSubmitComment}>
                     <textarea
-                      className="w-full p-3 border border-gray-300 rounded-lg resize-none mb-2"
-                      rows={3}
+                      className="w-full p-3 border border-input rounded-md mb-2 min-h-24 focus:outline-none focus:ring-2 focus:ring-ring"
                       placeholder="Tambahkan komentar..."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
@@ -479,16 +478,16 @@ export default function ErrorGroupPage() {
                     ></textarea>
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      size="sm"
                       disabled={!newComment.trim() || submittingComment}
                     >
                       {submittingComment ? (
                         <>
-                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                          <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                           Mengirim...
                         </>
                       ) : (
-                        'Kirim Komentar'
+                        <>Kirim Komentar</>
                       )}
                     </Button>
                   </form>

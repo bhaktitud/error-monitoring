@@ -99,6 +99,22 @@ export const AuthAPI = {
     });
   },
 
+  // Request password reset (forgot password)
+  forgotPassword: async (email: string) => {
+    return apiRequest<{ success: boolean; message: string; needVerification?: boolean }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  // Reset password with token
+  resetPassword: async (token: string, newPassword: string) => {
+    return apiRequest<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  },
+
   // Get current user profile
   getCurrentUser: async () => {
     return apiRequest<UserProfile>('/auth/me');

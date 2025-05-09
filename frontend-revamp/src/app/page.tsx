@@ -1,20 +1,12 @@
 'use client'
-import { useEffect } from 'react';
+
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FiBarChart, FiShield, FiUsers, FiAlertTriangle } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function LandingPage() {
   const router = useRouter();
-
-  useEffect(() => {
-    // Cek apakah user sudah login
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // Jika sudah login, redirect ke dashboard
-      router.push('/projects');
-    }
-  }, [router]);
 
   const handleGetStarted = () => {
     router.push('/register');
@@ -24,6 +16,19 @@ export default function LandingPage() {
     router.push('/login');
   };
 
+  const handleDashboard = () => {
+    router.push('/projects');
+  };
+
+  // Simple check for client-side
+  let isAuthenticated = false;
+  let isClient = false;
+
+  if (typeof window !== 'undefined') {
+    isClient = true;
+    isAuthenticated = !!localStorage.getItem('authToken');
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -32,12 +37,33 @@ export default function LandingPage() {
           <span className="text-xl font-bold text-primary">Error Monitor</span>
         </div>
         <div>
-          <Button variant="outline" className="mr-3" onClick={handleLogin}>
-            Login
-          </Button>
-          <Button onClick={handleGetStarted}>
-            Daftar Gratis
-          </Button>
+          {!isClient ? (
+            <div className="h-8 w-20 animate-pulse bg-muted rounded"></div>
+          ) : isAuthenticated ? (
+            <div className="flex items-center">
+              <Button 
+                variant="outline" 
+                className="mr-3"
+                onClick={handleDashboard}
+              >
+                Dashboard
+              </Button>
+              <Link href="/account/profile">
+                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-medium">
+                  U
+                </div>
+              </Link>
+            </div>
+          ) : (
+            <>
+              <Button variant="outline" className="mr-3" onClick={handleLogin}>
+                Login
+              </Button>
+              <Button onClick={handleGetStarted}>
+                Daftar Gratis
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -52,12 +78,20 @@ export default function LandingPage() {
             Berhenti kehilangan pengguna karena bug yang tidak terdeteksi.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" onClick={handleGetStarted}>
-              Mulai Sekarang
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleLogin}>
-              Login
-            </Button>
+            {isClient && isAuthenticated ? (
+              <Button size="lg" onClick={handleDashboard}>
+                Pergi ke Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" onClick={handleGetStarted}>
+                  Mulai Sekarang
+                </Button>
+                <Button variant="outline" size="lg" onClick={handleLogin}>
+                  Login
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>

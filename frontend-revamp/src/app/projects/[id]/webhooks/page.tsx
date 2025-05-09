@@ -139,7 +139,7 @@ export default function WebhooksPage() {
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Webhook</h1>
+          <h1 className="text-2xl font-bold text-foreground">Webhook</h1>
           {!showAddForm && (
             <Button onClick={() => setShowAddForm(true)}>
               <FiPlus className="mr-2 h-4 w-4" />
@@ -149,7 +149,7 @@ export default function WebhooksPage() {
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
@@ -162,13 +162,13 @@ export default function WebhooksPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="webhook-url">
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="webhook-url">
                     URL Webhook
                   </label>
                   <input
                     id="webhook-url"
                     type="url"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     placeholder="https://example.com/webhook"
@@ -178,12 +178,12 @@ export default function WebhooksPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="webhook-event-type">
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="webhook-event-type">
                     Tipe Event
                   </label>
                   <select
                     id="webhook-event-type"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     value={formData.eventType}
                     onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
                     disabled={submitting}
@@ -194,19 +194,19 @@ export default function WebhooksPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="webhook-secret">
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="webhook-secret">
                     Secret (opsional)
                   </label>
                   <input
                     id="webhook-secret"
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     value={formData.secret}
                     onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
                     placeholder="Secret untuk validasi webhook"
                     disabled={submitting}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Secret akan digunakan untuk membuat signature HMAC SHA-256 dari payload.
                   </p>
                 </div>
@@ -215,12 +215,12 @@ export default function WebhooksPage() {
                   <input
                     id="webhook-enabled"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
                     checked={formData.enabled}
                     onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
                     disabled={submitting}
                   />
-                  <label htmlFor="webhook-enabled" className="ml-2 block text-sm text-gray-700">
+                  <label htmlFor="webhook-enabled" className="ml-2 block text-sm text-foreground">
                     Aktifkan webhook
                   </label>
                 </div>
@@ -240,7 +240,7 @@ export default function WebhooksPage() {
                 >
                   {submitting ? (
                     <>
-                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                       Menyimpan...
                     </>
                   ) : (
@@ -254,75 +254,90 @@ export default function WebhooksPage() {
 
         {loading ? (
           <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p>Memuat webhook...</p>
           </div>
         ) : webhooks.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-50 mb-4">
-              <FiLink className="h-6 w-6 text-blue-500" />
+          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary/20 mb-4">
+              <FiLink className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-medium text-lg mb-2">Belum ada webhook</h3>
-            <p className="text-gray-500 mb-4">Tambahkan webhook untuk mengirim notifikasi error ke sistem eksternal.</p>
+            <h3 className="font-medium text-lg mb-2">Belum ada Webhook</h3>
+            <p className="text-muted-foreground mb-4">Tambahkan webhook untuk mengirim notifikasi error ke sistem eksternal.</p>
             <Button onClick={() => setShowAddForm(true)}>
               <FiPlus className="mr-2 h-4 w-4" />
               Tambah Webhook
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="space-y-4">
             {webhooks.map((webhook) => (
-              <Card key={webhook.id} className="overflow-hidden">
-                <div className="flex flex-col sm:flex-row">
-                  <div className="p-6 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-lg break-all">{webhook.url}</h3>
-                      <Badge variant={webhook.enabled ? "default" : "secondary"}>
-                        {webhook.enabled ? 'Aktif' : 'Nonaktif'}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-500 mb-2">
-                      Tipe: {webhook.eventType || 'all'} • Dibuat: {formatDate(webhook.createdAt)}
-                    </div>
-                    {webhook.secret && (
-                      <div className="text-xs text-gray-500">
-                        Menggunakan secret: Ya
+              <Card key={webhook.id}>
+                <CardContent className="pt-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        URL Webhook:
                       </div>
-                    )}
+                      <Link href={webhook.url} className="break-all" target="_blank">
+                        <div className="text-xs text-muted-foreground">
+                          {webhook.url}
+                        </div>
+                      </Link>
+                    </div>
+                    <div className="flex sm:flex-col gap-2 p-4 bg-muted sm:justify-center">
+                      <div className="flex items-center justify-between w-full">
+                        <div>Status:</div>
+                        <Badge variant={webhook.enabled ? 'default' : 'secondary'}>
+                          {webhook.enabled ? 'Aktif' : 'Nonaktif'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between w-full">
+                        <div>Event:</div>
+                        <Badge variant="outline">
+                          {webhook.eventType === 'error' ? 'Error saja' : 'Semua event'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between w-full">
+                        <div>Dibuat:</div>
+                        <span className="text-sm">{formatDate(webhook.createdAt)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex sm:flex-col gap-2 p-4 bg-gray-50 sm:justify-center">
-                    <Button 
-                      size="sm" 
-                      variant={webhook.enabled ? "outline" : "default"}
+                  <div className="flex justify-end mt-4 space-x-2">
+                    <Button
+                      variant={webhook.enabled ? 'destructive' : 'outline'}
+                      size="sm"
                       onClick={() => toggleWebhookStatus(webhook.id, webhook.enabled)}
                     >
                       {webhook.enabled ? (
                         <>
-                          <FiX className="mr-1 h-4 w-4" />
-                          Nonaktifkan
+                          <FiX className="mr-1 h-4 w-4" /> Nonaktifkan
                         </>
                       ) : (
                         <>
-                          <FiCheck className="mr-1 h-4 w-4" />
-                          Aktifkan
+                          <FiCheck className="mr-1 h-4 w-4" /> Aktifkan
                         </>
                       )}
                     </Button>
-                    <Link href={`/projects/${projectId}/webhooks/${webhook.id}/deliveries`}>
-                      <Button variant="outline" size="sm">
-                        Lihat Log
-                      </Button>
-                    </Link>
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => deleteWebhook(webhook.id)}
                     >
-                      <FiTrash2 className="mr-1 h-4 w-4" />
-                      Hapus
+                      <FiTrash2 className="mr-1 h-4 w-4" /> Hapus
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => 
+                        window.location.href = `/projects/${projectId}/webhooks/${webhook.id}/deliveries`
+                      }
+                    >
+                      Lihat Kiriman
                     </Button>
                   </div>
-                </div>
+                </CardContent>
               </Card>
             ))}
           </div>

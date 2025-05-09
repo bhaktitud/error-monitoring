@@ -478,8 +478,13 @@ router.get('/verify-email', async (req, res) => {
       // Tetap lanjutkan meskipun email gagal terkirim
     }
     
-    // Redirect ke halaman sukses di frontend
-    res.redirect(`${process.env.FRONTEND_URL}/verify-success`);
+    // Ganti dari redirect menjadi respons JSON sukses
+    // Frontend akan melakukan redirect sendiri ketika menerima respons sukses
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Email berhasil diverifikasi',
+      redirectUrl: `${process.env.FRONTEND_URL}/verify-success`
+    });
   } catch (err) {
     console.error('Error verifying email:', err);
     res.status(500).json({ error: 'Gagal memverifikasi email' });
@@ -554,6 +559,159 @@ router.post('/resend-verification', async (req, res) => {
   } catch (err) {
     console.error('Error resending verification email:', err);
     res.status(500).json({ error: 'Gagal mengirim ulang email verifikasi' });
+  }
+});
+
+// Endpoint untuk permintaan reset password (lupa password)
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email wajib diisi' });
+  }
+  
+  try {
+    // Import fungsi token dan template email
+    const { generateToken, getResetTokenExpiry } = require('../utils/token');
+    const { getResetPasswordEmailTemplate } = require('../utils/email-templates');
+    
+    // Cari user berdasarkan email
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (!user) {
+      // Untuk keamanan, kita tidak memberi tahu bahwa user tidak ditemukan
+      return res.status(200).json({ 
+        message: 'Jika email terdaftar, instruksi reset password akan dikirim',
+        success: true
+      });
+    }
+    
+    // Jika user belum diverifikasi
+    if (!user.emailVerified) {
+      return res.status(400).json({ 
+        error: 'Email belum diverifikasi. Silakan verifikasi email terlebih dahulu.',
+        needVerification: true
+      });
+    }
+    
+    // Buat token reset password
+    const resetToken = generateToken();
+    const resetTokenExpiry = getResetTokenExpiry();
+    
+    // Update token reset password user
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordTokenExpiry: resetTokenExpiry
+      }
+    });
+    
+    // Buat link reset password
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    
+    // Buat konten email
+    const userName = user.name || user.email.split('@')[0];
+    const emailHtml = getResetPasswordEmailTemplate(userName, resetLink);
+    
+    // Kirim email reset password
+    const { data, error } = await resend.emails.send({
+      from: 'Error Monitoring <onboarding@resend.dev>',
+      to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
+      subject: 'Reset Password Anda',
+      html: emailHtml
+    });
+    
+    if (error) {
+      throw new Error(`Error dari Resend: ${error.message}`);
+    }
+    
+    res.status(200).json({ 
+      message: 'Email instruksi reset password telah dikirim',
+      success: true 
+    });
+  } catch (err) {
+    console.error('Error sending reset password email:', err);
+    res.status(500).json({ error: 'Gagal mengirim email reset password' });
+  }
+});
+
+// Endpoint untuk reset password dengan token
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token dan password baru wajib diisi' });
+  }
+  
+  // Cek minimal panjang password
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password baru minimal 8 karakter' });
+  }
+  
+  try {
+    // Import fungsi token dan template email
+    const { isTokenValid } = require('../utils/token');
+    const { getPasswordChangedEmailTemplate } = require('../utils/email-templates');
+    
+    // Cari user dengan token reset password yang sesuai
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken: token
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Token reset password tidak valid' });
+    }
+    
+    // Cek apakah token sudah kadaluarsa
+    if (!isTokenValid(user.resetPasswordTokenExpiry)) {
+      return res.status(400).json({ error: 'Token reset password sudah kadaluarsa' });
+    }
+    
+    // Hash password baru
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    // Update password user dan hapus token reset
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newPasswordHash,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiry: null
+      }
+    });
+    
+    // Kirim email konfirmasi perubahan password
+    try {
+      const userName = user.name || user.email.split('@')[0];
+      const emailHtml = getPasswordChangedEmailTemplate(userName);
+      
+      const { data, error } = await resend.emails.send({
+        from: 'Error Monitoring <onboarding@resend.dev>',
+        to: process.env.NODE_ENV === 'production' ? user.email : 'delivered@resend.dev',
+        subject: 'Password Anda Telah Diubah',
+        html: emailHtml
+      });
+      
+      if (error) {
+        console.error('Error sending password changed email:', error);
+      }
+    } catch (emailError) {
+      console.error('Failed to send password changed email:', emailError);
+      // Tetap lanjutkan meskipun email gagal terkirim
+    }
+    
+    res.status(200).json({ 
+      success: true,
+      message: 'Password berhasil diubah' 
+    });
+  } catch (err) {
+    console.error('Error resetting password:', err);
+    res.status(500).json({ error: 'Gagal mereset password' });
   }
 });
 

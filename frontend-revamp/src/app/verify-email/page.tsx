@@ -22,17 +22,23 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        // Panggil API untuk verifikasi email
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email?token=${token}`);
+        // Buat URL API untuk verifikasi email
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email?token=${token}`;
         
-        if (response.ok) {
+        // Gunakan standar fetch API tanpa opsi redirect
+        const response = await fetch(apiUrl);
+        
+        // Parse respons JSON
+        const data = await response.json().catch(() => ({}));
+        
+        if (response.ok && data.success) {
+          // Verifikasi berhasil
           setStatus('success');
-          // Redirect ke halaman sukses setelah berhasil verifikasi
           setTimeout(() => {
-            router.push('/verify-success');
+            router.push(data.redirectUrl || '/verify-success');
           }, 2000);
         } else {
-          const data = await response.json();
+          // Verifikasi gagal
           setStatus('error');
           setErrorMessage(data.error || 'Gagal memverifikasi email');
         }

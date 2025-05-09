@@ -4,9 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
+  // Langsung lewati pemrosesan untuk homepage
+  if (path === '/') {
+    return NextResponse.next();
+  }
+  
   // Rute yang tidak memerlukan autentikasi
-  const isPublicPath = path === '/' || 
-                      path === '/login' || 
+  const isPublicPath = path === '/login' || 
                       path === '/register' ||
                       path === '/verify-email' ||
                       path === '/verify-success' ||
@@ -22,7 +26,7 @@ export function middleware(request: NextRequest) {
   
   // Redirect ke dashboard jika mengakses login/register dengan token
   // Kecuali halaman verifikasi email
-  if (isPublicPath && path !== '/' && token && 
+  if (isPublicPath && token && 
       !path.includes('verify-email') && path !== '/verify-success') {
     return NextResponse.redirect(new URL('/projects', request.url));
   }
@@ -33,7 +37,6 @@ export function middleware(request: NextRequest) {
 // Tentukan rute yang akan dijalankan middleware
 export const config = {
   matcher: [
-    '/',
     '/login',
     '/register',
     '/projects/:path*',

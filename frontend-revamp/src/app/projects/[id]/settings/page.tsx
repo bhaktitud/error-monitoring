@@ -94,7 +94,7 @@ export default function SettingsPage() {
     return (
       <DashboardLayout projectId={projectId}>
         <div className="text-center p-12">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p>Memuat pengaturan proyek...</p>
         </div>
       </DashboardLayout>
@@ -105,7 +105,7 @@ export default function SettingsPage() {
     return (
       <DashboardLayout>
         <div className="text-center p-12">
-          <FiAlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <FiAlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
           <h2 className="text-xl font-semibold mb-2">Proyek tidak ditemukan</h2>
           <p className="mb-4">Proyek yang Anda cari tidak dapat ditemukan.</p>
           <Button onClick={() => router.push('/projects')}>
@@ -131,7 +131,7 @@ export default function SettingsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
@@ -147,21 +147,21 @@ export default function SettingsPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Nama Proyek
                   </label>
                   <div className="text-lg">{project.name}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     ID Proyek
                   </label>
-                  <div className="text-sm font-mono bg-gray-50 p-2 rounded border">{project.id}</div>
+                  <div className="text-sm font-mono bg-muted p-2 rounded border">{project.id}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1 flex items-center">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center">
                     DSN (Data Source Name)
                     <Button 
                       variant="ghost" 
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                       {copied ? 'Disalin!' : 'Salin'}
                     </Button>
                   </label>
-                  <div className="text-sm font-mono bg-gray-50 p-2 rounded border overflow-auto">
+                  <div className="text-sm font-mono bg-muted p-2 rounded border overflow-auto">
                     {project.dsn}
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                     {testErrorStatus === 'success' && 'Berhasil Terkirim!'}
                     {testErrorStatus === 'error' && 'Gagal Mengirim'}
                   </Button>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Ini akan mengirim event error tes ke proyek Anda
                   </p>
                 </div>
@@ -212,11 +212,11 @@ export default function SettingsPage() {
                   Untuk mulai melacak error dalam aplikasi Anda, ikuti panduan integrasi berikut:
                 </p>
                 
-                <div className="bg-gray-50 p-4 rounded-md border">
+                <div className="bg-muted p-4 rounded-md border">
                   <h3 className="font-semibold mb-2">1. Instalasi SDK</h3>
-                  <div className="bg-gray-900 text-white p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group">
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group">
                     <button 
-                      className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-gray-300 p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
                         navigator.clipboard.writeText('npm install @error-monitor/sdk');
                         toast.success('Kode disalin!');
@@ -228,9 +228,9 @@ export default function SettingsPage() {
                   </div>
                   
                   <h3 className="font-semibold mb-2 mt-4">2. Konfigurasi SDK</h3>
-                  <div className="bg-gray-900 text-white p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group">
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group">
                     <button 
-                      className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-gray-300 p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
                         navigator.clipboard.writeText(`import { init } from '@error-monitor/sdk';
 
@@ -250,9 +250,9 @@ init({
                   </div>
                   
                   <h3 className="font-semibold mb-2 mt-4">3. Tangkap Error</h3>
-                  <div className="bg-gray-900 text-white p-3 rounded font-mono text-sm overflow-x-auto relative group">
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm overflow-x-auto relative group">
                     <button 
-                      className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-gray-300 p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
                         navigator.clipboard.writeText(`import { captureException } from '@error-monitor/sdk';
 
@@ -276,7 +276,7 @@ try {
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Untuk dokumentasi lebih lengkap dan opsi konfigurasi lanjutan, kunjungi dokumentasi API kami.
                 </p>
               </div>
@@ -284,18 +284,18 @@ try {
           </Card>
           
           {/* Danger Zone */}
-          <Card className="border-red-200">
+          <Card className="border-destructive">
             <CardContent className="pt-6">
-              <h2 className="text-xl font-semibold mb-4 text-red-600 flex items-center">
+              <h2 className="text-xl font-semibold mb-4 text-destructive flex items-center">
                 <FiAlertCircle className="mr-2 h-5 w-5" />
                 Danger Zone
               </h2>
               
-              <div className="p-4 border border-red-300 rounded-md">
+              <div className="p-4 border border-destructive rounded-md">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">Hapus Proyek</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-foreground">Hapus Proyek</h3>
+                    <p className="text-sm text-muted-foreground">
                       Tindakan ini tidak dapat dibatalkan. Semua data terkait proyek ini akan dihapus secara permanen.
                     </p>
                   </div>

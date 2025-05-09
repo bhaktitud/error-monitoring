@@ -92,22 +92,14 @@ export default function ChangePasswordPage() {
       <div className="max-w-md mx-auto">
         <div className="mb-6">
           <div className="flex items-center mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => router.push('/projects')}
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Dashboard
-            </Button>
-          </div>
           <Button 
-            variant="ghost" 
+            variant="outline" 
             onClick={() => router.push('/account/profile')}
-            className="mb-2"
           >
             <FiArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Profil
           </Button>
+          </div>
           <h1 className="text-2xl font-bold mb-2">Ubah Password</h1>
           <p className="text-muted-foreground">Perbarui password akun Anda</p>
         </div>

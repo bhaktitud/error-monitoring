@@ -61,7 +61,7 @@ export default function CreateProjectPage() {
           <FiArrowLeft className="h-4 w-4 mr-2" />
           Kembali
         </Button>
-        <h1 className="text-2xl font-bold text-gray-800">Buat Proyek Baru</h1>
+        <h1 className="text-2xl font-bold text-foreground">Buat Proyek Baru</h1>
       </div>
 
       <div className="max-w-2xl mx-auto">
@@ -76,16 +76,16 @@ export default function CreateProjectPage() {
 
             <CardContent className="space-y-4">
               {error && (
-                <div className="bg-red-50 p-3 rounded-md flex items-start">
-                  <FiAlertCircle className="text-red-500 mt-0.5 mr-2" />
-                  <span className="text-red-600 text-sm">{error}</span>
+                <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                  <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                  <span className="text-destructive text-sm">{error}</span>
                 </div>
               )}
 
               {success && (
-                <div className="bg-green-50 p-3 rounded-md flex items-start">
-                  <FiCheck className="text-green-500 mt-0.5 mr-2" />
-                  <span className="text-green-600 text-sm">Proyek berhasil dibuat! Anda akan dialihkan dalam beberapa detik.</span>
+                <div className="bg-success/20 p-3 rounded-md flex items-start">
+                  <FiCheck className="text-success mt-0.5 mr-2" />
+                  <span className="text-success-foreground text-sm">Proyek berhasil dibuat! Anda akan dialihkan dalam beberapa detik.</span>
                 </div>
               )}
 
@@ -98,7 +98,7 @@ export default function CreateProjectPage() {
                   placeholder="Masukkan nama proyek"
                   disabled={isSubmitting || success}
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Berikan nama yang deskriptif untuk proyek Anda, misalnya &quot;Website Frontend&quot; atau &quot;Mobile API&quot;
                 </p>
               </div>
@@ -112,7 +112,7 @@ export default function CreateProjectPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
                     Memproses...
                   </>
                 ) : success ? (

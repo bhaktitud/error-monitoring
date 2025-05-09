@@ -75,11 +75,11 @@ export default function ErrorGroupsPage() {
           <div className="flex items-center gap-2">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FiSearch className="w-4 h-4 text-gray-500" />
+                <FiSearch className="w-4 h-4 text-muted-foreground" />
               </div>
               <input 
                 type="text" 
-                className="py-2 pl-10 pr-4 block w-full border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="py-2 pl-10 pr-4 block w-full border border-input rounded-md focus:outline-none focus:ring-ring focus:border-ring"
                 placeholder="Cari error..." 
               />
             </div>
@@ -94,31 +94,31 @@ export default function ErrorGroupsPage() {
                 Filter: {filter.charAt(0).toUpperCase() + filter.slice(1)}
                 <FiChevronDown className="ml-2 h-4 w-4" />
               </Button>
-              <div className="absolute z-10 mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden">
+              <div className="absolute z-10 mt-1 w-56 rounded-md shadow-lg bg-popover ring-1 ring-black ring-opacity-5 hidden">
                 <div className="py-1" role="menu" aria-orientation="vertical">
                   <button 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
                     role="menuitem"
                     onClick={() => handleFilterChange('all')}
                   >
                     All
                   </button>
                   <button 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
                     role="menuitem"
                     onClick={() => handleFilterChange('open')}
                   >
                     Open
                   </button>
                   <button 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
                     role="menuitem"
                     onClick={() => handleFilterChange('resolved')}
                   >
                     Resolved
                   </button>
                   <button 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
                     role="menuitem"
                     onClick={() => handleFilterChange('ignored')}
                   >
@@ -131,23 +131,23 @@ export default function ErrorGroupsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p>Memuat grup error...</p>
           </div>
         ) : groups.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-              <FiFilter className="h-6 w-6 text-gray-500" />
+          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-muted mb-4">
+              <FiFilter className="h-6 w-6 text-muted-foreground" />
             </div>
             <h3 className="font-medium text-lg mb-2">Belum ada error group yang dilaporkan</h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               Error groups akan muncul di sini ketika aplikasi Anda mengirim error melalui SDK.
             </p>
             <Button 
@@ -158,7 +158,7 @@ export default function ErrorGroupsPage() {
             </Button>
           </div>
         ) : filteredGroups.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-lg border border-gray-200">
+          <div className="text-center p-12 bg-card rounded-lg border border-border">
             <h3 className="font-medium text-lg mb-2">Tidak ada error group yang cocok dengan filter</h3>
             <Button 
               variant="outline" 

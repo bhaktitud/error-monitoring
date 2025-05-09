@@ -91,21 +91,21 @@ export default function EventsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p>Memuat event...</p>
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-            <FiAlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
+            <FiAlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-medium text-lg mb-2">Belum ada event</h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               Event akan muncul di sini ketika aplikasi Anda mengirim error melalui SDK.
             </p>
             <Button 
@@ -124,15 +124,15 @@ export default function EventsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="flex items-center mb-1">
-                          <span className="font-medium text-gray-900">{event.errorType}</span>
+                          <span className="font-medium text-foreground">{event.errorType}</span>
                           {event.statusCode && (
                             <Badge className="ml-2" variant="outline">
                               {event.statusCode}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-gray-700 mb-1">{event.message}</p>
-                        <div className="flex items-center text-sm text-gray-500">
+                        <p className="text-foreground mb-1">{event.message}</p>
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <FiCalendar className="mr-1 h-3 w-3" />
                           <span>{formatDate(event.timestamp)}</span>
                         </div>
@@ -146,7 +146,7 @@ export default function EventsPage() {
                         Detail
                       </Button>
                     </div>
-                    <div className="mt-2 text-xs font-mono bg-gray-50 p-2 rounded border overflow-hidden text-gray-600">
+                    <div className="mt-2 text-xs font-mono bg-muted p-2 rounded border overflow-hidden text-muted-foreground">
                       {event.stacktrace?.split('\n')[0]}...
                     </div>
                     {(event.tags && Object.keys(event.tags).length > 0) && (

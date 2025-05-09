@@ -93,7 +93,7 @@ export default function ProjectPage() {
     return (
       <DashboardLayout projectId={projectId}>
         <div className="text-center p-12">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p>Memuat proyek...</p>
         </div>
       </DashboardLayout>
@@ -104,7 +104,7 @@ export default function ProjectPage() {
     return (
       <DashboardLayout>
         <div className="text-center p-12">
-          <FiAlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <FiAlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
           <h2 className="text-xl font-semibold mb-2">Proyek tidak ditemukan</h2>
           <p className="mb-4">Proyek yang Anda cari tidak dapat ditemukan.</p>
           <Button onClick={() => router.push('/projects')}>
@@ -119,7 +119,7 @@ export default function ProjectPage() {
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">{project.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
           <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
             <FiSettings className="mr-2 h-4 w-4" />
             Pengaturan Proyek
@@ -127,7 +127,7 @@ export default function ProjectPage() {
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
@@ -147,7 +147,7 @@ export default function ProjectPage() {
                 </Button>
               </div>
             </div>
-            <div className="bg-gray-50 p-3 rounded font-mono text-sm border">{project.dsn}</div>
+            <div className="bg-muted p-3 rounded font-mono text-sm border">{project.dsn}</div>
           </CardContent>
         </Card>
 
@@ -155,14 +155,14 @@ export default function ProjectPage() {
         
         {loadingErrorGroups ? (
           <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p>Memuat error groups...</p>
           </div>
         ) : errorGroups.length === 0 ? (
-          <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-            <FiAlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
+            <FiAlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-medium text-lg mb-2">Belum ada error yang dilaporkan</h3>
-            <p className="text-gray-500 mb-4">Error akan muncul disini setelah aplikasi Anda mengirimkan error melalui SDK.</p>
+            <p className="text-muted-foreground mb-4">Error akan muncul disini setelah aplikasi Anda mengirimkan error melalui SDK.</p>
             <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
               Lihat Panduan Integrasi
             </Button>

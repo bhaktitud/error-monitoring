@@ -232,157 +232,134 @@ export default function SettingsPage() {
                     <button 
                       className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
-                        navigator.clipboard.writeText(`import { init } from '@error-monitor/sdk';
-
-// Inisialisasi SDK dengan DSN proyek Anda
-init({
-  dsn: '${project.dsn}',
-  environment: process.env.NODE_ENV,
-  release: '1.0.0',
-  // Opsi tambahan
-  beforeSend: (event) => {
-    // Filter atau modifikasi event sebelum dikirim
-    return event;
-  }
-});`);
+                        navigator.clipboard.writeText(`
+                          import { init, withErrorMonitoring } from '@bhaktixdev/error-monitor-sdk';
+                          
+                          init({
+                            dsn: '${project.dsn}',
+                            apiUrl: 'http://localhost:3000',
+                            environment: 'development',
+                            release: '1.0.0',
+                          });
+                        `);
                         toast.success('Kode disalin!');
                       }}
                     >
                       <FiCopy size={14} />
                     </button>
-                    <pre className="whitespace-pre">{`import { init } from '@error-monitor/sdk';
+                    <pre className="whitespace-pre">
+                      {
+                        `
+import { init, withErrorMonitoring } from '@bhaktixdev/error-monitor-sdk';
 
 // Inisialisasi SDK dengan DSN proyek Anda
 init({
   dsn: '${project.dsn}',
-  environment: process.env.NODE_ENV,
+  apiUrl: 'http://localhost:3000',
+  environment: 'development',
   release: '1.0.0',
-  // Opsi tambahan
-  beforeSend: (event) => {
-    // Filter atau modifikasi event sebelum dikirim
-    return event;
-  }
-});`}</pre>
+});
+                        `
+                      }
+                    </pre>
                   </div>
                   
                   <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group mt-4">
                     <button 
                       className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
-                        navigator.clipboard.writeText(`// Contoh penggunaan dalam aplikasi
-import { captureException } from '@error-monitor/sdk';
+                        navigator.clipboard.writeText(`
+                          // Contoh penggunaan dalam aplikasi
+                          import { withErrorMonitoring } from '@bhaktixdev/error-monitor-sdk';
 
-try {
-  // Kode aplikasi Anda
-  throw new Error('Terjadi kesalahan');
-} catch (error) {
-  // Tangkap dan kirim error
-  captureException(error, {
-    tags: {
-      section: 'checkout',
-      userId: '123'
-    }
-  });
-}`);
+
+                          // Middleware untuk menangani error
+                          const errorHandler = withErrorMonitoring((err, req, res, next) => {
+                          console.error('Error caught by middleware:', err);
+                            res.status(err.status || 500).send('Terjadi kesalahan pada server');
+                          });
+
+                          // Middleware untuk logging request
+                          const requestLogger = withErrorMonitoring((req, res, next) => {
+                            next();
+                          });
+
+                          // Terapkan middleware
+                          app.use(requestLogger);
+
+                          // Routes
+                          app.get('/', (req, res) => {
+                            res.send('Example Express backend running!');
+                          });
+
+                          app.get('/test', (req, res) => {
+                            res.send('Example Express backend running!');
+                          });
+
+                          // Contoh route yang menghasilkan error
+                          app.get('/error', (req, res, next) => {
+                            next(new Error('Contoh error dari /error'));
+                          });
+
+                          app.get('/not-found', withErrorMonitoring(async (req, res) => {
+                            throw new Error('Contoh error dari endpoint /not-found');
+                          }));
+
+                          // Terapkan error handler di akhir
+                          app.use(errorHandler);
+                            
+                        `);
                         toast.success('Kode disalin!');
                       }}
                     >
                       <FiCopy size={14} />
                     </button>
-                    <pre className="whitespace-pre">{`// Contoh penggunaan dalam aplikasi
-import { captureException } from '@error-monitor/sdk';
+                    <pre className="whitespace-pre">
+                      {
+                      `
+// Contoh penggunaan dalam aplikasi
+import { withErrorMonitoring } from '@bhaktixdev/error-monitor-sdk';
 
-try {
-  // Kode aplikasi Anda
-  throw new Error('Terjadi kesalahan');
-} catch (error) {
-  // Tangkap dan kirim error
-  captureException(error, {
-    tags: {
-      section: 'checkout',
-      userId: '123'
-    }
-  });
-}`}</pre>
+
+// Middleware untuk menangani error
+const errorHandler = withErrorMonitoring((err, req, res, next) => {
+console.error('Error caught by middleware:', err);
+  res.status(err.status || 500).send('Terjadi kesalahan pada server');
+});
+
+// Middleware untuk logging request
+const requestLogger = withErrorMonitoring((req, res, next) => {
+  next();
+});
+
+// Terapkan middleware
+app.use(requestLogger);
+
+// Routes
+app.get('/', (req, res) => {
+  res.send('Example Express backend running!');
+});
+
+app.get('/test', (req, res) => {
+  res.send('Example Express backend running!');
+});
+
+// Contoh route yang menghasilkan error
+app.get('/error', (req, res, next) => {
+  next(new Error('Contoh error dari /error'));
+});
+
+app.get('/not-found', withErrorMonitoring(async (req, res) => {
+  throw new Error('Contoh error dari endpoint /not-found');
+}));
+
+// Terapkan error handler di akhir
+app.use(errorHandler);
+                      `
+                      }
+                    </pre>
                   </div>
                   
-                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group mt-4">
-                    <button 
-                      className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`// Contoh penggunaan sebagai middleware
-import { withErrorMonitoring } from '@error-monitor/sdk';
-
-// Middleware untuk Express.js
-const errorMiddleware = withErrorMonitoring((req, res, next) => {
-  try {
-    // Logika middleware Anda
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Middleware untuk Next.js API Routes
-export default withErrorMonitoring(async function handler(req, res) {
-  // Handler API Anda
-  const data = await fetchData();
-  res.status(200).json(data);
-});
-
-// Middleware untuk Next.js App Router
-export const middleware = withErrorMonitoring(async (request) => {
-  // Logika middleware Anda
-  const response = NextResponse.next();
-  return response;
-});`);
-                        toast.success('Kode disalin!');
-                      }}
-                    >
-                      <FiCopy size={14} />
-                    </button>
-                    <pre className="whitespace-pre">{`// Contoh penggunaan sebagai middleware
-import { withErrorMonitoring } from '@error-monitor/sdk';
-
-// Middleware untuk Express.js
-const errorMiddleware = withErrorMonitoring((req, res, next) => {
-  try {
-    // Logika middleware Anda
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Middleware untuk Next.js API Routes
-export default withErrorMonitoring(async function handler(req, res) {
-  // Handler API Anda
-  const data = await fetchData();
-  res.status(200).json(data);
-});
-
-// Middleware untuk Next.js App Router
-export const middleware = withErrorMonitoring(async (request) => {
-  // Logika middleware Anda
-  const response = NextResponse.next();
-  return response;
-});`}</pre>
-                  </div>
-                  
-                  <h3 className="font-semibold mb-2 mt-4">3. Dokumentasi</h3>
-                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm overflow-x-auto">
-                    <p className="text-sm text-muted-foreground">
-                      Untuk dokumentasi lengkap dan panduan implementasi, silakan kunjungi:
-                    </p>
-                    <a 
-                      href="https://docs.error-monitor.com" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline mt-2 inline-block"
-                    >
-                      docs.error-monitor.com
-                    </a>
-                  </div>
                 </div>
                 
                 <p className="text-sm text-muted-foreground mt-4">

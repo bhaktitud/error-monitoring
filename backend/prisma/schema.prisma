@@ -40,6 +40,10 @@ model User {
   projects     Project[] @relation("ProjectOwner")
   memberships  ProjectMember[]
   sentInvitations ProjectInvite[] @relation("InviteSender")
+  planId       String?   // relasi ke Plan
+  plan         Plan?     @relation(fields: [planId], references: [id])
+  planExpiry   DateTime? // masa aktif plan (jika berbayar)
+  planHistories PlanHistory[]
 }
 
 model Project {
@@ -155,4 +159,25 @@ model WebhookDelivery {
   error        String?  // Error message jika gagal
   sentAt       DateTime @default(now())
   responseAt   DateTime?
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  price     Int?     // harga dalam rupiah, null untuk custom/enterprise
+  features  Json?    // fitur plan (opsional)
+  users     User[]
+  planHistories PlanHistory[]
+}
+
+model PlanHistory {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  plan      Plan     @relation(fields: [planId], references: [id])
+  planId    String
+  startDate DateTime
+  endDate   DateTime?
+  action    String   // 'upgrade', 'downgrade', 'auto-downgrade', dsb
+  note      String?
 } 

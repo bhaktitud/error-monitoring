@@ -6,8 +6,9 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ErrorCard } from '@/components/ui/error-card';
-import { FiSettings, FiExternalLink, FiCopy, FiAlertCircle } from 'react-icons/fi';
-import { ProjectsAPI, GroupsAPI } from '@/lib/api';
+import { ProgressBar } from '@/components/ui/progress-bar';
+import { FiSettings, FiExternalLink, FiCopy, FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
+import { ProjectsAPI, GroupsAPI, EventsAPI } from '@/lib/api';
 
 interface ErrorGroup {
   id: string;
@@ -38,6 +39,7 @@ export default function ProjectPage() {
   const [loadingErrorGroups, setLoadingErrorGroups] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [eventsUsage, setEventsUsage] = useState<{ totalEvents: number; quota: number; percent: number } | null>(null);
 
   // Fungsi untuk menyalin DSN ke clipboard
   const copyDSN = () => {
@@ -49,45 +51,31 @@ export default function ProjectPage() {
   };
 
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchData = async () => {
       try {
-        setLoading(true);
-        const projectData = await ProjectsAPI.getProject(projectId);
+        const [projectData, groupsData, usageData] = await Promise.all([
+          ProjectsAPI.getProject(projectId),
+          GroupsAPI.getGroups(projectId),
+          EventsAPI.getEventsUsage(projectId)
+        ]);
+        
         setProject(projectData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Gagal memuat data proyek');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [projectId]);
-
-  useEffect(() => {
-    const fetchErrorGroups = async () => {
-      try {
-        setLoadingErrorGroups(true);
-        const data = await GroupsAPI.getGroups(projectId);
-        // Convert status string to the right type
-        const typedGroups = data.map(group => ({
+        const typedGroups = groupsData.map(group => ({
           ...group,
           status: group.status as 'open' | 'resolved' | 'ignored'
         }));
         setErrorGroups(typedGroups);
+        setEventsUsage(usageData);
       } catch (err) {
-        console.error('Error fetching error groups:', err);
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data');
       } finally {
+        setLoading(false);
         setLoadingErrorGroups(false);
       }
     };
 
-    if (!loading && project) {
-      fetchErrorGroups();
-    }
-  }, [loading, project, projectId]);
+    fetchData();
+  }, [projectId]);
 
   if (loading) {
     return (
@@ -119,7 +107,17 @@ export default function ProjectPage() {
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push(`/projects`)}
+              className="mr-4"
+            >
+              <FiArrowLeft className="mr-2 h-4 w-4" />
+              {/* Kembali */}
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
+          </div>
           <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
             <FiSettings className="mr-2 h-4 w-4" />
             Pengaturan Proyek
@@ -132,24 +130,39 @@ export default function ProjectPage() {
           </div>
         )}
 
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium">DSN (Data Source Name)</h3>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={copyDSN}>
-                  <FiCopy className="mr-1 h-4 w-4" />
-                  {copied ? 'Disalin!' : 'Salin'}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${projectId}/settings`)}>
-                  <FiExternalLink className="mr-1 h-4 w-4" />
-                  Setup Guide
-                </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">DSN (Data Source Name)</h3>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={copyDSN}>
+                    <FiCopy className="mr-1 h-4 w-4" />
+                    {copied ? 'Disalin!' : 'Salin'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${projectId}/settings`)}>
+                    <FiExternalLink className="mr-1 h-4 w-4" />
+                    Setup Guide
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="bg-muted p-3 rounded font-mono text-sm border">{project.dsn}</div>
-          </CardContent>
-        </Card>
+              <div className="bg-muted p-3 rounded font-mono text-sm border">{project.dsn}</div>
+            </CardContent>
+          </Card>
+
+          {eventsUsage && (
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-medium mb-4">Kuota Events Bulanan</h3>
+                <ProgressBar 
+                  percent={eventsUsage.percent} 
+                  total={eventsUsage.totalEvents} 
+                  quota={eventsUsage.quota} 
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         <h2 className="text-xl font-semibold mb-4">Error Terbaru</h2>
         

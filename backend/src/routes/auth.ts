@@ -97,6 +97,10 @@ router.post('/register', async (req, res) => {
       }
     }
     
+    // Cari plan Free
+    const freePlan = await prisma.plan.findFirst({ where: { name: 'Free' } });
+    if (!freePlan) return res.status(500).json({ error: 'Plan Free tidak ditemukan' });
+
     // Import fungsi token
     const { generateToken, getVerificationTokenExpiry } = require('../utils/token');
     // Import template email
@@ -114,7 +118,8 @@ router.post('/register', async (req, res) => {
         passwordHash,
         emailVerified: false,
         verificationToken,
-        verificationTokenExpiry
+        verificationTokenExpiry,
+        planId: freePlan.id
       } 
     });
     
@@ -233,6 +238,7 @@ router.get('/me', auth, async (req: any, res) => {
         notifyEmail: true,
         notifyInApp: true,
         notifySms: true,
+        plan: { select: { name: true, features: true } }
       }
     });
     

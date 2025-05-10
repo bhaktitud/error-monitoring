@@ -194,7 +194,7 @@ export default function MembersPage() {
 
   return (
     <DashboardLayout projectId={projectId}>
-      <div className="mb-6 max-w-6xl mx-auto">
+      <div className="mb-6 ">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <Button 

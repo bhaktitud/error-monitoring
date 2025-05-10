@@ -30,6 +30,10 @@ export interface UserProfile {
     inApp: boolean;
     sms: boolean;
   };
+  plan?: {
+    name: string;
+    features: Record<string, any>;
+  };
 }
 
 /**
@@ -177,29 +181,16 @@ export const AuthAPI = {
 export const ProjectsAPI = {
   // Get all projects for current user
   getProjects: async () => {
-    return apiRequest<Array<{
-      id: string;
-      name: string;
-      dsn: string;
-      createdAt: string;
-    }>>('/projects');
+    return apiRequest<{ ownedProjects: Array<{ id: string; name: string; dsn: string; createdAt: string; }>, invitedProjects: Array<{ id: string; name: string; dsn: string; createdAt: string; }> }>('/projects');
   },
 
   // Get single project by ID
   getProject: async (projectId: string) => {
-    // Use the projects list API and find the project by ID
-    const projects = await apiRequest<Array<{
-      id: string;
-      name: string;
-      dsn: string;
-      createdAt: string;
-    }>>('/projects');
-    
-    const project = projects.find(p => p.id === projectId);
+    const { ownedProjects, invitedProjects } = await apiRequest<{ ownedProjects: Array<{ id: string; name: string; dsn: string; createdAt: string; }>, invitedProjects: Array<{ id: string; name: string; dsn: string; createdAt: string; }> }>('/projects');
+    const project = [...ownedProjects, ...invitedProjects].find(p => p.id === projectId);
     if (!project) {
       throw new Error('Project not found');
     }
-    
     return project;
   },
 
@@ -340,6 +331,15 @@ export const EventsAPI = {
       userContext: UserContext;
       tags: Tags;
     }>>(`/events/project/${projectId}`);
+  },
+  
+  // Get events usage and quota
+  getEventsUsage: async (projectId: string) => {
+    return apiRequest<{
+      totalEvents: number;
+      quota: number;
+      percent: number;
+    }>(`/events/usage/${projectId}`);
   },
   
   // Send error event directly from frontend

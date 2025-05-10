@@ -50,13 +50,20 @@ router.post('/', auth, async (req: any, res) => {
 // List project milik user
 router.get('/', auth, async (req: any, res) => {
   try {
-    const projects = await prisma.project.findMany({
+    // Proyek yang user miliki (owner)
+    const ownedProjects = await prisma.project.findMany({
+      where: { ownerId: req.user.userId },
+      select: { id: true, name: true, dsn: true, createdAt: true }
+    });
+    // Proyek di mana user hanya sebagai member (bukan owner)
+    const invitedProjects = await prisma.project.findMany({
       where: {
-        members: { some: { userId: req.user.userId } }
+        members: { some: { userId: req.user.userId } },
+        NOT: { ownerId: req.user.userId }
       },
       select: { id: true, name: true, dsn: true, createdAt: true }
     });
-    res.json(projects);
+    res.json({ ownedProjects, invitedProjects });
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengambil project' });
   }

@@ -8,9 +8,40 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FiUser, FiMail, FiPhone, FiGlobe, FiGithub, FiFileText, FiMessageSquare, FiUpload, FiSave, FiArrowLeft } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiGlobe, FiGithub, FiFileText, FiMessageSquare, FiUpload, FiSave, FiArrowLeft, FiBarChart, FiCheck, FiX, FiUsers, FiDatabase, FiClock, FiZap } from 'react-icons/fi';
 import { AuthAPI, UserProfile } from '@/lib/api';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+const featureLabel = (key: string) => {
+  switch (key) {
+    case 'teamMembers': return 'Team Members';
+    case 'projects': return 'Projects';
+    case 'retentionDays': return 'Retention (days)';
+    case 'eventsPerMonth': return 'Events per Month';
+    case 'alert': return 'Alert';
+    case 'webhook': return 'Webhook';
+    case 'prioritySupport': return 'Priority Support';
+    case 'sso': return 'SSO';
+    case 'sla': return 'SLA';
+    case 'onboarding': return 'Onboarding';
+    case 'allProFeatures': return 'All Pro Features';
+    default: return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+  }
+};
+
+const featureIcon = (key: string, value: any) => {
+  switch (key) {
+    case 'teamMembers': return <FiUsers className="inline mr-1" />;
+    case 'projects': return <FiDatabase className="inline mr-1" />;
+    case 'retentionDays': return <FiClock className="inline mr-1" />;
+    case 'alert': return <FiMail className="inline mr-1" />;
+    case 'prioritySupport': return <FiZap className="inline mr-1" />;
+    default: return value === true ? <FiCheck className="inline mr-1 text-green-500" /> : value === false ? <FiX className="inline mr-1 text-red-500" /> : null;
+  }
+};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +50,10 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
   
   const [profile, setProfile] = useState<UserProfile>({
     id: '',
@@ -60,6 +95,11 @@ export default function ProfilePage() {
     };
 
     fetchUser();
+    // Fetch daftar plan
+    fetch(`${API_BASE_URL}/plans`)
+      .then(res => res.json())
+      .then(data => setPlans(data))
+      .catch(() => setPlans([]));
   }, []);
   
   // Handle form input changes
@@ -156,6 +196,32 @@ export default function ProfilePage() {
       return email.charAt(0).toUpperCase();
     }
     return 'U';
+  };
+  
+  // Handle pilih plan dari modal
+  const handleSelectPlan = async (planId: string) => {
+    setUpgrading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const res = await fetch(`${API_BASE_URL}/plans/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ userId: profile.id, planId })
+      });
+      if (!res.ok) throw new Error('Gagal mengubah plan');
+      toast.success('Plan berhasil diubah!');
+      // Refresh profile
+      const userData = await AuthAPI.getCurrentUser();
+      setProfile(prev => ({ ...prev, ...userData }));
+      setShowPlanModal(false);
+    } catch (err) {
+      toast.error('Gagal mengubah plan');
+    } finally {
+      setUpgrading(false);
+    }
   };
   
   if (loading) {
@@ -279,6 +345,47 @@ export default function ProfilePage() {
                 >
                   Ubah Password
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Info Subscription</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+
+                {/* Paket Aktif */}
+                <div>
+                  <div className="flex items-center text-muted-foreground mb-1">
+                    <FiBarChart className="mr-2" />
+                    <span className="text-sm">Paket Aktif</span>
+                  </div>
+                  <p className="font-semibold">{profile.plan?.name || 'Tidak tersedia'}</p>
+                  {profile.plan?.features && (
+                    <ul className="text-sm text-muted-foreground mt-1 space-y-2">
+                      {Object.entries(profile.plan.features).map(([key, value]) => (
+                        <li key={key} className="flex items-center gap-2">
+                          {featureIcon(key, value)}
+                          <span className="font-medium text-foreground">{featureLabel(key)}:</span>
+                          <span className="ml-1">
+                            {Array.isArray(value) ? value.join(', ') : (typeof value === 'boolean' ? (value ? 'Tersedia' : 'Tidak tersedia') : value)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Button
+                    size="sm"
+                    className="w-full mt-3"
+                    variant="outline"
+                    onClick={() => router.push('/account/plan')}
+                  >
+                    Ubah Plan
+                  </Button>
+                </div>
+                
               </div>
             </CardContent>
           </Card>
@@ -482,6 +589,46 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Modal Pilih Plan */}
+      <Dialog open={showPlanModal} onOpenChange={setShowPlanModal}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Pilih Paket</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 min-w-[900px]">
+              {plans.map(plan => (
+                <Card key={plan.id} className={`flex flex-col border ${plan.name === profile.plan?.name ? 'border-primary' : 'border-border'} p-4 min-w-64 w-64`}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{plan.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold mb-2">{plan.price === 0 ? 'Rp0' : plan.price === null ? 'Custom' : `Rp${plan.price.toLocaleString()}`}</div>
+                    {plan.price && plan.price > 0 && <div className="text-xs mb-2 text-muted-foreground">/bulan</div>}
+                    <ul className="mb-4 text-xs text-muted-foreground space-y-1">
+                      {plan.features && Object.entries(plan.features).map(([key, value]) => (
+                        <li key={key}>{key}: {Array.isArray(value) ? value.join(', ') : (typeof value === 'boolean' ? (value ? '✔️' : '❌') : value)}</li>
+                      ))}
+                    </ul>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      disabled={upgrading || plan.name === profile.plan?.name}
+                      onClick={() => handleSelectPlan(plan.id)}
+                    >
+                      {upgrading && plan.name !== profile.plan?.name ? 'Memproses...' : plan.name === profile.plan?.name ? 'Paket Aktif' : 'Pilih Plan'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          <DialogClose asChild>
+            <Button variant="outline" className="w-full mt-4">Tutup</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

@@ -26,7 +26,8 @@ const formatDate = (dateStr: string) => {
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [ownedProjects, setOwnedProjects] = useState<Project[]>([]);
+  const [invitedProjects, setInvitedProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
@@ -37,7 +38,8 @@ export default function ProjectsPage() {
       try {
         setLoading(true);
         const data = await ProjectsAPI.getProjects();
-        setProjects(data);
+        setOwnedProjects(data.ownedProjects || []);
+        setInvitedProjects(data.invitedProjects || []);
         setError(null);
       } catch (err) {
         console.error('Error fetching projects:', err);
@@ -92,61 +94,124 @@ export default function ProjectsPage() {
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p>Memuat proyek...</p>
         </div>
-      ) : projects.length === 0 ? (
-        <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
-          <h3 className="font-medium text-lg mb-2">Belum ada proyek</h3>
-          <p className="text-muted-foreground mb-4">Mulai dengan membuat proyek baru untuk memantau error aplikasi Anda.</p>
-          <Button onClick={handleCreateProject}>
-            <FiPlus className="mr-2 h-4 w-4" />
-            Buat Proyek Baru
-          </Button>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {projects.map((project) => (
-            <Card 
-              key={project.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleProjectClick(project.id)}
-            >
-              <CardHeader>
-                <CardTitle>{project.name}</CardTitle>
-                <CardDescription>
-                  Dibuat pada {formatDate(project.createdAt)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">DSN:</span>
-                  <code className="bg-muted px-2 py-1 rounded text-sm">{project.dsn}</code>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyDSN(project.dsn);
-                    }}
-                  >
-                    <FiCopy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProjectClick(project.id);
-                  }}
-                >
-                  <FiActivity className="mr-2 h-4 w-4" />
-                  Lihat Error
+        <>
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Proyek Saya</h2>
+            {ownedProjects.length === 0 ? (
+              <div className="text-center p-8 bg-card rounded-lg border border-dashed border-border">
+                <h3 className="font-medium text-lg mb-2">Belum ada proyek yang Anda buat</h3>
+                <p className="text-muted-foreground mb-4">Mulai dengan membuat proyek baru untuk memantau error aplikasi Anda.</p>
+                <Button onClick={handleCreateProject}>
+                  <FiPlus className="mr-2 h-4 w-4" />
+                  Buat Proyek Baru
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {ownedProjects.map((project) => (
+                  <Card 
+                    key={project.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => handleProjectClick(project.id)}
+                  >
+                    <CardHeader>
+                      <CardTitle>{project.name}</CardTitle>
+                      <CardDescription>
+                        Dibuat pada {formatDate(project.createdAt)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-muted-foreground">DSN:</span>
+                        <code className="bg-muted px-2 py-1 rounded text-sm">{project.dsn}</code>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyDSN(project.dsn);
+                          }}
+                        >
+                          <FiCopy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProjectClick(project.id);
+                        }}
+                      >
+                        <FiActivity className="mr-2 h-4 w-4" />
+                        Lihat Error
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Proyek Undangan</h2>
+            {invitedProjects.length === 0 ? (
+              <div className="text-center p-8 bg-card rounded-lg border border-dashed border-border">
+                <h3 className="font-medium text-lg mb-2">Belum ada proyek undangan</h3>
+                <p className="text-muted-foreground mb-4">Anda akan melihat proyek di mana Anda diundang oleh orang lain di sini.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {invitedProjects.map((project) => (
+                  <Card 
+                    key={project.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => handleProjectClick(project.id)}
+                  >
+                    <CardHeader>
+                      <CardTitle>{project.name}</CardTitle>
+                      <CardDescription>
+                        Dibuat pada {formatDate(project.createdAt)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-muted-foreground">DSN:</span>
+                        <code className="bg-muted px-2 py-1 rounded text-sm">{project.dsn}</code>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyDSN(project.dsn);
+                          }}
+                        >
+                          <FiCopy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProjectClick(project.id);
+                        }}
+                      >
+                        <FiActivity className="mr-2 h-4 w-4" />
+                        Lihat Error
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </DashboardLayout>
   );

@@ -3,6 +3,7 @@ import prisma from '../models/prisma';
 import { sendErrorNotification } from '../utils/email';
 import crypto from 'crypto';
 import axios from 'axios';
+import { PlanFeatures } from '../types/plan';
 
 const router = express.Router();
 
@@ -14,6 +15,21 @@ router.post('/', async (req, res) => {
   try {
     const project = await prisma.project.findUnique({ where: { dsn } });
     if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
+    // Validasi kuota events bulanan
+    const owner = await prisma.user.findUnique({ where: { id: project.ownerId }, include: { plan: true } });
+    const features = owner?.plan?.features as PlanFeatures | null;
+    const kuota = features?.eventsPerMonth || 1000;
+    const awalBulan = new Date();
+    awalBulan.setDate(1); awalBulan.setHours(0,0,0,0);
+    const totalEvents = await prisma.event.count({
+      where: {
+        projectId: project.id,
+        timestamp: { gte: awalBulan }
+      }
+    });
+    if (totalEvents >= kuota) {
+      return res.status(403).json({ error: 'Kuota events bulanan Anda sudah habis.' });
+    }
     // Hitung fingerprint
     const fingerprint = crypto.createHash('sha256')
       .update(project.id + errorType + message + (stacktrace || '') + (statusCode || ''))
@@ -58,7 +74,6 @@ router.post('/', async (req, res) => {
       }
     });
     // Kirim email ke owner project
-    const owner = await prisma.user.findUnique({ where: { id: project.ownerId } });
     if (owner) {
       sendErrorNotification(
         owner.email,
@@ -149,6 +164,30 @@ router.get('/project/:id', async (req, res) => {
     res.json(events);
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengambil event' });
+  }
+});
+
+// Ambil usage events bulan ini untuk project tertentu
+router.get('/usage/:projectId', async (req, res) => {
+  const { projectId } = req.params;
+  try {
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
+    const owner = await prisma.user.findUnique({ where: { id: project.ownerId }, include: { plan: true } });
+    const features = owner?.plan?.features as PlanFeatures | null;
+    const quota = features?.eventsPerMonth || 1000;
+    const awalBulan = new Date();
+    awalBulan.setDate(1); awalBulan.setHours(0,0,0,0);
+    const totalEvents = await prisma.event.count({
+      where: {
+        projectId,
+        timestamp: { gte: awalBulan }
+      }
+    });
+    const percent = Math.min(100, Math.round((totalEvents / quota) * 100));
+    res.json({ totalEvents, quota, percent });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengambil usage events' });
   }
 });
 

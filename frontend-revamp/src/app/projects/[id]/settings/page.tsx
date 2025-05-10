@@ -234,8 +234,16 @@ export default function SettingsPage() {
                       onClick={() => {
                         navigator.clipboard.writeText(`import { init } from '@error-monitor/sdk';
 
+// Inisialisasi SDK dengan DSN proyek Anda
 init({
-  dsn: '${project.dsn}'
+  dsn: '${project.dsn}',
+  environment: process.env.NODE_ENV,
+  release: '1.0.0',
+  // Opsi tambahan
+  beforeSend: (event) => {
+    // Filter atau modifikasi event sebelum dikirim
+    return event;
+  }
 });`);
                         toast.success('Kode disalin!');
                       }}
@@ -244,40 +252,141 @@ init({
                     </button>
                     <pre className="whitespace-pre">{`import { init } from '@error-monitor/sdk';
 
+// Inisialisasi SDK dengan DSN proyek Anda
 init({
-  dsn: '${project.dsn}'
+  dsn: '${project.dsn}',
+  environment: process.env.NODE_ENV,
+  release: '1.0.0',
+  // Opsi tambahan
+  beforeSend: (event) => {
+    // Filter atau modifikasi event sebelum dikirim
+    return event;
+  }
 });`}</pre>
                   </div>
                   
-                  <h3 className="font-semibold mb-2 mt-4">3. Tangkap Error</h3>
-                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm overflow-x-auto relative group">
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group mt-4">
                     <button 
                       className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => {
-                        navigator.clipboard.writeText(`import { captureException } from '@error-monitor/sdk';
+                        navigator.clipboard.writeText(`// Contoh penggunaan dalam aplikasi
+import { captureException } from '@error-monitor/sdk';
 
 try {
-  // Kode Anda
+  // Kode aplikasi Anda
+  throw new Error('Terjadi kesalahan');
 } catch (error) {
-  captureException(error);
+  // Tangkap dan kirim error
+  captureException(error, {
+    tags: {
+      section: 'checkout',
+      userId: '123'
+    }
+  });
 }`);
                         toast.success('Kode disalin!');
                       }}
                     >
                       <FiCopy size={14} />
                     </button>
-                    <pre className="whitespace-pre">{`import { captureException } from '@error-monitor/sdk';
+                    <pre className="whitespace-pre">{`// Contoh penggunaan dalam aplikasi
+import { captureException } from '@error-monitor/sdk';
 
 try {
-  // Kode Anda
+  // Kode aplikasi Anda
+  throw new Error('Terjadi kesalahan');
 } catch (error) {
-  captureException(error);
+  // Tangkap dan kirim error
+  captureException(error, {
+    tags: {
+      section: 'checkout',
+      userId: '123'
+    }
+  });
 }`}</pre>
+                  </div>
+                  
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm mb-2 overflow-x-auto relative group mt-4">
+                    <button 
+                      className="absolute top-2 right-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground p-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`// Contoh penggunaan sebagai middleware
+import { withErrorMonitoring } from '@error-monitor/sdk';
+
+// Middleware untuk Express.js
+const errorMiddleware = withErrorMonitoring((req, res, next) => {
+  try {
+    // Logika middleware Anda
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware untuk Next.js API Routes
+export default withErrorMonitoring(async function handler(req, res) {
+  // Handler API Anda
+  const data = await fetchData();
+  res.status(200).json(data);
+});
+
+// Middleware untuk Next.js App Router
+export const middleware = withErrorMonitoring(async (request) => {
+  // Logika middleware Anda
+  const response = NextResponse.next();
+  return response;
+});`);
+                        toast.success('Kode disalin!');
+                      }}
+                    >
+                      <FiCopy size={14} />
+                    </button>
+                    <pre className="whitespace-pre">{`// Contoh penggunaan sebagai middleware
+import { withErrorMonitoring } from '@error-monitor/sdk';
+
+// Middleware untuk Express.js
+const errorMiddleware = withErrorMonitoring((req, res, next) => {
+  try {
+    // Logika middleware Anda
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware untuk Next.js API Routes
+export default withErrorMonitoring(async function handler(req, res) {
+  // Handler API Anda
+  const data = await fetchData();
+  res.status(200).json(data);
+});
+
+// Middleware untuk Next.js App Router
+export const middleware = withErrorMonitoring(async (request) => {
+  // Logika middleware Anda
+  const response = NextResponse.next();
+  return response;
+});`}</pre>
+                  </div>
+                  
+                  <h3 className="font-semibold mb-2 mt-4">3. Dokumentasi</h3>
+                  <div className="bg-background text-foreground p-3 rounded font-mono text-sm overflow-x-auto">
+                    <p className="text-sm text-muted-foreground">
+                      Untuk dokumentasi lengkap dan panduan implementasi, silakan kunjungi:
+                    </p>
+                    <a 
+                      href="https://docs.error-monitor.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline mt-2 inline-block"
+                    >
+                      docs.error-monitor.com
+                    </a>
                   </div>
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
-                  Untuk dokumentasi lebih lengkap dan opsi konfigurasi lanjutan, kunjungi dokumentasi API kami.
+                <p className="text-sm text-muted-foreground mt-4">
+                  Jika Anda membutuhkan bantuan tambahan, tim support kami siap membantu Anda.
                 </p>
               </div>
             </CardContent>

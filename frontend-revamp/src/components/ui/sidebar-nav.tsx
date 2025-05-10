@@ -151,7 +151,7 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
           <div className="w-8 h-8 bg-sidebar-primary rounded mr-2 flex items-center justify-center text-sidebar-primary-foreground font-bold">
             LR
           </div>
-          <h1 className="text-lg font-bold text-sidebar-foreground">LogRaven.id</h1>
+          <h1 className="text-lg font-bold text-sidebar-foreground">LogRaven</h1>
         </Link>
       </div>
 

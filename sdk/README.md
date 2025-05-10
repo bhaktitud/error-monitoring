@@ -1,17 +1,17 @@
-# Sentry Clone SDK
+# LogRaven SDK
 
-SDK sederhana untuk mengirim error ke backend Sentry Clone.
+SDK untuk mengirim error ke backend LogRaven.
 
 ## Instalasi
 
 ```
-npm install sentry-clone-sdk
+npm install @lograven/sdk
 ```
 
 ## Cara Pakai
 
 ```js
-import { init, captureException } from 'sentry-clone-sdk';
+import { init, captureException } from '@lograven/sdk';
 
 // Inisialisasi SDK
 init({

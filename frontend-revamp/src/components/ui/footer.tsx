@@ -16,10 +16,10 @@ export default function Footer() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm">
                 LR
               </div>
-              <span className="font-bold text-lg">LogRaven.id</span>
+              <span className="font-bold text-lg">LogRaven</span>
             </div>
             <p className="text-sm text-sidebar-foreground/80">
-              Platform logging untuk aplikasi Anda.
+              Platform error monitoring untuk aplikasi Anda.
             </p>
           </div>
           
@@ -66,7 +66,7 @@ export default function Footer() {
           <div className="col-span-1">
             <h3 className="text-sm font-semibold mb-4">Kontak</h3>
             <ul className="space-y-2 text-sm">
-              <li>Email: support@admin-dashboard.com</li>
+              <li>Email: support@lograven.com</li>
               <li>Phone: +62 21 1234 5678</li>
               <li>
                 <div className="flex space-x-4 mt-4">
@@ -130,7 +130,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="border-t border-sidebar-border/50 mt-8 pt-4 flex flex-col md:flex-row items-center justify-between text-sm text-sidebar-foreground/70">
           <div className="flex items-center">
-            <Copyright className="h-4 w-4 mr-1" /> {currentYear} Admin Dashboard. All rights reserved.
+            <Copyright className="h-4 w-4 mr-1" /> {currentYear} LogRaven. All rights reserved.
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-4">
             <Link href="#" className="hover:text-sidebar-primary transition-colors">

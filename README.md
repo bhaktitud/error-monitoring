@@ -1,6 +1,6 @@
-# Sentry Clone - SaaS Error Monitoring
+# LogRaven - SaaS Error Monitoring
 
-Sentry Clone adalah platform error monitoring open source yang terinspirasi dari Sentry.io. Project ini memungkinkan developer untuk memonitor error aplikasi secara real-time, mengelola project, mengirim error dari berbagai aplikasi, dan mendapatkan notifikasi jika terjadi error.
+LogRaven adalah platform error monitoring open source yang memungkinkan developer untuk memonitor error aplikasi secara real-time, mengelola project, mengirim error dari berbagai aplikasi, dan mendapatkan notifikasi jika terjadi error.
 
 ---
 

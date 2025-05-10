@@ -274,6 +274,7 @@ router.get('/me', auth, async (req: any, res) => {
 router.patch('/profile', auth, async (req: any, res) => {
   try {
     const { 
+      avatar,
       name, 
       phoneNumber, 
       timezone, 
@@ -286,6 +287,8 @@ router.patch('/profile', auth, async (req: any, res) => {
     
     // Persiapkan data yang akan diupdate
     const updateData: any = {};
+
+    if (avatar !== undefined) updateData.avatar = avatar;
     
     if (name !== undefined) updateData.name = name;
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;

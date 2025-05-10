@@ -3,6 +3,7 @@ import prisma from '../models/prisma';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { Resend } from 'resend';
+import { PlanFeatures } from '../types/plan';
 
 const router = express.Router();
 
@@ -30,6 +31,15 @@ router.post('/', auth, async (req: any, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Nama project wajib diisi' });
   try {
+    // Ambil data user beserta plan
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, include: { plan: true } });
+    if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+    const features = user.plan?.features as unknown as PlanFeatures || {};
+    const maxProjects = features.maxProjects ?? 1;
+    const userProjectsCount = await prisma.project.count({ where: { ownerId: req.user.userId } });
+    if (userProjectsCount >= maxProjects) {
+      return res.status(403).json({ error: 'Batas maksimal project pada plan Anda telah tercapai.' });
+    }
     const dsn = uuidv4();
     const project = await prisma.project.create({
       data: {
@@ -75,7 +85,7 @@ router.get('/:id/members', auth, async (req: any, res) => {
   try {
     const members = await prisma.projectMember.findMany({
       where: { projectId: id },
-      include: { user: { select: { id: true, email: true } } },
+      include: { user: { select: { id: true, email: true, avatar: true } } },
       orderBy: { role: 'asc' }
     });
     res.json(members);
@@ -523,6 +533,23 @@ router.delete('/:id/members/:memberId', auth, async (req: any, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Gagal hapus member' });
+  }
+});
+
+// Hapus project
+router.delete('/:id', auth, async (req: any, res) => {
+  const { id } = req.params;
+  try {
+    // Pastikan user adalah owner project
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
+    if (project.ownerId !== req.user.userId) {
+      return res.status(403).json({ error: 'Anda tidak berhak menghapus project ini.' });
+    }
+    await prisma.project.delete({ where: { id } });
+    res.json({ success: true, message: 'Project berhasil dihapus.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menghapus project.' });
   }
 });
 

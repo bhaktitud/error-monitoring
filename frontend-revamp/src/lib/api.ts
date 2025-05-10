@@ -144,27 +144,49 @@ export const AuthAPI = {
     });
   },
   
-  // Upload avatar
-  uploadAvatar: async (formData: FormData) => {
-    // Gunakan token secara manual karena FormData
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    
-    const response = await fetch(`${API_BASE_URL}/auth/avatar`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        error: 'Terjadi kesalahan server'
-      }));
-      throw new Error(errorData.error || 'Terjadi kesalahan pada server');
+  // Upload avatar menggunakan ImageKit
+  uploadAvatar: async (file: File) => {
+    try {
+      // 1. Dapatkan authentication parameters dari backend dengan apiRequest
+      const { token, expire, signature } = await apiRequest<{ token: string; expire: number; signature: string }>('/media/auth');
+
+      // 2. Upload file ke ImageKit (fetch langsung, bukan apiRequest)
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('token', token);
+      formData.append('expire', expire.toString());
+      formData.append('signature', signature);
+      formData.append('folder', '/avatars');
+      formData.append('useUniqueFileName', 'true');
+      formData.append('publicKey', process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || '');
+
+      const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengupload avatar');
+      }
+
+      const result = await response.json();
+
+      console.log(result, 'result');
+
+      // 3. Update profil user dengan URL avatar baru
+      await AuthAPI.updateProfile({
+        avatar: result.url
+      });
+
+      return {
+        success: true,
+        avatarUrl: result.url
+      };
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      throw error;
     }
-    
-    return response.json();
   },
   
   // Send test email
@@ -309,6 +331,13 @@ export const ProjectsAPI = {
   // Remove member from project
   removeMember: async (projectId: string, memberId: string) => {
     return apiRequest<{ success: boolean }>(`/projects/${projectId}/members/${memberId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Delete project
+  deleteProject: async (projectId: string) => {
+    return apiRequest<{ success: boolean; message?: string }>(`/projects/${projectId}`, {
       method: 'DELETE',
     });
   },

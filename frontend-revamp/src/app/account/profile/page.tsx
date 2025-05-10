@@ -48,11 +48,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [plans, setPlans] = useState<any[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
+  const [plans, setPlans] = useState<Array<{
+    id: string;
+    name: string;
+    price: number;
+    features: Record<string, unknown>;
+  }>>([]);
   const [showPlanModal, setShowPlanModal] = useState(false);
   
   const [profile, setProfile] = useState<UserProfile>({
@@ -131,19 +133,47 @@ export default function ProfilePage() {
   };
   
   // Handle avatar upload
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setAvatar(file);
       
-      // Preview avatar
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && event.target.result) {
-          setAvatarPreview(event.target.result as string);
+      // Validasi ukuran file (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file terlalu besar. Maksimal 5MB');
+        return;
+      }
+
+      // Validasi tipe file
+      if (!file.type.startsWith('image/')) {
+        toast.error('File harus berupa gambar');
+        return;
+      }
+
+      try {
+        setSaving(true);
+        
+        // Preview avatar
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target && event.target.result) {
+            setAvatarPreview(event.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+
+        // Upload avatar ke ImageKit
+        const result = await AuthAPI.uploadAvatar(file);
+        
+        if (result.avatarUrl) {
+          setProfile(prev => ({ ...prev, avatar: result.avatarUrl }));
+          toast.success('Foto profil berhasil diperbarui!');
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        toast.error('Gagal mengupload foto profil. Silakan coba lagi.');
+      } finally {
+        setSaving(false);
+      }
     }
   };
   
@@ -155,9 +185,9 @@ export default function ProfilePage() {
     
     try {
       // Upload avatar jika ada
-      if (avatar) {
+      if (avatarPreview) {
         const formData = new FormData();
-        formData.append('avatar', avatar);
+        formData.append('avatar', avatarPreview);
         const result = await AuthAPI.uploadAvatar(formData);
         
         // Update profile dengan URL avatar baru
@@ -200,7 +230,6 @@ export default function ProfilePage() {
   
   // Handle pilih plan dari modal
   const handleSelectPlan = async (planId: string) => {
-    setUpgrading(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch(`${API_BASE_URL}/plans/upgrade`, {
@@ -217,10 +246,9 @@ export default function ProfilePage() {
       const userData = await AuthAPI.getCurrentUser();
       setProfile(prev => ({ ...prev, ...userData }));
       setShowPlanModal(false);
-    } catch (err) {
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
       toast.error('Gagal mengubah plan');
-    } finally {
-      setUpgrading(false);
     }
   };
   
@@ -614,10 +642,9 @@ export default function ProfilePage() {
                     <Button
                       size="sm"
                       className="w-full"
-                      disabled={upgrading || plan.name === profile.plan?.name}
                       onClick={() => handleSelectPlan(plan.id)}
                     >
-                      {upgrading && plan.name !== profile.plan?.name ? 'Memproses...' : plan.name === profile.plan?.name ? 'Paket Aktif' : 'Pilih Plan'}
+                      {plan.name === profile.plan?.name ? 'Paket Aktif' : 'Pilih Plan'}
                     </Button>
                   </CardContent>
                 </Card>

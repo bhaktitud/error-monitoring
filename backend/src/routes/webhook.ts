@@ -2,6 +2,7 @@ import express from 'express';
 import prisma from '../models/prisma';
 import crypto from 'crypto';
 import axios from 'axios';
+import { PlanFeatures } from '../types/plan';
 
 const router = express.Router();
 
@@ -25,6 +26,15 @@ router.post('/projects/:id/webhooks', async (req, res) => {
   const { url, enabled, eventType, secret } = req.body;
   if (!url) return res.status(400).json({ error: 'URL wajib diisi' });
   try {
+    // Ambil project dan owner beserta plan
+    const project = await prisma.project.findUnique({ where: { id }, include: { owner: { include: { plan: true } } } });
+    if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
+    const features = project.owner.plan?.features as unknown as PlanFeatures || {};
+    const maxWebhooks = features.maxWebhooks ?? 0;
+    const webhooksCount = await prisma.webhook.count({ where: { projectId: id } });
+    if (webhooksCount >= maxWebhooks) {
+      return res.status(403).json({ error: 'Batas maksimal webhook pada plan Anda telah tercapai.' });
+    }
     const webhook = await prisma.webhook.create({
       data: { projectId: id, url, enabled: enabled ?? true, eventType, secret }
     });

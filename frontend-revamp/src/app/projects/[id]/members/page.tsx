@@ -11,6 +11,7 @@ import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 interface Member {
   id: string;
@@ -18,6 +19,7 @@ interface Member {
   user: {
     id: string;
     email: string;
+    avatar?: string;
   };
 }
 
@@ -50,6 +52,7 @@ export default function MembersPage() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members');
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -364,14 +367,18 @@ export default function MembersPage() {
                         <tr key={member.id} className="hover:bg-muted/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className={`${
-                                  member.role === 'admin' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'
-                                }`}>
-                                  {member.user.email.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
+                              <Avatar className="h-10 w-10 cursor-pointer" onClick={() => setSelectedMember(member)}>
+                                {member.user.avatar ? (
+                                  <img src={member.user.avatar} alt={member.user.email} className="h-10 w-10 rounded-full object-cover" />
+                                ) : (
+                                  <AvatarFallback className={`${
+                                    member.role === 'admin' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'
+                                  }`}>
+                                    {member.user.email.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                )}
                               </Avatar>
-                              <div className="ml-4">
+                              <div className="ml-4 cursor-pointer" onClick={() => setSelectedMember(member)}>
                                 <div className="text-sm font-medium text-foreground">
                                   {member.user.email}
                                 </div>
@@ -545,6 +552,32 @@ export default function MembersPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail Anggota</DialogTitle>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="h-24 w-24">
+                {selectedMember.user.avatar ? (
+                  <img src={selectedMember.user.avatar} alt={selectedMember.user.email} className="h-24 w-24 rounded-full object-cover" />
+                ) : (
+                  <AvatarFallback className="text-2xl">
+                    {selectedMember.user.email.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="text-lg font-semibold">{selectedMember.user.email}</div>
+              <div className="text-sm text-muted-foreground">Role: {selectedMember.role === 'admin' ? 'Admin' : 'Member'}</div>
+            </div>
+          )}
+          <DialogClose asChild>
+            <Button variant="outline" className="w-full mt-4">Tutup</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 } 

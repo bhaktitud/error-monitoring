@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FiArrowLeft, FiCopy, FiCode, FiSettings, FiAlertCircle, FiSend } from 'react-icons/fi';
 import { EventsAPI, ProjectsAPI } from '@/lib/api';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 interface Project {
   id: string;
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [testErrorStatus, setTestErrorStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -52,16 +54,13 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteProject = () => {
-    const confirmed = window.confirm(
-      'Apakah Anda yakin ingin menghapus proyek ini? Tindakan ini tidak dapat dibatalkan dan semua data terkait proyek ini akan dihapus.'
-    );
-    
-    if (confirmed) {
-      // Di aplikasi nyata, ini akan diganti dengan pemanggilan API
-      // untuk menghapus proyek
-      alert('Proyek berhasil dihapus (simulasi)');
+  const handleDeleteProject = async () => {
+    try {
+      await ProjectsAPI.deleteProject(projectId);
+      toast.success('Proyek berhasil dihapus.');
       router.push('/projects');
+    } catch (err) {
+      toast.error('Gagal menghapus proyek. Silakan coba lagi.');
     }
   };
 
@@ -387,7 +386,7 @@ app.use(errorHandler);
                   </div>
                   <Button 
                     variant="destructive"
-                    onClick={handleDeleteProject}
+                    onClick={() => setOpenDeleteDialog(true)}
                   >
                     Hapus Proyek
                   </Button>
@@ -397,6 +396,22 @@ app.use(errorHandler);
           </Card>
         </div>
       </div>
+
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Hapus Proyek</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-center">
+            <p className="mb-4 text-destructive font-semibold">Apakah Anda yakin ingin menghapus proyek ini?</p>
+            <p className="text-muted-foreground text-sm mb-4">Tindakan ini tidak dapat dibatalkan dan semua data terkait proyek ini akan dihapus secara permanen.</p>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>Batal</Button>
+              <Button variant="destructive" onClick={async () => { await handleDeleteProject(); setOpenDeleteDialog(false); }}>Hapus</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 } 

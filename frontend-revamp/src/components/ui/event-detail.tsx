@@ -48,13 +48,13 @@ export const EventDetail: FC<EventDetailProps> = ({
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-          <FiAlertTriangle className="mr-2 text-red-500" />
+        <CardTitle className="text-lg font-semibold text-foreground flex items-center">
+          <FiAlertTriangle className="mr-2 text-destructive" />
           {errorType}
           {statusCode && <Badge variant="outline" className="ml-2">{statusCode}</Badge>}
         </CardTitle>
         <div className="text-base font-medium mt-2">{message}</div>
-        <div className="flex items-center text-sm text-gray-600 mt-2">
+        <div className="flex items-center text-sm text-muted-foreground mt-2">
           <FiClock className="mr-1" />
           <span>Waktu: {formatDate(timestamp)}</span>
         </div>
@@ -66,14 +66,14 @@ export const EventDetail: FC<EventDetailProps> = ({
               <h4 className="font-medium">Stack Trace</h4>
               <button 
                 onClick={copyStackTrace}
-                className="flex items-center text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 rounded transition-colors"
+                className="flex items-center text-xs bg-muted hover:bg-muted/80 text-muted-foreground py-1 px-2 rounded transition-colors"
               >
                 <FiCopy className="mr-1 h-3 w-3" />
                 Salin
               </button>
             </div>
             <div className="relative group">
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded font-mono text-sm overflow-auto max-h-80 whitespace-pre">
+              <pre className="bg-card text-card-foreground border border-border p-4 rounded font-mono text-sm overflow-auto max-h-80 whitespace-pre">
                 {stacktrace}
               </pre>
             </div>
@@ -83,14 +83,14 @@ export const EventDetail: FC<EventDetailProps> = ({
         {userAgent && (
           <div className="mb-4">
             <h4 className="font-medium mb-2">User Agent</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm">{userAgent}</div>
+            <div className="bg-muted p-3 rounded text-sm">{userAgent}</div>
           </div>
         )}
 
         {userContext && Object.keys(userContext).length > 0 && (
           <div className="mb-4">
             <h4 className="font-medium mb-2">User Context</h4>
-            <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto">
+            <pre className="bg-muted p-3 rounded text-sm overflow-auto">
               {JSON.stringify(userContext, null, 2)}
             </pre>
           </div>
@@ -101,7 +101,7 @@ export const EventDetail: FC<EventDetailProps> = ({
             <h4 className="font-medium mb-2">Tags</h4>
             <div className="flex flex-wrap gap-2">
               {Object.entries(tags).map(([key, value]) => (
-                <Badge key={key} variant="outline" className="bg-gray-50">
+                <Badge key={key} variant="outline" className="bg-muted">
                   {key}: {value}
                 </Badge>
               ))}

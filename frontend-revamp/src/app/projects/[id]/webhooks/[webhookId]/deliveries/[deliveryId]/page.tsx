@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 const CustomBadge = ({ variant = "default", ...props }: BadgeProps) => {
   const getVariantClasses = () => {
     if (variant === "success") {
-      return "bg-green-100 text-green-800 hover:bg-green-200";
+      return "bg-success/20 text-success hover:bg-success/30 border-success/50";
     }
     return "";
   };
@@ -57,7 +57,6 @@ interface WebhookDeliveryDetail {
 
 export default function WebhookDeliveryDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const deliveryId = params.deliveryId as string;
   const webhookId = params.webhookId as string;
   const projectId = params.id as string;
@@ -122,7 +121,7 @@ export default function WebhookDeliveryDetailPage() {
               <FiArrowLeft className="mr-2" /> Kembali ke Daftar
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold">Detail Pengiriman Webhook</h1>
+          <h1 className="text-2xl font-bold text-foreground">Detail Pengiriman Webhook</h1>
           
           {delivery && !loading && (
             <Button 
@@ -147,7 +146,7 @@ export default function WebhookDeliveryDetailPage() {
         ) : loading ? (
           <Card>
             <CardContent className="py-8">
-              <div className="text-center">Memuat data...</div>
+              <div className="text-center text-muted-foreground">Memuat data...</div>
             </CardContent>
           </Card>
         ) : delivery ? (
@@ -241,7 +240,7 @@ export default function WebhookDeliveryDetailPage() {
         ) : (
           <Card>
             <CardContent className="py-8">
-              <div className="text-center">Log webhook tidak ditemukan</div>
+              <div className="text-center text-muted-foreground">Log webhook tidak ditemukan</div>
             </CardContent>
           </Card>
         )}

@@ -139,7 +139,6 @@ export default function WebhooksPage() {
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Webhook</h1>
           {!showAddForm && (
             <Button onClick={() => setShowAddForm(true)}>
               <FiPlus className="mr-2 h-4 w-4" />

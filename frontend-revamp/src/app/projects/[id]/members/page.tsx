@@ -7,7 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProjectsAPI } from '@/lib/api';
-import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Member {
   id: string;
@@ -91,7 +94,7 @@ export default function MembersPage() {
     setInviteError(null);
     
     try {
-      const response = await ProjectsAPI.inviteMember(projectId, inviteEmail, inviteRole);
+      await ProjectsAPI.inviteMember(projectId, inviteEmail, inviteRole);
       
       // Refresh daftar undangan
       const invitations = await ProjectsAPI.getInvitations(projectId);
@@ -191,22 +194,21 @@ export default function MembersPage() {
 
   return (
     <DashboardLayout projectId={projectId}>
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <Button 
               variant="ghost" 
               onClick={() => router.push(`/projects/${projectId}`)}
-              className="mr-4"
+              className="mr-4 hover:bg-muted transition-colors"
             >
               <FiArrowLeft className="mr-2 h-4 w-4" />
               Kembali
             </Button>
-            <h1 className="text-2xl font-bold text-gray-800">Anggota Tim</h1>
           </div>
           
           {!showInviteForm && (
-            <Button onClick={() => setShowInviteForm(true)}>
+            <Button onClick={() => setShowInviteForm(true)} variant="default">
               <FiPlus className="mr-2 h-4 w-4" />
               Undang Anggota
             </Button>
@@ -214,38 +216,47 @@ export default function MembersPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
-            {error}
+          <div className="bg-destructive/10 border-l-4 border-destructive text-destructive p-4 mb-6 rounded-md shadow-sm">
+            <div className="flex">
+              <FiAlertCircle className="h-5 w-5 mr-3 text-destructive" />
+              <span>{error}</span>
+            </div>
           </div>
         )}
 
         {showInviteForm && (
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold mb-4">Undang Anggota Tim</h2>
+          <Card className="mb-6 shadow-md border-0 overflow-hidden">
+            <CardContent className="pt-6 pb-6">
+              <h2 className="text-lg font-semibold mb-6 text-foreground">Undang Anggota Tim</h2>
               
               {inviteError && (
-                <div className="bg-red-50 p-3 rounded-md mb-4">
-                  <p className="text-red-600 text-sm">{inviteError}</p>
+                <div className="bg-destructive/10 border-l-4 border-destructive p-3 rounded-md mb-4">
+                  <div className="flex">
+                    <FiAlertCircle className="h-5 w-5 mr-3 text-destructive" />
+                    <p className="text-destructive text-sm">{inviteError}</p>
+                  </div>
                 </div>
               )}
               
               {inviteSuccess && (
-                <div className="bg-green-50 p-3 rounded-md mb-4">
-                  <p className="text-green-600 text-sm">{inviteSuccess}</p>
+                <div className="bg-success/10 border-l-4 border-success p-3 rounded-md mb-4">
+                  <div className="flex">
+                    <FiCheck className="h-5 w-5 mr-3 text-success" />
+                    <p className="text-success text-sm">{inviteSuccess}</p>
+                  </div>
                 </div>
               )}
               
               <form onSubmit={handleInviteMember}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-email">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="invite-email">
                       Email
                     </label>
                     <input
                       id="invite-email"
                       type="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder="Masukkan email"
@@ -254,12 +265,12 @@ export default function MembersPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="invite-role">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="invite-role">
                       Role
                     </label>
                     <select
                       id="invite-role"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value)}
                       disabled={isSubmitting}
@@ -269,7 +280,7 @@ export default function MembersPage() {
                     </select>
                   </div>
                 </div>
-                <div className="mt-4 flex justify-end space-x-2">
+                <div className="mt-6 flex justify-end space-x-3">
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -281,10 +292,11 @@ export default function MembersPage() {
                   <Button 
                     type="submit"
                     disabled={isSubmitting}
+                    variant="default"
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        <div className="animate-spin h-4 w-4 border-2 border-background border-t-transparent rounded-full mr-2"></div>
                         Memproses...
                       </>
                     ) : (
@@ -297,212 +309,241 @@ export default function MembersPage() {
           </Card>
         )}
         
-        {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex">
-            <button
-              onClick={() => setActiveTab('members')}
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'members'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <FiUser className="inline-block mr-2" />
+        {/* Tabs */}
+        <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as 'members' | 'invitations')} className="w-full">
+          <TabsList className="mb-6 w-full max-w-md grid grid-cols-2 p-1 rounded-lg">
+            <TabsTrigger value="members" className="rounded-md py-2 transition-all">
+              <FiUser className="mr-2 h-4 w-4" />
               Anggota ({members.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('invitations')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'invitations'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <FiClock className="inline-block mr-2" />
-              Undangan Tertunda ({invitations.length})
-            </button>
-          </nav>
-        </div>
+            </TabsTrigger>
+            <TabsTrigger value="invitations" className="rounded-md py-2 transition-all">
+              <FiClock className="mr-2 h-4 w-4" />
+              Undangan ({invitations.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Members Tab Content */}
-        {activeTab === 'members' && (
-          loading ? (
-            <div className="text-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Memuat anggota tim...</p>
-            </div>
-          ) : members.length === 0 ? (
-            <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-                <FiUser className="h-6 w-6 text-gray-500" />
+          <TabsContent value="members" className="mt-0">
+            {loading ? (
+              <div className="flex justify-center items-center p-12 bg-card rounded-lg border border-border shadow-sm">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mr-3"></div>
+                <p className="text-muted-foreground">Memuat anggota tim...</p>
               </div>
-              <h3 className="font-medium text-lg mb-2">Belum ada anggota tim</h3>
-              <p className="text-gray-500 mb-4">
-                Undang anggota tim untuk berkolaborasi pada proyek ini.
-              </p>
-              <Button onClick={() => setShowInviteForm(true)}>
-                <FiPlus className="mr-2 h-4 w-4" />
-                Undang Anggota
-              </Button>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {members.map((member) => (
-                    <tr key={member.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <FiMail className="text-gray-500" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {member.user.email}
+            ) : members.length === 0 ? (
+              <div className="text-center p-12 bg-card rounded-lg border border-border shadow-sm">
+                <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-primary/10 mb-4">
+                  <FiUser className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-medium text-lg mb-2 text-foreground">Belum ada anggota tim</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Undang anggota tim untuk berkolaborasi pada proyek ini.
+                </p>
+                <Button onClick={() => setShowInviteForm(true)} variant="default">
+                  <FiPlus className="mr-2 h-4 w-4" />
+                  Undang Anggota
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Anggota
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-card divide-y divide-border">
+                      {members.map((member) => (
+                        <tr key={member.id} className="hover:bg-muted/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className={`${
+                                  member.role === 'admin' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'
+                                }`}>
+                                  {member.user.email.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-foreground">
+                                  {member.user.email}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge className={
-                          member.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }>
-                          {member.role === 'admin' ? 'Admin' : 'Member'}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <select
-                          className="px-2 py-1 text-xs border border-gray-300 rounded"
-                          value={member.role}
-                          onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="member">Member</option>
-                        </select>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleRemoveMember(member.id, member.user.email)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
-        
-        {/* Invitations Tab Content */}
-        {activeTab === 'invitations' && (
-          loadingInvites ? (
-            <div className="text-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Memuat undangan...</p>
-            </div>
-          ) : invitations.length === 0 ? (
-            <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
-              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-                <FiUserPlus className="h-6 w-6 text-gray-500" />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={member.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
+                              {member.role === 'admin' ? 'Admin' : 'Member'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end space-x-3">
+                              <select
+                                className="px-3 py-1.5 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                                value={member.role}
+                                onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="member">Member</option>
+                              </select>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleRemoveMember(member.id, member.user.email)}
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    >
+                                      <FiTrash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Hapus anggota</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <h3 className="font-medium text-lg mb-2">Belum ada undangan tertunda</h3>
-              <p className="text-gray-500 mb-4">
-                Undang anggota baru untuk berkolaborasi pada proyek ini.
-              </p>
-              <Button onClick={() => setShowInviteForm(true)}>
-                <FiPlus className="mr-2 h-4 w-4" />
-                Undang Anggota
-              </Button>
-            </div>
-          ) : (
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Diundang Oleh
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tanggal Undangan
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Kadaluarsa
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {invitations.map(invite => (
-                    <tr key={invite.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{invite.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {invite.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{invite.inviter.name || invite.inviter.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{formatDate(invite.createdAt)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{formatDate(invite.expiresAt)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleResendInvitation(invite.id, invite.email)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <FiMail className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleCancelInvitation(invite.id, invite.email)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <FiX className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
+            )}
+          </TabsContent>
+          
+          <TabsContent value="invitations" className="mt-0">
+            {loadingInvites ? (
+              <div className="flex justify-center items-center p-12 bg-card rounded-lg border border-border shadow-sm">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mr-3"></div>
+                <p className="text-muted-foreground">Memuat undangan...</p>
+              </div>
+            ) : invitations.length === 0 ? (
+              <div className="text-center p-12 bg-card rounded-lg border border-border shadow-sm">
+                <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-primary/10 mb-4">
+                  <FiUserPlus className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-medium text-lg mb-2 text-foreground">Belum ada undangan tertunda</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Undang anggota baru untuk berkolaborasi pada proyek ini.
+                </p>
+                <Button onClick={() => setShowInviteForm(true)} variant="default">
+                  <FiPlus className="mr-2 h-4 w-4" />
+                  Undang Anggota
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Kadaluarsa
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-card divide-y divide-border">
+                      {invitations.map(invite => (
+                        <tr key={invite.id} className="hover:bg-muted/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Avatar className="h-8 w-8 mr-3">
+                                <AvatarFallback className={`${
+                                  invite.role === 'admin' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'
+                                }`}>
+                                  {invite.email.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="text-sm font-medium text-foreground">{invite.email}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={invite.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
+                              {invite.role === 'admin' ? 'Admin' : 'Member'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-foreground">
+                              Diundang oleh {invite.inviter.name || invite.inviter.email}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {formatDate(invite.createdAt)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-foreground">{formatDate(invite.expiresAt)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleResendInvitation(invite.id, invite.email)}
+                                      className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                    >
+                                      <FiMail className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Kirim ulang undangan</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleCancelInvitation(invite.id, invite.email)}
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    >
+                                      <FiX className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Batalkan undangan</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

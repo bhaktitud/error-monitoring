@@ -116,11 +116,6 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
             name: 'Notifications',
             href: `/projects/${projectId}/notifications`,
             icon: <FiBell className="mr-2 h-4 w-4" />,
-          },
-          {
-            name: 'SDK Setup',
-            href: `/projects/${projectId}/settings`,
-            icon: <FiCode className="mr-2 h-4 w-4" />,
           }
         ]
       },

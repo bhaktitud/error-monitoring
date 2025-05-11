@@ -1,28 +1,31 @@
 'use client'
 
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { FiCheck } from "react-icons/fi";
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { FiCheck } from 'react-icons/fi';
+import PageTransition from '@/components/ui/page-transition';
 
 export default function VerifySuccessPage() {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
-          <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-            <FiCheck className="text-primary text-xl" />
+    <PageTransition>
+      <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+        <div className="w-full max-w-md">
+          <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
+            <div className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-6">
+              <FiCheck className="text-primary text-3xl" />
+            </div>
+            <h1 className="text-2xl font-semibold mb-3">Email Berhasil Diverifikasi!</h1>
+            <p className="text-muted-foreground mb-8">
+              Akun Anda telah berhasil diaktifkan. Anda sekarang dapat menggunakan semua fitur LogRaven.
+            </p>
+            <Button onClick={() => router.push('/login')} className="w-full">
+              Masuk Sekarang
+            </Button>
           </div>
-          <h2 className="text-xl font-semibold mb-2">Verifikasi Email Berhasil!</h2>
-          <p className="text-muted-foreground mb-6">
-            Email Anda telah berhasil diverifikasi. Akun Anda sekarang aktif dan Anda dapat mengakses semua fitur.
-          </p>
-          <Button onClick={() => router.push('/login')} className="w-full">
-            Masuk Sekarang
-          </Button>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 } 

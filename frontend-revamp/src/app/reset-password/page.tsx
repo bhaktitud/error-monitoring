@@ -1,161 +1,217 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { FiAlertCircle, FiCheck, FiLock } from 'react-icons/fi';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { FiAlertCircle, FiCheck, FiChevronLeft } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
+import { motion } from 'framer-motion';
+import PageTransition from '@/components/ui/page-transition';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
-  
-  const [newPassword, setNewPassword] = useState('');
+  const [token, setToken] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
+  // Mengambil parameter dari URL
   useEffect(() => {
-    if (!token) {
-      setError('Token reset password tidak ditemukan. Silakan minta reset password lagi.');
+    const tokenParam = searchParams.get('token');
+    if (tokenParam) {
+      setToken(tokenParam);
+    } else {
+      setError('Token reset password tidak valid atau telah kedaluwarsa.');
     }
-  }, [token]);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!token) {
-      setError('Token reset password tidak ditemukan. Silakan minta reset password lagi.');
+    if (!password.trim() || !confirmPassword.trim()) {
+      setError('Semua field wajib diisi');
       return;
     }
-    
-    if (!newPassword.trim() || !confirmPassword.trim()) {
-      setError('Password baru dan konfirmasi password wajib diisi');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
+
+    if (password !== confirmPassword) {
       setError('Password tidak sama dengan konfirmasi password');
       return;
     }
-    
-    if (newPassword.length < 8) {
+
+    if (password.length < 8) {
       setError('Password minimal 8 karakter');
       return;
     }
-    
+
+    if (!token) {
+      setError('Token reset password tidak valid.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
     try {
-      setIsLoading(true);
-      setError('');
+      await AuthAPI.resetPassword(token, password);
+      setSuccess(true);
       
-      const response = await AuthAPI.resetPassword(token, newPassword);
-      
-      if (response.success) {
-        setIsSuccess(true);
+      // Redirect ke halaman login setelah beberapa detik
+      setTimeout(() => {
+        router.push('/login');
+      }, 5000); // 5 detik agar pesan bisa dibaca
+    } catch (err) {
+      console.error('Error during password reset:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Gagal mengatur ulang password. Token mungkin sudah kedaluwarsa.');
       }
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.';
-      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Tampilan sukses
-  if (isSuccess) {
+  if (success) {
     return (
-      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
-            <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-              <FiCheck className="text-primary text-xl" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">Password Berhasil Diubah</h2>
-            <p className="text-muted-foreground mb-6">
-              Password Anda telah berhasil diubah. Anda sekarang dapat masuk dengan password baru Anda.
-            </p>
-            <Button onClick={() => router.push('/login')} className="w-full">
-              Masuk Sekarang
-            </Button>
+      <PageTransition>
+        <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+          <div className="absolute top-4 left-4">
+            <Link href="/">
+              <Button variant="ghost" className="text-white hover:bg-white/10">
+                <FiChevronLeft className="mr-2" /> Kembali
+              </Button>
+            </Link>
           </div>
+          <motion.div 
+            className="w-full max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <FiCheck className="text-primary text-xl" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Password Berhasil Diubah!</h2>
+              <p className="text-muted-foreground mb-6">
+                Password akun Anda telah berhasil diubah. Anda akan diarahkan ke halaman login sebentar lagi.
+              </p>
+              <Button onClick={() => router.push('/login')} className="w-full">
+                Masuk Sekarang
+              </Button>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card p-8 rounded-lg shadow-sm border border-border">
-          <div className="text-center mb-6">
-            <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-              <FiLock className="text-primary text-xl" />
-            </div>
-            <h1 className="text-xl font-semibold">Reset Password</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Masukkan password baru Anda
-            </p>
-          </div>
-          
-          {/* Error message */}
-          {error && (
-            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4 flex items-start">
-              <FiAlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="new-password">
-                Password Baru
-              </label>
-              <input
-                id="new-password"
-                type="password"
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary bg-background"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Masukkan password baru"
-                required
-              />
-            </div>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirm-password">
-                Konfirmasi Password
-              </label>
-              <input
-                id="confirm-password"
-                type="password"
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary bg-background"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Masukkan password baru lagi"
-                required
-              />
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full mb-3"
-              disabled={isLoading || !token}
-            >
-              {isLoading ? 'Memproses...' : 'Ubah Password'}
+    <PageTransition>
+      <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+        <div className="absolute top-4 left-4">
+          <Link href="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10">
+              <FiChevronLeft className="mr-2" /> Kembali
             </Button>
-            
-            <div className="text-center mt-4">
-              <Link href="/login" className="text-sm text-primary hover:underline">
-                Kembali ke Login
-              </Link>
-            </div>
-          </form>
+          </Link>
         </div>
+        <motion.div 
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
+            <p className="text-white/80">Atur Ulang Password Anda</p>
+          </div>
+
+          <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
+            <form onSubmit={handleSubmit}>
+              <CardHeader>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>
+                  Buat password baru untuk akun Anda
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!token && (
+                  <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                    <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                    <span className="text-destructive text-sm">Token reset password tidak valid atau telah kedaluwarsa.</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                    <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                    <span className="text-destructive text-sm">{error}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
+                    Password Baru
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimal 8 karakter"
+                    disabled={isSubmitting || !token}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirm-password">
+                    Konfirmasi Password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Masukkan password lagi"
+                    disabled={isSubmitting || !token}
+                    required
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-4">
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isSubmitting || !token}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
+                      Memproses...
+                    </>
+                  ) : (
+                    'Simpan Password Baru'
+                  )}
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  <Link href="/login" className="text-primary hover:underline">
+                    Kembali ke login
+                  </Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
       </div>
-    </div>
+    </PageTransition>
   );
 } 

@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { FiUserPlus, FiAlertCircle, FiCheck, FiChevronLeft } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
+import { motion } from 'framer-motion';
+import PageTransition from '@/components/ui/page-transition';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -87,6 +89,57 @@ export default function RegisterPage() {
 
   if (success) {
     return (
+      <PageTransition>
+        <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+          <div className="absolute top-4 left-4">
+            <Link href="/">
+              <Button variant="ghost" className="text-white hover:bg-white/10">
+                <FiChevronLeft className="mr-2" /> Kembali
+              </Button>
+            </Link>
+          </div>
+          <motion.div 
+            className="w-full max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <FiCheck className="text-primary text-xl" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Pendaftaran Berhasil!</h2>
+              <p className="text-muted-foreground mb-4">
+                Akun Anda telah berhasil dibuat. Kami telah mengirimkan email verifikasi ke alamat <strong>{email}</strong>.
+              </p>
+              {isInvitationRegister ? (
+                <>
+                  <p className="text-muted-foreground mb-6">
+                    Anda telah ditambahkan ke project. Silakan verifikasi email Anda untuk mengakses semua fitur.
+                  </p>
+                  <Button onClick={() => router.push('/projects')} className="w-full">
+                    Lihat Project
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground mb-6">
+                    Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
+                  </p>
+                  <Button onClick={() => router.push('/login')} className="w-full">
+                    Masuk Sekarang
+                  </Button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  return (
+    <PageTransition>
       <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
         <div className="absolute top-4 left-4">
           <Link href="/">
@@ -95,159 +148,122 @@ export default function RegisterPage() {
             </Button>
           </Link>
         </div>
-        <div className="w-full max-w-md">
-          <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
-            <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-              <FiCheck className="text-primary text-xl" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">Pendaftaran Berhasil!</h2>
-            <p className="text-muted-foreground mb-4">
-              Akun Anda telah berhasil dibuat. Kami telah mengirimkan email verifikasi ke alamat <strong>{email}</strong>.
+        <motion.div 
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
+            <p className="text-white/80">
+              {isInvitationRegister ? 'Buat akun untuk bergabung ke project' : 'Buat akun baru'}
             </p>
-            {isInvitationRegister ? (
-              <>
-                <p className="text-muted-foreground mb-6">
-                  Anda telah ditambahkan ke project. Silakan verifikasi email Anda untuk mengakses semua fitur.
-                </p>
-                <Button onClick={() => router.push('/projects')} className="w-full">
-                  Lihat Project
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="text-muted-foreground mb-6">
-                  Silakan cek inbox Anda dan klik tautan verifikasi untuk mengaktifkan akun Anda.
-                </p>
-                <Button onClick={() => router.push('/login')} className="w-full">
-                  Masuk Sekarang
-                </Button>
-              </>
-            )}
           </div>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
-      <div className="absolute top-4 left-4">
-        <Link href="/">
-          <Button variant="ghost" className="text-white hover:bg-white/10">
-            <FiChevronLeft className="mr-2" /> Kembali
-          </Button>
-        </Link>
-      </div>
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
-          <p className="text-white/80">
-            {isInvitationRegister ? 'Buat akun untuk bergabung ke project' : 'Buat akun baru'}
-          </p>
-        </div>
+          <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
+            <form onSubmit={handleSubmit}>
+              <CardHeader>
+                <CardTitle>
+                  {isInvitationRegister ? 'Registrasi Undangan' : 'Registrasi'}
+                </CardTitle>
+                <CardDescription>
+                  {isInvitationRegister 
+                    ? 'Lengkapi data berikut untuk menerima undangan project'
+                    : 'Daftar untuk menggunakan layanan LogRaven'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {error && (
+                  <div className="bg-destructive/20 p-3 rounded-md flex items-start">
+                    <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
+                    <span className="text-destructive text-sm">{error}</span>
+                  </div>
+                )}
 
-        <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
-          <form onSubmit={handleSubmit}>
-            <CardHeader>
-              <CardTitle>
-                {isInvitationRegister ? 'Registrasi Undangan' : 'Registrasi'}
-              </CardTitle>
-              <CardDescription>
-                {isInvitationRegister 
-                  ? 'Lengkapi data berikut untuk menerima undangan project'
-                  : 'Daftar untuk menggunakan layanan LogRaven'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="bg-destructive/20 p-3 rounded-md flex items-start">
-                  <FiAlertCircle className="text-destructive mt-0.5 mr-2" />
-                  <span className="text-destructive text-sm">{error}</span>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Masukkan email"
+                    disabled={isSubmitting || isInvitationRegister} // Disable jika dari undangan
+                    required
+                  />
+                  {isInvitationRegister && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Email tidak dapat diubah karena terkait dengan undangan
+                    </p>
+                  )}
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="email">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Masukkan email"
-                  disabled={isSubmitting || isInvitationRegister} // Disable jika dari undangan
-                  required
-                />
-                {isInvitationRegister && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Email tidak dapat diubah karena terkait dengan undangan
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 8 karakter"
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimal 8 karakter"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirm-password">
+                    Konfirmasi Password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Masukkan password lagi"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-4">
+                <Button 
+                  type="submit" 
+                  className="w-full"
                   disabled={isSubmitting}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirm-password">
-                  Konfirmasi Password
-                </label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Masukkan password lagi"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <FiUserPlus className="mr-2 h-4 w-4" />
-                    {isInvitationRegister ? 'Daftar & Bergabung' : 'Daftar'}
-                  </>
-                )}
-              </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                Sudah memiliki akun?{' '}
-                <Link href="/login" className="text-primary hover:underline">
-                  Masuk sekarang
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <FiUserPlus className="mr-2 h-4 w-4" />
+                      {isInvitationRegister ? 'Daftar & Bergabung' : 'Daftar'}
+                    </>
+                  )}
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  Sudah memiliki akun?{' '}
+                  <Link href="/login" className="text-primary hover:underline">
+                    Masuk sekarang
+                  </Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
       </div>
-    </div>
+    </PageTransition>
   );
 } 

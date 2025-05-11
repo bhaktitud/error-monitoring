@@ -2,6 +2,7 @@ import { FC, ReactNode, useState } from 'react';
 import { SidebarNav } from '@/components/ui/sidebar-nav';
 import { Header } from '@/components/ui/header';
 import Footer from '@/components/ui/footer';
+import PageTransition from '@/components/ui/page-transition';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -26,7 +27,9 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children, projectId 
           <Header projectId={projectId} toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
           
           <main className="flex-1 overflow-auto p-6">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
           
           <Footer />

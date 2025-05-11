@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface Plan {
   id: string;
@@ -149,7 +150,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="flex justify-between items-center px-6 py-4 lg:px-8 bg-background border-b border-border">
+      <motion.header 
+        className="flex justify-between items-center px-6 py-4 lg:px-8 bg-background border-b border-border"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="flex items-center">
           <span className="text-xl font-bold text-primary">LogRaven</span>
         </div>
@@ -182,19 +188,41 @@ export default function LandingPage() {
             </>
           )}
         </div>
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="px-6 py-16 lg:px-8 bg-muted" style={{opacity: 1}}>
+      <motion.section 
+        ref={heroRef} 
+        className="px-6 py-16 lg:px-8 bg-muted" 
+        style={{opacity: 1}}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mb-6">
+          <motion.h1 
+            className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             Deteksi dan Tangani Error Aplikasi Anda dengan Mudah
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8">
+          </motion.h1>
+          <motion.p 
+            className="text-lg text-muted-foreground mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             Pantau, analisis, dan selesaikan error pada aplikasi web dan mobile Anda secara real-time. 
             Berhenti kehilangan pengguna karena bug yang tidak terdeteksi.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          </motion.p>
+          <motion.div 
+            className="flex flex-col sm:flex-row justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             {isClient && isAuthenticated ? (
               <Button size="lg" onClick={handleDashboard}>
                 Pergi ke Dashboard
@@ -209,16 +237,31 @@ export default function LandingPage() {
                 </Button>
               </>
             )}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Features */}
       <section ref={featuresRef} className="px-6 py-16 lg:px-8" style={{opacity: 1}}>
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Fitur Utama</h2>
+          <motion.h2 
+            className="text-3xl font-bold text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            Fitur Utama
+          </motion.h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="feature-card bg-card p-6 rounded-lg border border-border">
+            <motion.div 
+              className="feature-card bg-card p-6 rounded-lg border border-border"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <FiAlertTriangle className="text-primary text-2xl" />
               </div>
@@ -227,9 +270,16 @@ export default function LandingPage() {
                 Deteksi dan lacak error secara real-time dari aplikasi Anda. Dapatkan 
                 informasi lengkap tentang error termasuk stack trace dan konteks.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="feature-card bg-card p-6 rounded-lg border border-border">
+            <motion.div 
+              className="feature-card bg-card p-6 rounded-lg border border-border"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <FiBarChart className="text-primary text-2xl" />
               </div>
@@ -238,9 +288,16 @@ export default function LandingPage() {
                 Analisis error dengan detail yang lengkap. Lihat tren error, pengguna yang terdampak, 
                 dan metrik lainnya untuk memahami penyebab masalah.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="feature-card bg-card p-6 rounded-lg border border-border">
+            <motion.div 
+              className="feature-card bg-card p-6 rounded-lg border border-border"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <FiUsers className="text-primary text-2xl" />
               </div>
@@ -249,9 +306,16 @@ export default function LandingPage() {
                 Bekerja sama dengan tim untuk mengatasi error. Tambahkan komentar, 
                 assign error ke anggota tim, dan lacak status penyelesaian.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="feature-card bg-card p-6 rounded-lg border border-border">
+            <motion.div 
+              className="feature-card bg-card p-6 rounded-lg border border-border"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <FiShield className="text-primary text-2xl" />
               </div>
@@ -260,7 +324,7 @@ export default function LandingPage() {
                 Integrasikan dengan tools lain melalui webhook. Dapatkan notifikasi 
                 tentang error di Slack, Discord, atau aplikasi lainnya.
               </p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -327,37 +391,86 @@ export default function LandingPage() {
       </section>
 
       {/* Call to Action */}
-      <section ref={ctaRef} className="px-6 py-16 lg:px-8 text-primary-foreground" style={{opacity: 1}}>
+      <motion.section 
+        ref={ctaRef} 
+        className="px-6 py-16 lg:px-8 text-primary-foreground" 
+        style={{opacity: 1}}
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Mulai Pantau Error Aplikasi Anda Hari Ini</h2>
-          <p className="text-lg mb-8">
-            Mendaftar gratis dan mulai melacak error pada aplikasi Anda dalam hitungan menit.
-          </p>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="bg-background text-primary hover:bg-muted"
-            onClick={handleGetStarted}
+          <motion.h2 
+            className="text-3xl font-bold mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Buat Akun Sekarang
-          </Button>
+            Mulai Pantau Error Aplikasi Anda Hari Ini
+          </motion.h2>
+          <motion.p 
+            className="text-lg mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Mendaftar gratis dan mulai melacak error pada aplikasi Anda dalam hitungan menit.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="bg-background text-primary hover:bg-muted"
+              onClick={handleGetStarted}
+            >
+              Buat Akun Sekarang
+            </Button>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 lg:px-8 bg-sidebar text-sidebar-foreground">
+      <motion.footer 
+        className="px-6 py-8 lg:px-8 bg-sidebar text-sidebar-foreground"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
+            <motion.div 
+              className="mb-4 md:mb-0"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
               <span className="text-lg font-semibold text-sidebar-primary-foreground">LogRaven</span>
               <p className="text-sm mt-1">Monitor error aplikasi Anda dengan mudah</p>
-            </div>
-            <div className="text-sm">
+            </motion.div>
+            <motion.div 
+              className="text-sm"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
               &copy; {new Date().getFullYear()} LogRaven. All rights reserved.
-            </div>
+            </motion.div>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 }

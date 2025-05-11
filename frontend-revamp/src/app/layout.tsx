@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Error Monitor - Monitoring Error Aplikasi",
+  title: "LogRaven - Monitoring Error Aplikasi",
   description: "Platform untuk memonitor dan mengelola error pada aplikasi Anda",
 };
 

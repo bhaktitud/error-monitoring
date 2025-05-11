@@ -87,6 +87,13 @@ export const AuthAPI = {
     });
   },
 
+  // Logout user
+  logout: async () => {
+    return apiRequest<{ success: boolean; message: string }>('/auth/logout', {
+      method: 'POST',
+    });
+  },
+
   // Register user
   register: async (email: string, password: string, inviteToken?: string | null) => {
     const payload = inviteToken 

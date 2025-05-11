@@ -1,192 +1,149 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Button } from '@/components/ui/button';
-import { ErrorCard } from '@/components/ui/error-card';
-import { GroupsAPI } from '@/lib/api';
-import { FiArrowLeft, FiFilter, FiChevronDown, FiSearch } from 'react-icons/fi';
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { FiSearch, FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi"
+import { useErrorsStore } from "@/lib/store/errors"
+import { Input } from "@/components/ui/input"
+import { SelectMenu, SelectMenuContent, SelectMenuItem, SelectMenuTrigger, SelectMenuValue } from "@/components/ui/select-menu"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge-component"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ErrorMessage } from "@/components/ui/error-message"
+import { formatDistanceToNow } from "date-fns"
+import { id } from "date-fns/locale"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 
-interface ErrorGroup {
-  id: string;
-  errorType: string;
-  message: string;
-  count: number;
-  firstSeen: string;
-  lastSeen: string;
-  status: string;
-  statusCode: number;
-  assignedTo: string;
-  updatedAt: string;
-}
+export default function GroupsPage() {
+  const params = useParams()
+  const router = useRouter()
+  const projectId = params.id as string
 
-export default function ErrorGroupsPage() {
-  const params = useParams();
-  const projectId = params.id as string;
-  const router = useRouter();
-  const [groups, setGroups] = useState<ErrorGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('all'); // all, open, resolved, ignored
+  const { groups, isLoading, error, fetchGroups } = useErrorsStore()
+
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [levelFilter, setLevelFilter] = useState<string>("all")
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-        const data = await GroupsAPI.getGroups(projectId);
-        setGroups(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching error groups:', err);
-        setError('Gagal memuat data grup error. Silakan coba lagi nanti.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchGroups(projectId)
+  }, [projectId, fetchGroups])
 
-    fetchGroups();
-  }, [projectId]);
+  const filteredGroups = groups.filter(group => {
+    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.message.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === "all" || group.status === statusFilter
+    const matchesLevel = levelFilter === "all" || group.level === levelFilter
+    return matchesSearch && matchesStatus && matchesLevel
+  })
 
-  // Filter error groups berdasarkan status
-  const filteredGroups = filter === 'all' 
-    ? groups 
-    : groups.filter(group => group.status === filter);
-
-  const handleFilterChange = (newFilter: string) => {
-    setFilter(newFilter);
-  };
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "open":
+        return <FiAlertCircle className="w-4 h-4 text-yellow-500" />
+      case "resolved":
+        return <FiCheckCircle className="w-4 h-4 text-green-500" />
+      case "ignored":
+        return <FiXCircle className="w-4 h-4 text-gray-500" />
+      default:
+        return null
+    }
+  }
 
   return (
     <DashboardLayout projectId={projectId}>
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push(`/projects/${projectId}`)}
-              className="mr-4"
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FiSearch className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <input 
-                type="text" 
-                className="py-2 pl-10 pr-4 block w-full border border-input rounded-md focus:outline-none focus:ring-ring focus:border-ring"
-                placeholder="Cari error..." 
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-1 gap-4">
+            <div className="relative flex-1">
+              <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cari error..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
               />
             </div>
-            
-            <div className="relative">
-              <Button 
-                variant="outline" 
-                onClick={() => {}}
-                className="flex items-center"
-              >
-                <FiFilter className="mr-2 h-4 w-4" />
-                Filter: {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                <FiChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-              <div className="absolute z-10 mt-1 w-56 rounded-md shadow-lg bg-popover ring-1 ring-black ring-opacity-5 hidden">
-                <div className="py-1" role="menu" aria-orientation="vertical">
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('all')}
-                  >
-                    All
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('open')}
-                  >
-                    Open
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('resolved')}
-                  >
-                    Resolved
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('ignored')}
-                  >
-                    Ignored
-                  </button>
-                </div>
-              </div>
-            </div>
+            <SelectMenu value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectMenuTrigger className="w-[180px]">
+                <SelectMenuValue placeholder="Filter Status" />
+              </SelectMenuTrigger>
+              <SelectMenuContent>
+                <SelectMenuItem value="all">Semua Status</SelectMenuItem>
+                <SelectMenuItem value="open">Open</SelectMenuItem>
+                <SelectMenuItem value="resolved">Resolved</SelectMenuItem>
+                <SelectMenuItem value="ignored">Ignored</SelectMenuItem>
+              </SelectMenuContent>
+            </SelectMenu>
+            <SelectMenu value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectMenuTrigger className="w-[180px]">
+                <SelectMenuValue placeholder="Filter Level" />
+              </SelectMenuTrigger>
+              <SelectMenuContent>
+                <SelectMenuItem value="all">Semua Level</SelectMenuItem>
+                <SelectMenuItem value="error">Error</SelectMenuItem>
+                <SelectMenuItem value="warning">Warning</SelectMenuItem>
+                <SelectMenuItem value="info">Info</SelectMenuItem>
+              </SelectMenuContent>
+            </SelectMenu>
           </div>
         </div>
 
-        {error && (
-          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p>Memuat grup error...</p>
-          </div>
-        ) : groups.length === 0 ? (
-          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-muted mb-4">
-              <FiFilter className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium text-lg mb-2">Belum ada error group yang dilaporkan</h3>
-            <p className="text-muted-foreground mb-4">
-              Error groups akan muncul di sini ketika aplikasi Anda mengirim error melalui SDK.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={() => router.push(`/projects/${projectId}/settings`)}
-            >
-              Lihat Panduan Integrasi
-            </Button>
+        {error ? (
+          <ErrorMessage message={error} />
+        ) : isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         ) : filteredGroups.length === 0 ? (
-          <div className="text-center p-12 bg-card rounded-lg border border-border">
-            <h3 className="font-medium text-lg mb-2">Tidak ada error group yang cocok dengan filter</h3>
-            <Button 
-              variant="outline" 
-              onClick={() => setFilter('all')}
-            >
-              Tampilkan Semua
-            </Button>
-          </div>
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">Tidak ada error yang ditemukan</p>
+          </Card>
         ) : (
           <div className="space-y-4">
             {filteredGroups.map((group) => (
-              <ErrorCard
+              <Card
                 key={group.id}
-                id={group.id}
-                errorType={group.errorType}
-                message={group.message}
-                count={group.count}
-                firstSeen={group.firstSeen}
-                lastSeen={group.lastSeen}
-                status={group.status as 'open' | 'resolved' | 'ignored'}
-                assignedTo={group.assignedTo}
-                statusCode={group.statusCode}
+                className="p-4 hover:bg-accent/50 cursor-pointer transition-colors"
                 onClick={() => router.push(`/projects/${projectId}/groups/${group.id}`)}
-              />
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(group.status)}
+                        <h3 className="font-medium">{group.name}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{group.message}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={group.level === "error" ? "destructive" : group.level === "warning" ? "secondary" : "outline"}>
+                        {group.level}
+                      </Badge>
+                      <Badge variant="outline">{group.count} events</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>Terakhir terlihat {formatDistanceToNow(new Date(group.lastSeen), { addSuffix: true, locale: id })}</span>
+                    <span>Pertama terlihat {formatDistanceToNow(new Date(group.firstSeen), { addSuffix: true, locale: id })}</span>
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         )}
       </div>
     </DashboardLayout>
-  );
+  )
 } 

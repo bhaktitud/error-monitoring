@@ -791,4 +791,19 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Logout
+router.post('/logout', auth, async (req: any, res) => {
+  try {
+    // Token akan tetap valid sampai expired, namun pada client-side
+    // token akan dihapus dari localStorage dan cookies
+    res.status(200).json({ 
+      success: true,
+      message: 'Berhasil logout'
+    });
+  } catch (err) {
+    console.error('Error during logout:', err);
+    res.status(500).json({ error: 'Terjadi error pada server' });
+  }
+});
+
 export default router; 

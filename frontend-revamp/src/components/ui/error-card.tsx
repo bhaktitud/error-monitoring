@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
 import { Badge } from './badge';
-import { FiAlertTriangle, FiClock, FiUser } from 'react-icons/fi';
+import { FiAlertTriangle, FiClock, FiUser, FiAlertCircle } from 'react-icons/fi';
 
 interface ErrorCardProps {
   id: string;
@@ -46,47 +46,12 @@ export const ErrorCard: FC<ErrorCardProps> = ({
   };
 
   return (
-    <Card className="mb-4 hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg font-semibold text-foreground flex items-center">
-              <FiAlertTriangle className="mr-2 text-destructive" />
-              {errorType}
-              {statusCode && <Badge variant="outline" className="ml-2">{statusCode}</Badge>}
-            </CardTitle>
-            <CardDescription className="mt-1 text-sm line-clamp-2">
-              {message}
-            </CardDescription>
-          </div>
-          <Badge className={statusVariants[status]}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="flex items-center text-sm text-muted-foreground mt-1">
-          <FiClock className="mr-1" />
-          <span className="mr-3">Pertama dilihat: {formatDate(firstSeen)}</span>
-          <FiClock className="mr-1" />
-          <span>Terakhir dilihat: {formatDate(lastSeen)}</span>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <div className="flex items-center">
-          {assignedTo ? (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <FiUser className="mr-1" />
-              <span>Ditugaskan ke: {assignedTo}</span>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground/70">Belum ditugaskan</div>
-          )}
-        </div>
-        <Badge variant="secondary" className="ml-auto">
-          {count} {count > 1 ? 'events' : 'event'}
-        </Badge>
-      </CardFooter>
+    <Card className="p-6">
+      <div className="flex flex-col items-center text-center">
+        <FiAlertCircle className="h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Terjadi Kesalahan</h3>
+        <p className="text-muted-foreground">{message}</p>
+      </div>
     </Card>
   );
 }; 

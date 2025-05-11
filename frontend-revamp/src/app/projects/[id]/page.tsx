@@ -140,7 +140,7 @@ export default function ProjectPage() {
                     <FiCopy className="mr-1 h-4 w-4" />
                     {copied ? 'Disalin!' : 'Salin'}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${projectId}/settings`)}>
+                  <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${projectId}/sdk-setup`)}>
                     <FiExternalLink className="mr-1 h-4 w-4" />
                     Setup Guide
                   </Button>
@@ -176,7 +176,7 @@ export default function ProjectPage() {
             <FiAlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-medium text-lg mb-2">Belum ada error yang dilaporkan</h3>
             <p className="text-muted-foreground mb-4">Error akan muncul disini setelah aplikasi Anda mengirimkan error melalui SDK.</p>
-            <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
+            <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/sdk-setup`)}>
               Lihat Panduan Integrasi
             </Button>
           </div>

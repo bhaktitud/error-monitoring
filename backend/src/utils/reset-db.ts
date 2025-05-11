@@ -40,7 +40,11 @@ async function resetDatabase() {
     await prisma.project.deleteMany();
     console.log('✅ Project dihapus');
     
-    // Hapus User (tidak bergantung pada tabel lain)
+    // Hapus PlanHistory (bergantung pada User)
+    await prisma.planHistory.deleteMany();
+    console.log('✅ PlanHistory dihapus');
+    
+    // Hapus User (tidak bergantung pada tabel lain setelah PlanHistory dihapus)
     await prisma.user.deleteMany();
     console.log('✅ User dihapus');
     

@@ -1,12 +1,12 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { FiMenu, FiX, FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
-import { AuthAPI, UserProfile } from '@/lib/api';
-import { useCookies } from 'next-client-cookies';
-import { logout } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import Link from 'next/link';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { useAuthStore } from '@/lib/store';
+import { logout } from '@/lib/auth';
+import { useCookies } from 'next-client-cookies';
 
 interface HeaderProps {
   projectId?: string;
@@ -17,9 +17,8 @@ interface HeaderProps {
 export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpen }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout: authLogout } = useAuthStore();
   const cookies = useCookies();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -28,21 +27,6 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const helpMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userData = await AuthAPI.getCurrentUser();
-        setUser(userData);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -104,8 +88,14 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   };
   
   const handleLogout = () => {
+    // Panggil fungsi logout dari auth store
+    authLogout();
+    
+    // Hapus cookies
     logout(cookies);
-    router.push('/login');
+    
+    // Redirect ke halaman login
+    router.replace('/login');
   };
   
   const getInitials = (email: string, name?: string) => {
@@ -203,43 +193,21 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
           {/* Profile menu */}
           <div className="relative" ref={profileMenuRef}>
             <button 
-              className="flex items-center"
+              className="p-1.5 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
               <Avatar className="h-8 w-8">
-                {user?.avatar ? (
-                  <AvatarImage src={user.avatar} alt={user.name || user.email} />
-                ) : null}
-                <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary font-medium">
-                  {loading ? '...' : getInitials(user?.email || '', user?.name)}
-                </AvatarFallback>
+                <AvatarImage src={user?.avatar} alt={user?.name || user?.email} />
+                <AvatarFallback>{getInitials(user?.email || '', user?.name)}</AvatarFallback>
               </Avatar>
             </button>
             
-            {/* Dropdown profile menu */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
-                {user && (
-                  <div className="px-4 py-3 border-b border-sidebar-border/50">
-                    <div className="flex items-center mb-2">
-                      <Avatar className="h-10 w-10 mr-3">
-                        {user.avatar ? (
-                          <AvatarImage src={user.avatar} alt={user.name || user.email} />
-                        ) : null}
-                        <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary font-medium">
-                          {getInitials(user.email, user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium text-sidebar-foreground">{user.name || 'User'}</p>
-                        <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
-                      </div>
-                    </div>
-                    {user.jobTitle && (
-                      <p className="text-xs text-sidebar-foreground/60 truncate">{user.jobTitle}</p>
-                    )}
-                  </div>
-                )}
+              <div className="absolute right-0 mt-2 w-48 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
+                <div className="px-4 py-2 border-b border-sidebar-border/50">
+                  <p className="text-sm font-medium text-sidebar-foreground">{user?.name || user?.email}</p>
+                  <p className="text-xs text-sidebar-foreground/60">{user?.email}</p>
+                </div>
                 
                 <Link href="/account/profile" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
                   <FiUser className="inline-block mr-2 h-4 w-4" />

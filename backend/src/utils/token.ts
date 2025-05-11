@@ -11,6 +11,11 @@ export const getVerificationTokenExpiry = (): Date => {
   return add(new Date(), { hours: 24 });
 };
 
+// Membuat waktu kedaluwarsa untuk token undangan project (24 jam)
+export const getInviteTokenExpiry = (): Date => {
+  return add(new Date(), { hours: 24 });
+};
+
 // Membuat waktu kedaluwarsa untuk token reset password (1 jam)
 export const getResetTokenExpiry = (): Date => {
   return add(new Date(), { hours: 1 });

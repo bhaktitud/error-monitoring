@@ -12,6 +12,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Member {
   id: string;
@@ -253,13 +256,12 @@ export default function MembersPage() {
               <form onSubmit={handleInviteMember}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="invite-email">
+                    <Label htmlFor="invite-email" className="mb-2">
                       Email
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       id="invite-email"
                       type="email"
-                      className="w-full px-4 py-3 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder="Masukkan email"
@@ -268,19 +270,22 @@ export default function MembersPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="invite-role">
+                    <Label htmlFor="invite-role" className="mb-2">
                       Role
-                    </label>
-                    <select
-                      id="invite-role"
-                      className="w-full px-4 py-3 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    </Label>
+                    <Select
                       value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value)}
+                      onValueChange={setInviteRole}
                       disabled={isSubmitting}
                     >
-                      <option value="admin">Admin</option>
-                      <option value="member">Member</option>
-                    </select>
+                      <SelectTrigger className="w-full" id="invite-role">
+                        <SelectValue placeholder="Pilih role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
@@ -392,14 +397,18 @@ export default function MembersPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex items-center justify-end space-x-3">
-                              <select
-                                className="px-3 py-1.5 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                              <Select
                                 value={member.role}
-                                onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                                onValueChange={(value) => handleRoleChange(member.id, value)}
                               >
-                                <option value="admin">Admin</option>
-                                <option value="member">Member</option>
-                              </select>
+                                <SelectTrigger className="w-28">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="member">Member</SelectItem>
+                                </SelectContent>
+                              </Select>
                               
                               <TooltipProvider>
                                 <Tooltip>

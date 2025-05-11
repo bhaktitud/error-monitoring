@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { init, withErrorMonitoring } from '@bhaktixdev/error-monitor-sdk';
+import { init, withErrorMonitoring } from '@lograven/sdk';
 
 dotenv.config();
 

@@ -44,3 +44,9 @@ node_modules/
 /backend/.env
 !/backend/.env.example
 /backend/prisma/dev.db
+
+# SDK
+/sdk/node_modules/
+/sdk/dist/
+/sdk/prisma/dev.db
+/sdk/coverage/

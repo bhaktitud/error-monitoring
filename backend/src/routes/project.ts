@@ -35,7 +35,7 @@ router.post('/', auth, async (req: any, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.user.userId }, include: { plan: true } });
     if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
     const features = user.plan?.features as unknown as PlanFeatures || {};
-    const maxProjects = features.maxProjects ?? 1;
+    const maxProjects = features.projects ?? 1;
     const userProjectsCount = await prisma.project.count({ where: { ownerId: req.user.userId } });
     if (userProjectsCount >= maxProjects) {
       return res.status(403).json({ error: 'Batas maksimal project pada plan Anda telah tercapai.' });

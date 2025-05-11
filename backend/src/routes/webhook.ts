@@ -30,7 +30,7 @@ router.post('/projects/:id/webhooks', async (req, res) => {
     const project = await prisma.project.findUnique({ where: { id }, include: { owner: { include: { plan: true } } } });
     if (!project) return res.status(404).json({ error: 'Project tidak ditemukan' });
     const features = project.owner.plan?.features as unknown as PlanFeatures || {};
-    const maxWebhooks = features.maxWebhooks ?? 0;
+    const maxWebhooks = typeof features.webhook === 'number' ? features.webhook : (features.webhook === true ? 1 : 0);
     const webhooksCount = await prisma.webhook.count({ where: { projectId: id } });
     if (webhooksCount >= maxWebhooks) {
       return res.status(403).json({ error: 'Batas maksimal webhook pada plan Anda telah tercapai.' });

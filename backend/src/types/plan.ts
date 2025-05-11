@@ -1,9 +1,10 @@
 export interface PlanFeatures {
   eventsPerMonth: number;
-  maxProjects?: number;
+  projects?: number;
+  webhook?: boolean | number;
   maxTeamMembers?: number;
-  maxWebhooks?: number;
   retentionDays?: number;
+  alert?: string[];
   customDomain?: boolean;
   sso?: boolean;
   prioritySupport?: boolean;

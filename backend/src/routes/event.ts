@@ -85,6 +85,7 @@ router.post('/', async (req, res) => {
     }
     // Kirim webhook ke endpoint custom user
     const webhooks = await prisma.webhook.findMany({ where: { projectId: project.id, enabled: true } });
+    console.log(webhooks);
     for (const webhook of webhooks) {
       try {
         const payload = {

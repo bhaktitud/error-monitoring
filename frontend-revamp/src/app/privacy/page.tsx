@@ -4,18 +4,21 @@ import { FiArrowLeft } from 'react-icons/fi'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import PageTransition from '@/components/ui/page-transition'
+import { ThemeSwitcher } from '@/components/theme-switcher'
+import Footer from '@/components/ui/footer'
 
 export default function PrivacyPage() {
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
+      <div className="flex flex-col min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 flex-1">
+          <div className="flex justify-between items-center mb-8">
             <Link href="/">
               <Button variant="ghost" className="flex items-center gap-2">
                 <FiArrowLeft /> Kembali ke Beranda
               </Button>
             </Link>
+            <ThemeSwitcher />
           </div>
           
           <div className="prose prose-neutral dark:prose-invert max-w-4xl mx-auto">
@@ -130,7 +133,7 @@ export default function PrivacyPage() {
                 <li>Hak untuk menolak pemrosesan informasi Anda</li>
               </ul>
               <p>
-                Untuk menggunakan hak-hak ini, silakan hubungi kami menggunakan informasi kontak yang tercantum di bagian "Hubungi Kami" di bawah ini.
+                Untuk menggunakan hak-hak ini, silakan hubungi kami menggunakan informasi kontak yang tercantum di bagian &quot;Hubungi Kami&quot; di bawah ini.
               </p>
             </section>
             
@@ -161,6 +164,7 @@ export default function PrivacyPage() {
             
           </div>
         </div>
+        <Footer />
       </div>
     </PageTransition>
   )

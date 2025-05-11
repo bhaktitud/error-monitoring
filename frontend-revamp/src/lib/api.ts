@@ -99,6 +99,14 @@ export const AuthAPI = {
     });
   },
 
+  // Verify email
+  verifyEmail: async (token: string) => {
+    return apiRequest<{ success: boolean; message: string }>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
   // Resend verification email
   resendVerification: async (email: string) => {
     return apiRequest<{ success: boolean; message: string }>('/auth/resend-verification', {

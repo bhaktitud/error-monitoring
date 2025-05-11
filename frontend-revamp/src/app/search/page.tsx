@@ -129,7 +129,7 @@ export default function GlobalSearchPage() {
             <form onSubmit={handleFormSubmit} className="flex gap-2">
               <div className="relative flex-grow">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="text-gray-400 h-4 w-4" />
+                  <FiSearch className="text-muted-foreground h-4 w-4" />
                 </div>
                 <Input
                   type="text"
@@ -147,7 +147,7 @@ export default function GlobalSearchPage() {
         </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-md">
+          <div className="bg-destructive/20 border border-destructive text-destructive p-4 mb-6 rounded-md">
             {error}
           </div>
         )}
@@ -161,7 +161,7 @@ export default function GlobalSearchPage() {
 
           {loading ? (
             <div className="text-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
               <p>Mencari...</p>
             </div>
           ) : results.length > 0 ? (
@@ -176,17 +176,17 @@ export default function GlobalSearchPage() {
                       .map((result) => (
                         <div 
                           key={`${result.type}-${result.id}`}
-                          className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                          className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                           onClick={() => handleResultClick(result)}
                         >
                           <div className="flex items-start">
                             <div className="mr-3 mt-1">
-                              <FiPackage className="text-blue-500 h-5 w-5" />
+                              <FiPackage className="text-primary h-5 w-5" />
                             </div>
                             <div>
-                              <h3 className="font-medium text-blue-600">{result.title}</h3>
+                              <h3 className="font-medium text-primary">{result.title}</h3>
                               {result.subtitle && (
-                                <p className="text-sm text-gray-500">{result.subtitle}</p>
+                                <p className="text-sm text-muted-foreground">{result.subtitle}</p>
                               )}
                             </div>
                           </div>
@@ -206,13 +206,13 @@ export default function GlobalSearchPage() {
                       .map((result) => (
                         <div 
                           key={`${result.type}-${result.id}`}
-                          className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                          className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                           onClick={() => handleResultClick(result)}
                         >
                           <div className="flex flex-col">
-                            <h3 className="font-medium text-blue-600">{result.title}</h3>
+                            <h3 className="font-medium text-primary">{result.title}</h3>
                             {result.subtitle && (
-                              <p className="text-sm text-gray-700 mt-1">{result.subtitle}</p>
+                              <p className="text-sm text-foreground mt-1">{result.subtitle}</p>
                             )}
                           </div>
                         </div>
@@ -222,12 +222,12 @@ export default function GlobalSearchPage() {
               )}
             </div>
           ) : queryParam ? (
-            <div className="text-center p-12 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-                <FiSearch className="h-6 w-6 text-gray-500" />
+            <div className="text-center p-12 bg-muted rounded-lg border border-border">
+              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-card mb-4">
+                <FiSearch className="h-6 w-6 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-medium mb-2">Tidak ada hasil</h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Tidak ada data yang cocok dengan kata kunci &quot;{queryParam}&quot;.
               </p>
             </div>

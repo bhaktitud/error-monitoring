@@ -10,6 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Copyright } from 'lucide-react';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 interface Plan {
   id: string;
@@ -160,7 +161,8 @@ export default function LandingPage() {
         <div className="flex items-center">
           <span className="text-xl font-bold text-primary">LogRaven</span>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
           {!isClient ? (
             <div className="h-8 w-20 animate-pulse bg-muted rounded"></div>
           ) : isAuthenticated ? (
@@ -403,7 +405,7 @@ export default function LandingPage() {
       >
         <div className="max-w-3xl mx-auto text-center">
           <motion.h2 
-            className="text-3xl font-bold mb-4"
+            className="text-3xl font-bold mb-4 text-primary"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -412,7 +414,7 @@ export default function LandingPage() {
             Mulai Pantau Error Aplikasi Anda Hari Ini
           </motion.h2>
           <motion.p 
-            className="text-lg mb-8"
+            className="text-lg mb-8 text-primary/80"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -462,7 +464,7 @@ export default function LandingPage() {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm">
                   LR
                 </div>
-                <span className="text-lg font-semibold text-sidebar-primary-foreground">LogRaven</span>
+                <span className="text-lg font-semibold text-sidebar-primary">LogRaven</span>
               </div>
               <p className="text-sm">Monitor error aplikasi Anda dengan mudah</p>
             </motion.div>

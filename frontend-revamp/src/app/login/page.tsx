@@ -12,6 +12,7 @@ import { useCookies } from 'next-client-cookies';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/ui/page-transition';
 import Footer from '@/components/ui/footer';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -107,10 +108,13 @@ export default function LoginPage() {
           <div className="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
             <div className="absolute top-4 left-4">
               <Link href="/">
-                <Button variant="ghost" className="text-white hover:bg-white/10">
+                <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
                   <FiChevronLeft className="mr-2" /> Kembali
                 </Button>
               </Link>
+            </div>
+            <div className="absolute top-4 right-4">
+              <ThemeSwitcher />
             </div>
             <motion.div 
               className="w-full max-w-md"
@@ -118,10 +122,10 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
+              <Card className="border border-primary-foreground/10 shadow-lg backdrop-blur-sm bg-card/95">
                 <CardHeader>
                   <CardTitle>Verifikasi Email</CardTitle>
-                  <CardDescription className="text-white/80">Email Anda belum diverifikasi</CardDescription>
+                  <CardDescription className="text-primary-foreground/80">Email Anda belum diverifikasi</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -207,10 +211,13 @@ export default function LoginPage() {
         <div className="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
           <div className="absolute top-4 left-4">
             <Link href="/">
-              <Button variant="ghost" className="text-white hover:bg-white/10">
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
                 <FiChevronLeft className="mr-2" /> Kembali
               </Button>
             </Link>
+          </div>
+          <div className="absolute top-4 right-4">
+            <ThemeSwitcher />
           </div>
           <motion.div 
             className="w-full max-w-md"
@@ -219,11 +226,11 @@ export default function LoginPage() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
-              <p className="text-white/80">Masuk ke akun Anda</p>
+              <h1 className="text-2xl font-bold text-primary-foreground mb-2">LogRaven</h1>
+              <p className="text-primary-foreground/80">Masuk ke akun Anda</p>
             </div>
 
-            <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
+            <Card className="border border-primary-foreground/10 shadow-lg backdrop-blur-sm bg-card/95">
               <form onSubmit={handleSubmit}>
                 <CardHeader>
                   <CardTitle>Login</CardTitle>

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { 
   FiHome, FiAlertCircle, FiSettings, FiLink, FiUsers, 
   FiLogOut, FiPieChart, FiBell,
-  FiClock, FiCode  
+  FiClock  
 } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
 import { logout } from '@/lib/auth';

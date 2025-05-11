@@ -5,6 +5,8 @@ import { Header } from '@/components/ui/header';
 import Footer from '@/components/ui/footer';
 import PageTransition from '@/components/ui/page-transition';
 
+// Note: Metadata harus di-export dari file terpisah karena ini adalah Client Component
+
 interface AccountLayoutProps {
   children: ReactNode;
 }

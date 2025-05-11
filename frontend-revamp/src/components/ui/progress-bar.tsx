@@ -7,9 +7,9 @@ interface ProgressBarProps {
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({ percent, total, quota }) => {
-  let barColor = 'bg-green-500';
-  if (percent >= 80 && percent < 100) barColor = 'bg-yellow-500';
-  if (percent >= 100) barColor = 'bg-red-500';
+  let barColor = 'bg-success';
+  if (percent >= 80 && percent < 100) barColor = 'bg-warning';
+  if (percent >= 100) barColor = 'bg-destructive';
 
   return (
     <div className="w-full">

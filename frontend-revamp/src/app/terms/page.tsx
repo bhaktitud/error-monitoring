@@ -4,18 +4,21 @@ import { FiArrowLeft } from 'react-icons/fi'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import PageTransition from '@/components/ui/page-transition'
+import { ThemeSwitcher } from '@/components/theme-switcher'
+import Footer from '@/components/ui/footer'
 
 export default function TermsPage() {
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
+      <div className="flex flex-col min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 flex-1">
+          <div className="flex justify-between items-center mb-8">
             <Link href="/">
               <Button variant="ghost" className="flex items-center gap-2">
                 <FiArrowLeft /> Kembali ke Beranda
               </Button>
             </Link>
+            <ThemeSwitcher />
           </div>
           
           <div className="prose prose-neutral dark:prose-invert max-w-4xl mx-auto">
@@ -30,7 +33,7 @@ export default function TermsPage() {
               <p>
                 Selamat datang di LogRaven. Syarat dan Ketentuan ini mengatur penggunaan dan akses 
                 Anda ke layanan LogRaven, termasuk website, API, dan fitur lainnya 
-                (secara kolektif disebut sebagai "Layanan").
+                (secara kolektif disebut sebagai &quot;Layanan&quot;).
               </p>
               <p>
                 Dengan mengakses atau menggunakan Layanan kami, Anda menyetujui bahwa Anda telah membaca,
@@ -42,10 +45,10 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">2. Definisi</h2>
               <ul className="list-disc pl-6 mb-4">
-                <li><strong>"Kami"</strong> atau <strong>"LogRaven"</strong> mengacu pada perusahaan LogRaven, termasuk karyawan, direktur, pejabat, dan agen.</li>
-                <li><strong>"Anda"</strong> atau <strong>"Pengguna"</strong> mengacu pada individu atau entitas yang mengakses atau menggunakan Layanan.</li>
-                <li><strong>"Konten"</strong> mengacu pada semua informasi, data, teks, gambar, atau materi lain yang diakses melalui Layanan.</li>
-                <li><strong>"Data Pengguna"</strong> mengacu pada data yang dikirimkan ke sistem kami oleh aplikasi Anda untuk tujuan monitoring error.</li>
+                <li><strong>&quot;Kami&quot;</strong> atau <strong>&quot;LogRaven&quot;</strong> mengacu pada perusahaan LogRaven, termasuk karyawan, direktur, pejabat, dan agen.</li>
+                <li><strong>&quot;Anda&quot;</strong> atau <strong>&quot;Pengguna&quot;</strong> mengacu pada individu atau entitas yang mengakses atau menggunakan Layanan.</li>
+                <li><strong>&quot;Konten&quot;</strong> mengacu pada semua informasi, data, teks, gambar, atau materi lain yang diakses melalui Layanan.</li>
+                <li><strong>&quot;Data Pengguna&quot;</strong> mengacu pada data yang dikirimkan ke sistem kami oleh aplikasi Anda untuk tujuan monitoring error.</li>
               </ul>
             </section>
             
@@ -106,7 +109,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">9. Disclaimer dan Batasan Tanggung Jawab</h2>
               <p>
-                LAYANAN DISEDIAKAN "SEBAGAIMANA ADANYA" DAN "SEBAGAIMANA TERSEDIA" TANPA JAMINAN APA PUN, BAIK TERSURAT MAUPUN TERSIRAT. KAMI TIDAK MENJAMIN BAHWA LAYANAN AKAN SELALU AMAN, BEBAS KESALAHAN, ATAU TERSEDIA SETIAP SAAT.
+                LAYANAN DISEDIAKAN &quot;SEBAGAIMANA ADANYA&quot; DAN &quot;SEBAGAIMANA TERSEDIA&quot; TANPA JAMINAN APA PUN, BAIK TERSURAT MAUPUN TERSIRAT. KAMI TIDAK MENJAMIN BAHWA LAYANAN AKAN SELALU AMAN, BEBAS KESALAHAN, ATAU TERSEDIA SETIAP SAAT.
               </p>
               <p>
                 DALAM KEADAAN APA PUN, KAMI TIDAK BERTANGGUNG JAWAB ATAS KERUGIAN TIDAK LANGSUNG, INSIDENTAL, KHUSUS, KONSEKUENSIAL, ATAU KERUGIAN HUKUMAN YANG TIMBUL DARI PENGGUNAAN ANDA ATAS LAYANAN.
@@ -136,6 +139,7 @@ export default function TermsPage() {
             
           </div>
         </div>
+        <Footer />
       </div>
     </PageTransition>
   )

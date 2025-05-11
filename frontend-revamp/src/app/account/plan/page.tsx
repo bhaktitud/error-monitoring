@@ -34,7 +34,7 @@ const featureIcon = (key: string, value: any) => {
     case 'retentionDays': return <FiClock className="inline mr-1" />;
     case 'alert': return <FiMail className="inline mr-1" />;
     case 'prioritySupport': return <FiZap className="inline mr-1" />;
-    default: return value === true ? <FiCheck className="inline mr-1 text-green-500" /> : value === false ? <FiX className="inline mr-1 text-red-500" /> : null;
+    default: return value === true ? <FiCheck className="inline mr-1 text-success" /> : value === false ? <FiX className="inline mr-1 text-destructive" /> : null;
   }
 };
 

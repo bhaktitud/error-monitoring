@@ -8,11 +8,11 @@ import { FiAlertCircle, FiCheck, FiChevronLeft } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/ui/page-transition';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [token, setToken] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -21,7 +21,6 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const tokenParam = searchParams.get('token');
     if (tokenParam) {
-      setToken(tokenParam);
       verifyEmail(tokenParam);
     } else {
       setError('Token verifikasi tidak valid atau telah kedaluwarsa.');
@@ -58,10 +57,13 @@ export default function VerifyEmailPage() {
       <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
         <div className="absolute top-4 left-4">
           <Link href="/">
-            <Button variant="ghost" className="text-white hover:bg-white/10">
+            <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10">
               <FiChevronLeft className="mr-2" /> Kembali
             </Button>
           </Link>
+        </div>
+        <div className="absolute top-4 right-4">
+          <ThemeSwitcher />
         </div>
         <motion.div 
           className="w-full max-w-md"
@@ -70,11 +72,11 @@ export default function VerifyEmailPage() {
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
-            <p className="text-white/80">Verifikasi Email Anda</p>
+            <h1 className="text-2xl font-bold text-primary-foreground mb-2">LogRaven</h1>
+            <p className="text-primary-foreground/80">Verifikasi Email Anda</p>
           </div>
 
-          <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
+          <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-primary-foreground/10 text-center">
             {isVerifying ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
@@ -106,7 +108,7 @@ export default function VerifyEmailPage() {
                   </div>
                 )}
                 <p className="mb-6 text-muted-foreground">
-                  Jika Anda mengalami masalah, silakan kembali ke halaman login dan gunakan opsi "Kirim Ulang Email Verifikasi".
+                  Jika Anda mengalami masalah, silakan kembali ke halaman login dan gunakan opsi &quot;Kirim Ulang Email Verifikasi&quot;.
                 </p>
                 <div className="flex flex-col space-y-3">
                   <Link href="/login" className="w-full">

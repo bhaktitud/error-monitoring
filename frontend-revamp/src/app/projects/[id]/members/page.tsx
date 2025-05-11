@@ -7,14 +7,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProjectsAPI } from '@/lib/api';
-import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX, FiCheck, FiAlertCircle, FiAlertTriangle } from 'react-icons/fi';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Member {
   id: string;
@@ -56,6 +58,14 @@ export default function MembersPage() {
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [deleteInviteDialogOpen, setDeleteInviteDialogOpen] = useState(false);
+  const [inviteToDelete, setInviteToDelete] = useState<{id: string, email: string} | null>(null);
+  const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<{id: string, email: string} | null>(null);
+  const [resendInviteDialogOpen, setResendInviteDialogOpen] = useState(false);
+  const [inviteToResend, setInviteToResend] = useState<{id: string, email: string} | null>(null);
+  const [resendingInvite, setResendingInvite] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -139,13 +149,17 @@ export default function MembersPage() {
   };
 
   const handleRemoveMember = async (memberId: string, email: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus ${email} dari proyek ini?`)) {
-      return;
-    }
+    setMemberToDelete({ id: memberId, email });
+    setDeleteMemberDialogOpen(true);
+  };
+  
+  const confirmRemoveMember = async () => {
+    if (!memberToDelete) return;
     
     try {
-      await ProjectsAPI.removeMember(projectId, memberId);
-      setMembers(prev => prev.filter(member => member.id !== memberId));
+      await ProjectsAPI.removeMember(projectId, memberToDelete.id);
+      setMembers(prev => prev.filter(member => member.id !== memberToDelete.id));
+      setDeleteMemberDialogOpen(false);
     } catch (err) {
       console.error('Error removing member:', err);
       alert('Gagal menghapus anggota. Silakan coba lagi.');
@@ -153,13 +167,17 @@ export default function MembersPage() {
   };
   
   const handleCancelInvitation = async (inviteId: string, email: string) => {
-    if (!confirm(`Apakah Anda yakin ingin membatalkan undangan untuk ${email}?`)) {
-      return;
-    }
+    setInviteToDelete({ id: inviteId, email });
+    setDeleteInviteDialogOpen(true);
+  };
+  
+  const confirmCancelInvitation = async () => {
+    if (!inviteToDelete) return;
     
     try {
-      await ProjectsAPI.cancelInvitation(projectId, inviteId);
-      setInvitations(prev => prev.filter(invite => invite.id !== inviteId));
+      await ProjectsAPI.cancelInvitation(projectId, inviteToDelete.id);
+      setInvitations(prev => prev.filter(invite => invite.id !== inviteToDelete.id));
+      setDeleteInviteDialogOpen(false);
     } catch (err) {
       console.error('Error cancelling invitation:', err);
       alert('Gagal membatalkan undangan. Silakan coba lagi.');
@@ -167,12 +185,21 @@ export default function MembersPage() {
   };
   
   const handleResendInvitation = async (inviteId: string, email: string) => {
+    setInviteToResend({ id: inviteId, email });
+    setResendInviteDialogOpen(true);
+  };
+  
+  const confirmResendInvitation = async () => {
+    if (!inviteToResend) return;
+    
     try {
-      const { invite } = await ProjectsAPI.resendInvitation(projectId, inviteId);
+      setConfirmLoading(true);
+      setResendingInvite(inviteToResend.id);
+      const { invite } = await ProjectsAPI.resendInvitation(projectId, inviteToResend.id);
       
       // Update undangan dalam daftar
       setInvitations(prev => prev.map(inviteItem => 
-        inviteItem.id === inviteId 
+        inviteItem.id === inviteToResend.id 
           ? { 
               ...inviteItem, 
               expiresAt: invite.expiresAt 
@@ -180,10 +207,31 @@ export default function MembersPage() {
           : inviteItem
       ));
       
-      alert(`Undangan berhasil dikirim ulang ke ${email}`);
+      setResendInviteDialogOpen(false);
+      
+      // Tampilkan toast sukses
+      toast.success(`Undangan berhasil dikirim ulang ke ${inviteToResend.email}`, {
+        description: "Email undangan telah dikirim ke alamat penerima",
+        duration: 4000,
+      });
+      
+      // Tampilkan efek loading untuk beberapa detik
+      setTimeout(() => {
+        setResendingInvite(null);
+        setConfirmLoading(false);
+      }, 1500);
     } catch (err) {
       console.error('Error resending invitation:', err);
-      alert('Gagal mengirim ulang undangan. Silakan coba lagi.');
+      setResendInviteDialogOpen(false);
+      
+      // Tampilkan toast error
+      toast.error('Gagal mengirim ulang undangan', {
+        description: 'Terjadi kesalahan saat mengirim email undangan. Silakan coba lagi.',
+        duration: 5000,
+      });
+      
+      setResendingInvite(null);
+      setConfirmLoading(false);
     }
   };
   
@@ -353,24 +401,24 @@ export default function MembersPage() {
             ) : (
               <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-border">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted">
+                        <TableHead className="w-[50%] px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Anggota
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="w-[20%] px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Role
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="w-[30%] px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Aksi
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-card divide-y divide-border">
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="bg-card divide-y divide-border">
                       {members.map((member) => (
-                        <tr key={member.id} className="hover:bg-muted/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                        <TableRow key={member.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <Avatar className="h-10 w-10 cursor-pointer" onClick={() => setSelectedMember(member)}>
                                 {member.user.avatar ? (
@@ -389,13 +437,13 @@ export default function MembersPage() {
                                 </div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <Badge variant={member.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
                               {member.role === 'admin' ? 'Admin' : 'Member'}
                             </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex items-center justify-end space-x-3">
                               <Select
                                 value={member.role}
@@ -428,11 +476,11 @@ export default function MembersPage() {
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
@@ -461,30 +509,30 @@ export default function MembersPage() {
             ) : (
               <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-border">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted">
+                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Email
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Role
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Status
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Kadaluarsa
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Aksi
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-card divide-y divide-border">
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="bg-card divide-y divide-border">
                       {invitations.map(invite => (
-                        <tr key={invite.id} className="hover:bg-muted/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                        <TableRow key={invite.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <Avatar className="h-8 w-8 mr-3">
                                 <AvatarFallback className={`${
@@ -495,24 +543,24 @@ export default function MembersPage() {
                               </Avatar>
                               <div className="text-sm font-medium text-foreground">{invite.email}</div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <Badge variant={invite.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
                               {invite.role === 'admin' ? 'Admin' : 'Member'}
                             </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-foreground">
                               Diundang oleh {invite.inviter.name || invite.inviter.email}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {formatDate(invite.createdAt)}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-foreground">{formatDate(invite.expiresAt)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex items-center justify-end space-x-2">
                               <TooltipProvider>
                                 <Tooltip>
@@ -522,8 +570,13 @@ export default function MembersPage() {
                                       size="sm"
                                       onClick={() => handleResendInvitation(invite.id, invite.email)}
                                       className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                      disabled={resendingInvite === invite.id}
                                     >
-                                      <FiMail className="h-4 w-4" />
+                                      {resendingInvite === invite.id ? (
+                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                                      ) : (
+                                        <FiMail className="h-4 w-4" />
+                                      )}
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -550,11 +603,11 @@ export default function MembersPage() {
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
@@ -585,6 +638,115 @@ export default function MembersPage() {
           <DialogClose asChild>
             <Button variant="outline" className="w-full mt-4">Tutup</Button>
           </DialogClose>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Hapus Undangan Dialog */}
+      <Dialog open={deleteInviteDialogOpen} onOpenChange={setDeleteInviteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Batalkan Undangan</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin membatalkan undangan untuk {inviteToDelete?.email}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center p-3 bg-destructive/10 rounded-md mb-2">
+            <FiAlertTriangle className="text-destructive mr-2 h-5 w-5 flex-shrink-0" />
+            <p className="text-sm text-destructive">Tindakan ini tidak dapat dibatalkan.</p>
+          </div>
+          <DialogFooter className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteInviteDialogOpen(false)}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmCancelInvitation}
+              className="flex-1"
+            >
+              Ya, Batalkan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Hapus Anggota Dialog */}
+      <Dialog open={deleteMemberDialogOpen} onOpenChange={setDeleteMemberDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hapus Anggota</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus {memberToDelete?.email} dari proyek ini?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center p-3 bg-destructive/10 rounded-md mb-2">
+            <FiAlertTriangle className="text-destructive mr-2 h-5 w-5 flex-shrink-0" />
+            <p className="text-sm text-destructive">Tindakan ini tidak dapat dibatalkan.</p>
+          </div>
+          <DialogFooter className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteMemberDialogOpen(false)}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmRemoveMember}
+              className="flex-1"
+            >
+              Ya, Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Kirim Ulang Undangan Dialog */}
+      <Dialog open={resendInviteDialogOpen} onOpenChange={(open) => {
+        // Jangan tutup dialog saat proses loading
+        if (confirmLoading) return;
+        setResendInviteDialogOpen(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kirim Ulang Undangan</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin mengirim ulang undangan kepada {inviteToResend?.email}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md mb-2 border border-blue-200 dark:border-blue-800">
+            <FiMail className="text-primary mr-2 h-5 w-5 flex-shrink-0" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">Email undangan baru akan dikirim dengan masa berlaku 24 jam.</p>
+          </div>
+          <DialogFooter className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setResendInviteDialogOpen(false)}
+              className="flex-1"
+              disabled={confirmLoading}
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={confirmResendInvitation}
+              className="flex-1"
+              disabled={confirmLoading}
+            >
+              {confirmLoading ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-background border-t-transparent rounded-full mr-2"></div>
+                  Mengirim...
+                </>
+              ) : (
+                'Kirim Ulang'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

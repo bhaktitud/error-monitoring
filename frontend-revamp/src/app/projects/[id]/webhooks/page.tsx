@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FiPlus, FiTrash2, FiLink, FiCheck, FiX } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiLink, FiCheck, FiX, FiArrowLeft } from 'react-icons/fi';
 import { WebhooksAPI } from '@/lib/api';
 import Link from 'next/link';
 
@@ -19,6 +19,8 @@ interface Webhook {
 }
 
 export default function WebhooksPage() {
+
+  const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -138,14 +140,24 @@ export default function WebhooksPage() {
   return (
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push(`/projects/${projectId}`)}
+              className="mr-4"
+            >
+              <FiArrowLeft className="mr-2 h-4 w-4" />
+              Kembali
+            </Button>
+          </div>
+        {/* <div className="flex justify-between items-center mb-6">
           {!showAddForm && (
             <Button onClick={() => setShowAddForm(true)}>
               <FiPlus className="mr-2 h-4 w-4" />
               Tambah Webhook
             </Button>
           )}
-        </div>
+        </div> */}
 
         {error && (
           <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">

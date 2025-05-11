@@ -147,7 +147,7 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
   return (
     <div className="w-64 bg-sidebar h-full overflow-y-auto border-r border-sidebar-border flex flex-col">
       <div className="py-4 px-4 border-b border-sidebar-border">
-        <Link href="/projects" className="flex items-center">
+        <Link href="/" className="flex items-center">
           <div className="w-8 h-8 bg-sidebar-primary rounded mr-2 flex items-center justify-center text-sidebar-primary-foreground font-bold">
             LR
           </div>

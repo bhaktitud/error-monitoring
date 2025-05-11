@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiUserPlus, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import { FiUserPlus, FiAlertCircle, FiCheck, FiChevronLeft } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
 
 export default function RegisterPage() {
@@ -87,9 +87,16 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+        <div className="absolute top-4 left-4">
+          <Link href="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10">
+              <FiChevronLeft className="mr-2" /> Kembali
+            </Button>
+          </Link>
+        </div>
         <div className="w-full max-w-md">
-          <div className="bg-card p-8 rounded-lg shadow-sm border border-border text-center">
+          <div className="bg-card/95 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/10 text-center">
             <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
               <FiCheck className="text-primary text-xl" />
             </div>
@@ -123,16 +130,23 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+      <div className="absolute top-4 left-4">
+        <Link href="/">
+          <Button variant="ghost" className="text-white hover:bg-white/10">
+            <FiChevronLeft className="mr-2" /> Kembali
+          </Button>
+        </Link>
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Error Monitor</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
+          <p className="text-white/80">
             {isInvitationRegister ? 'Buat akun untuk bergabung ke project' : 'Buat akun baru'}
           </p>
         </div>
 
-        <Card>
+        <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
           <form onSubmit={handleSubmit}>
             <CardHeader>
               <CardTitle>
@@ -141,7 +155,7 @@ export default function RegisterPage() {
               <CardDescription>
                 {isInvitationRegister 
                   ? 'Lengkapi data berikut untuk menerima undangan project'
-                  : 'Daftar untuk menggunakan layanan error monitoring'
+                  : 'Daftar untuk menggunakan layanan LogRaven'
                 }
               </CardDescription>
             </CardHeader>

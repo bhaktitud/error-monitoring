@@ -103,8 +103,8 @@ router.post('/register', async (req, res) => {
 
     // Import fungsi token
     const { generateToken, getVerificationTokenExpiry } = require('../utils/token');
-    // Import template email
-    const { getVerificationEmailTemplate } = require('../utils/email-templates');
+    // Import template email (dari lokasi baru)
+    const { getVerificationEmailTemplate } = require('../templates/email');
     
     // Buat token verifikasi
     const verificationToken = generateToken();
@@ -166,7 +166,7 @@ router.post('/register', async (req, res) => {
     // Kirim email verifikasi
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Error Monitoring <onboarding@resend.dev>',
+        from: 'LogRaven <onboarding@resend.dev>',
         to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
         subject: 'Verifikasi Email Anda',
         html: emailHtml
@@ -473,9 +473,9 @@ router.post('/test-email', auth, async (req: any, res) => {
     
     // Kirim email menggunakan Resend
     const { data, error } = await resend.emails.send({
-      from: 'Error Monitoring <onboarding@resend.dev>',
+      from: 'LogRaven <onboarding@resend.dev>',
       to: "delivered@resend.dev", /* for testing we used delivered@resend.dev , later in production we will use user.email,*/
-      subject: 'Test Email dari Error Monitoring System',
+      subject: 'Test Email dari LogRaven',
       html: html
     });
     
@@ -505,8 +505,8 @@ router.get('/verify-email', async (req, res) => {
   try {
     // Import fungsi token
     const { isTokenValid } = require('../utils/token');
-    // Import template email
-    const { getWelcomeEmailTemplate } = require('../utils/email-templates');
+    // Import template email (dari lokasi baru)
+    const { getWelcomeEmailTemplate } = require('../templates/email');
     
     // Cari user dengan token verifikasi yang sesuai
     const user = await prisma.user.findFirst({
@@ -540,9 +540,9 @@ router.get('/verify-email', async (req, res) => {
       const emailHtml = getWelcomeEmailTemplate(userName);
       
       const { data, error } = await resend.emails.send({
-        from: 'Error Monitoring <onboarding@resend.dev>',
+        from: 'LogRaven <onboarding@resend.dev>',
         to: process.env.NODE_ENV === 'production' ? user.email : 'delivered@resend.dev',
-        subject: 'Selamat Datang di Error Monitoring',
+        subject: 'Selamat Datang di LogRaven',
         html: emailHtml
       });
       
@@ -578,8 +578,8 @@ router.post('/resend-verification', async (req, res) => {
   try {
     // Import fungsi token
     const { generateToken, getVerificationTokenExpiry } = require('../utils/token');
-    // Import template email
-    const { getVerificationEmailTemplate } = require('../utils/email-templates');
+    // Import template email (dari lokasi baru)
+    const { getVerificationEmailTemplate } = require('../templates/email');
     
     // Cari user berdasarkan email
     const user = await prisma.user.findUnique({
@@ -618,7 +618,7 @@ router.post('/resend-verification', async (req, res) => {
     
     // Kirim email verifikasi
     const { data, error } = await resend.emails.send({
-      from: 'Error Monitoring <onboarding@resend.dev>',
+      from: 'LogRaven <onboarding@resend.dev>',
       to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
       subject: 'Verifikasi Email Anda',
       html: emailHtml
@@ -649,7 +649,7 @@ router.post('/forgot-password', async (req, res) => {
   try {
     // Import fungsi token dan template email
     const { generateToken, getResetTokenExpiry } = require('../utils/token');
-    const { getResetPasswordEmailTemplate } = require('../utils/email-templates');
+    const { getResetPasswordEmailTemplate } = require('../templates/email');
     
     // Cari user berdasarkan email
     const user = await prisma.user.findUnique({
@@ -694,7 +694,7 @@ router.post('/forgot-password', async (req, res) => {
     
     // Kirim email reset password
     const { data, error } = await resend.emails.send({
-      from: 'Error Monitoring <onboarding@resend.dev>',
+      from: 'LogRaven <onboarding@resend.dev>',
       to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
       subject: 'Reset Password Anda',
       html: emailHtml
@@ -730,7 +730,7 @@ router.post('/reset-password', async (req, res) => {
   try {
     // Import fungsi token dan template email
     const { isTokenValid } = require('../utils/token');
-    const { getPasswordChangedEmailTemplate } = require('../utils/email-templates');
+    const { getPasswordChangedEmailTemplate } = require('../templates/email');
     
     // Cari user dengan token reset password yang sesuai
     const user = await prisma.user.findFirst({
@@ -767,7 +767,7 @@ router.post('/reset-password', async (req, res) => {
       const emailHtml = getPasswordChangedEmailTemplate(userName);
       
       const { data, error } = await resend.emails.send({
-        from: 'Error Monitoring <onboarding@resend.dev>',
+        from: 'LogRaven <onboarding@resend.dev>',
         to: process.env.NODE_ENV === 'production' ? user.email : 'delivered@resend.dev',
         subject: 'Password Anda Telah Diubah',
         html: emailHtml

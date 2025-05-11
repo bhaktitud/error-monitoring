@@ -231,7 +231,7 @@ router.post('/notifications/projects/:id/test', authMiddleware, async (req, res)
       
       // Kirim email menggunakan Resend
       const { data, error } = await resend.emails.send({
-        from: 'Error Monitoring <noreply@errormonitoring.domain>',
+        from: 'LogRaven <noreply@lograven.com>',
         to: project.owner.email,
         subject: `[Test] Notifikasi Error dari Project ${project.name}`,
         html: html
@@ -331,7 +331,7 @@ router.post('/projects/:id/notifications/test', authMiddleware, async (req, res)
       
       // Kirim email menggunakan Resend
       const { data, error } = await resend.emails.send({
-        from: 'Error Monitoring <noreply@errormonitoring.domain>',
+        from: 'LogRaven <noreply@lograven.com>',
         to: project.owner.email,
         subject: `[Test] Notifikasi Error dari Project ${project.name}`,
         html: html

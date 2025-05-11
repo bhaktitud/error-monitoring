@@ -151,7 +151,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="flex justify-between items-center px-6 py-4 lg:px-8 bg-background border-b border-border">
         <div className="flex items-center">
-          <span className="text-xl font-bold text-primary">Error Monitor</span>
+          <span className="text-xl font-bold text-primary">LogRaven</span>
         </div>
         <div>
           {!isClient ? (
@@ -222,7 +222,7 @@ export default function LandingPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <FiAlertTriangle className="text-primary text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Error Monitoring</h3>
+              <h3 className="text-xl font-semibold mb-2">Log & Error Tracking</h3>
               <p className="text-muted-foreground">
                 Deteksi dan lacak error secara real-time dari aplikasi Anda. Dapatkan 
                 informasi lengkap tentang error termasuk stack trace dan konteks.
@@ -349,11 +349,11 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <span className="text-lg font-semibold text-sidebar-primary-foreground">Error Monitor</span>
+              <span className="text-lg font-semibold text-sidebar-primary-foreground">LogRaven</span>
               <p className="text-sm mt-1">Monitor error aplikasi Anda dengan mudah</p>
             </div>
             <div className="text-sm">
-              &copy; {new Date().getFullYear()} Error Monitor. All rights reserved.
+              &copy; {new Date().getFullYear()} LogRaven. All rights reserved.
             </div>
           </div>
         </div>

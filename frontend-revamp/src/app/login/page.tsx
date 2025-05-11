@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FiLogIn, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import { FiLogIn, FiAlertCircle, FiCheck, FiChevronLeft } from 'react-icons/fi';
 import { AuthAPI } from '@/lib/api';
 import { login } from '@/lib/auth';
 import { useCookies } from 'next-client-cookies';
@@ -99,12 +99,19 @@ export default function LoginPage() {
   // Tampilkan halaman verifikasi jika user belum verifikasi email
   if (needVerification) {
     return (
-      <div className="flex min-h-screen bg-muted items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+        <div className="absolute top-4 left-4">
+          <Link href="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10">
+              <FiChevronLeft className="mr-2" /> Kembali
+            </Button>
+          </Link>
+        </div>
         <div className="w-full max-w-md">
-          <Card>
+          <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
             <CardHeader>
               <CardTitle>Verifikasi Email</CardTitle>
-              <CardDescription>Email Anda belum diverifikasi</CardDescription>
+              <CardDescription className="text-white/80">Email Anda belum diverifikasi</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -181,19 +188,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-muted items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-[#0B2447] via-[#19376D] to-[#576CBC]">
+      <div className="absolute top-4 left-4">
+        <Link href="/">
+          <Button variant="ghost" className="text-white hover:bg-white/10">
+            <FiChevronLeft className="mr-2" /> Kembali
+          </Button>
+        </Link>
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Error Monitor</h1>
-          <p className="text-muted-foreground">Masuk ke akun Anda</p>
+          <h1 className="text-2xl font-bold text-white mb-2">LogRaven</h1>
+          <p className="text-white/80">Masuk ke akun Anda</p>
         </div>
 
-        <Card>
+        <Card className="border border-white/10 shadow-lg backdrop-blur-sm bg-card/95">
           <form onSubmit={handleSubmit}>
             <CardHeader>
               <CardTitle>Login</CardTitle>
               <CardDescription>
-                Masuk untuk mengakses dashboard error monitoring
+                Masuk untuk mengakses dashboard LogRaven
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -1,6 +1,6 @@
-# UI Dashboard Error Monitoring
+# UI Dashboard LogRaven
 
-UI Dashboard untuk aplikasi Error Monitoring berdasarkan dokumentasi API di `/backend/API_DOCUMENTATION.md`. UI ini terinspirasi oleh Sentry dan dibuat menggunakan Next.js dan Tailwind CSS.
+UI Dashboard untuk aplikasi LogRaven berdasarkan dokumentasi API di `/backend/API_DOCUMENTATION.md`. UI ini terinspirasi oleh Sentry dan dibuat menggunakan Next.js dan Tailwind CSS.
 
 ## Struktur UI
 

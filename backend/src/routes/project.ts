@@ -123,14 +123,13 @@ router.post('/:id/members/invite', auth, async (req: any, res) => {
       return res.status(404).json({ error: 'Project tidak ditemukan' });
     }
     
-    // Import fungsi token
-    const { generateToken, getVerificationTokenExpiry } = require('../utils/token');
-    // Import template email
-    const { getProjectInviteEmailTemplate } = require('../utils/email-templates');
+    // Import fungsi token dan template email
+    const { generateToken, getInviteTokenExpiry } = require('../utils/token');
+    const { getProjectInviteEmailTemplate } = require('../templates/email');
     
     // Buat token invite
     const inviteToken = generateToken();
-    const inviteTokenExpiry = getVerificationTokenExpiry(); // berlaku 24 jam
+    const inviteTokenExpiry = getInviteTokenExpiry(); // berlaku 24 jam
     
     // Cari user by email
     let user = await prisma.user.findUnique({ where: { email } });
@@ -181,7 +180,7 @@ router.post('/:id/members/invite', auth, async (req: any, res) => {
       // Hanya kirim email jika Resend API Key ada
       if (process.env.RESEND_API_KEY) {
         const { data, error } = await resend.emails.send({
-          from: 'Error Monitoring <onboarding@resend.dev>',
+          from: 'LogRaven <onboarding@resend.dev>',
           to: process.env.NODE_ENV === 'production' ? email : 'delivered@resend.dev',
           subject: `Undangan ke Project ${projectName}`,
           html: emailHtml
@@ -426,7 +425,7 @@ router.post('/:id/invites/:inviteId/resend', auth, async (req: any, res) => {
     // Import fungsi token
     const { getVerificationTokenExpiry } = require('../utils/token');
     // Import template email
-    const { getProjectInviteEmailTemplate } = require('../utils/email-templates');
+    const { getProjectInviteEmailTemplate } = require('../templates/email');
     
     // Update expiry time (perpanjang 24 jam dari sekarang)
     const newExpiryTime = getVerificationTokenExpiry();
@@ -465,7 +464,7 @@ router.post('/:id/invites/:inviteId/resend', auth, async (req: any, res) => {
       // Hanya kirim email jika Resend API Key ada
       if (process.env.RESEND_API_KEY) {
         const { data, error } = await resend.emails.send({
-          from: 'Error Monitoring <onboarding@resend.dev>',
+          from: 'LogRaven <onboarding@resend.dev>',
           to: process.env.NODE_ENV === 'production' ? invite.email : 'delivered@resend.dev',
           subject: `Pengingat: Undangan ke Project ${projectName}`,
           html: emailHtml

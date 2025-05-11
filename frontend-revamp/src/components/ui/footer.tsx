@@ -32,6 +32,21 @@ export default function Footer() {
                   Dashboard
                 </Link>
               </li>
+              <li>
+                <Link href="/pricing" className="hover:text-sidebar-primary transition-colors">
+                  Harga
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-sidebar-primary transition-colors">
+                  Syarat & Ketentuan
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-sidebar-primary transition-colors">
+                  Kebijakan Privasi
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -133,10 +148,10 @@ export default function Footer() {
             <Copyright className="h-4 w-4 mr-1" /> {currentYear} LogRaven. All rights reserved.
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-4">
-            <Link href="#" className="hover:text-sidebar-primary transition-colors">
+            <Link href="/privacy" className="hover:text-sidebar-primary transition-colors">
               Kebijakan Privasi
             </Link>
-            <Link href="#" className="hover:text-sidebar-primary transition-colors">
+            <Link href="/terms" className="hover:text-sidebar-primary transition-colors">
               Syarat & Ketentuan
             </Link>
           </div>

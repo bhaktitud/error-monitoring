@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EventDetail } from '@/components/ui/event-detail';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy } from 'react-icons/fi';
 import { GroupsAPI, ProjectsAPI } from '@/lib/api';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -20,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface UserContext {
   [key: string]: unknown;
@@ -177,6 +177,8 @@ export default function ErrorGroupPage() {
         // Set initially selected member if error is assigned
         if (errorGroup?.assignedTo) {
           setSelectedMember(errorGroup.assignedTo);
+        } else {
+          setSelectedMember('unassigned');
         }
 
         // Cek apakah user saat ini adalah admin atau pemilik
@@ -220,9 +222,11 @@ export default function ErrorGroupPage() {
   const handleAssign = async () => {
     try {
       setSubmittingAssign(true);
-      await GroupsAPI.assignGroup(groupId, selectedMember);
+      // Jika nilai 'unassigned', kirim empty string ke API
+      const memberIdToSend = selectedMember === 'unassigned' ? '' : selectedMember;
+      await GroupsAPI.assignGroup(groupId, memberIdToSend);
       
-      setErrorGroup(prev => prev ? { ...prev, assignedTo: selectedMember } : null);
+      setErrorGroup(prev => prev ? { ...prev, assignedTo: memberIdToSend } : null);
       setError(null);
     } catch (err) {
       console.error('Error assigning error group:', err);
@@ -256,9 +260,9 @@ export default function ErrorGroupPage() {
   if (loading) {
     return (
       <DashboardLayout projectId={projectId}>
-        <div className="text-center p-12">
-          <Skeleton className="h-8 w-8 rounded-full mx-auto mb-4" />
-          <Skeleton className="h-4 w-48 mx-auto" />
+        <div className="flex items-center justify-center p-10">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <span className="ml-3">Memuat data...</span>
         </div>
       </DashboardLayout>
     );
@@ -267,11 +271,15 @@ export default function ErrorGroupPage() {
   if (!errorGroup) {
     return (
       <DashboardLayout projectId={projectId}>
-        <div className="text-center p-12">
-          <p className="text-red-500">Error group tidak ditemukan atau terjadi kesalahan saat memuat data.</p>
-          <Button onClick={() => router.back()} className="mt-4">
+        <div className="flex flex-col items-center justify-center p-10">
+          <FiAlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error Group Tidak Ditemukan</h2>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/projects/${projectId}/groups`)}
+          >
             <FiArrowLeft className="mr-2 h-4 w-4" />
-            Kembali
+            Kembali ke Error Groups
           </Button>
         </div>
       </DashboardLayout>
@@ -290,271 +298,319 @@ export default function ErrorGroupPage() {
 
   return (
     <DashboardLayout projectId={projectId}>
-      <div>
-        <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <FiArrowLeft className="mr-2 h-4 w-4" />
-            Kembali
-          </Button>
+      {loading ? (
+        <div className="flex items-center justify-center p-10">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <span className="ml-3">Memuat data...</span>
         </div>
-
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <FiAlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">{errorGroup.errorType}</h1>
-          <p className="text-foreground mb-4">{errorGroup.message}</p>
-          
-          <div className="flex flex-wrap items-center gap-4 mb-6">
-            <Badge variant={
-              errorGroup.status === 'resolved' ? 'default' : 
-              errorGroup.status === 'ignored' ? 'secondary' : 'destructive'
-            }>
-              {errorGroup.status === 'open' ? 'Terbuka' : 
-               errorGroup.status === 'resolved' ? 'Selesai' : 'Diabaikan'}
-            </Badge>
-            
-            <div className="text-sm text-muted-foreground">
-              {errorGroup.count} kemunculan
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              Pertama: {formatDate(errorGroup.firstSeen)}
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              Terakhir: {formatDate(errorGroup.lastSeen)}
-            </div>
-            
-            {errorGroup.statusCode && (
-              <div className="text-sm text-muted-foreground">
-                Status code: {errorGroup.statusCode}
-              </div>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <div className="text-sm font-medium">Status:</div>
-              {canAssign ? (
-                <>
-                  <Button 
-                    size="sm" 
-                    variant={errorGroup.status === 'open' ? 'default' : 'outline'} 
-                    onClick={() => handleStatusChange('open')}
-                  >
-                    Terbuka
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={errorGroup.status === 'resolved' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange('resolved')}
-                  >
-                    <FiCheck className="mr-1 h-4 w-4" />
-                    Selesai
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={errorGroup.status === 'ignored' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange('ignored')}
-                  >
-                    <FiEyeOff className="mr-1 h-4 w-4" />
-                    Abaikan
-                  </Button>
-                </>
-              ) : (
-                <Badge variant={
-                  errorGroup.status === 'resolved' ? 'default' : 
-                  errorGroup.status === 'ignored' ? 'secondary' : 'destructive'
-                }>
-                  {errorGroup.status === 'open' ? 'Terbuka' : 
-                  errorGroup.status === 'resolved' ? 'Selesai' : 'Diabaikan'}
+      ) : error ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : errorGroup ? (
+        <div className="space-y-6">
+          {/* Header dengan navigasi kembali dan status */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/projects/${projectId}/groups`)}
+                className="h-9 px-2"
+              >
+                <FiArrowLeft className="mr-2 h-4 w-4" />
+                Kembali
+              </Button>
+              <h1 className="text-xl font-semibold truncate">{errorGroup.errorType}</h1>
+              {errorGroup.statusCode && (
+                <Badge variant={errorGroup.statusCode >= 500 ? "destructive" : "outline"}>
+                  {errorGroup.statusCode}
                 </Badge>
               )}
             </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant={errorGroup.status === 'open' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('open')}
+                className="h-9"
+                disabled={errorGroup.status === 'open'}
+              >
+                <FiLoader className="mr-2 h-4 w-4" />
+                Open
+              </Button>
+              <Button
+                variant={errorGroup.status === 'resolved' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('resolved')}
+                className="h-9"
+                disabled={errorGroup.status === 'resolved'}
+              >
+                <FiCheck className="mr-2 h-4 w-4" />
+                Resolved
+              </Button>
+              <Button
+                variant={errorGroup.status === 'ignored' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('ignored')}
+                className="h-9"
+                disabled={errorGroup.status === 'ignored'}
+              >
+                <FiEyeOff className="mr-2 h-4 w-4" />
+                Ignore
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="md:col-span-2">
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  Riwayat Event
-                </h2>
+
+          {/* Main content - two column layout on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Error details dan events - 2/3 kolom */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Card informasi error group */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="grid gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold mb-2">{errorGroup.message}</h2>
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center">
+                          <FiAlertTriangle className="mr-1 h-4 w-4" />
+                          {errorGroup.count} kejadian
+                        </span>
+                        <span>•</span>
+                        <span>Pertama: {formatDate(errorGroup.firstSeen)}</span>
+                        <span>•</span>
+                        <span>Terakhir: {formatDate(errorGroup.lastSeen)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tab panel untuk menampilkan event details */}
+              <div className="bg-card border rounded-md shadow-sm">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <h3 className="font-medium">Kejadian Error</h3>
+                </div>
                 
                 {loadingEvents ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-24 w-full rounded-md" />
-                    <Skeleton className="h-24 w-full rounded-md" />
-                    <Skeleton className="h-24 w-full rounded-md" />
+                  <div className="flex justify-center items-center p-8">
+                    <Skeleton className="h-32 w-full" />
                   </div>
                 ) : events.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Tidak ada event
+                  <div className="p-8 text-center text-muted-foreground">
+                    Tidak ada data kejadian error
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="divide-y">
                     {events.map((event) => (
-                      <EventDetail key={event.id} 
-                        id={event.id}
-                        errorType={event.errorType} 
-                        message={event.message}
-                        timestamp={event.timestamp}
-                        stacktrace={event.stacktrace}
-                        userAgent={event.userAgent}
-                        statusCode={event.statusCode}
-                        userContext={event.userContext}
-                        tags={event.tags as Record<string, string>}
-                      />
+                      <div key={event.id} className="p-0">
+                        <details className="group">
+                          <summary className="flex justify-between items-center p-4 cursor-pointer hover:bg-muted/50">
+                            <div className="flex-1">
+                              <span className="font-medium">{event.message.substring(0, 100)}{event.message.length > 100 ? '...' : ''}</span>
+                              <div className="mt-1 text-sm text-muted-foreground">{formatDate(event.timestamp)}</div>
+                            </div>
+                            <div className="ml-4 transition-transform group-open:rotate-180">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                          </summary>
+                          <div className="px-4 pb-4">
+                            <div className="space-y-4">
+                              {/* Stack trace dengan syntax highlighting */}
+                              {event.stacktrace && (
+                                <div>
+                                  <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-medium">Stack Trace</h4>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(event.stacktrace || '');
+                                        toast.success('Stack trace disalin');
+                                      }}
+                                    >
+                                      <FiCopy className="h-3 w-3 mr-1" /> Salin
+                                    </Button>
+                                  </div>
+                                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+                                    {event.stacktrace}
+                                  </pre>
+                                </div>
+                              )}
+                              
+                              {/* User agent info */}
+                              {event.userAgent && (
+                                <div>
+                                  <h4 className="text-sm font-medium mb-2">User Agent</h4>
+                                  <div className="text-xs bg-muted p-3 rounded-md">
+                                    {event.userAgent}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* User context dengan syntax highlighting */}
+                              {event.userContext && Object.keys(event.userContext).length > 0 && (
+                                <div>
+                                  <h4 className="text-sm font-medium mb-2">User Context</h4>
+                                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+                                    {JSON.stringify(event.userContext, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                              
+                              {/* Tags */}
+                              {event.tags && Object.keys(event.tags).length > 0 && (
+                                <div>
+                                  <h4 className="text-sm font-medium mb-2">Tags</h4>
+                                  <div className="flex flex-wrap gap-1">
+                                    {Object.entries(event.tags).map(([key, value]) => (
+                                      <Badge key={key} variant="outline" className="text-xs">
+                                        {key}: {value as string}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </details>
+                      </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div>
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <FiUser className="mr-2 h-5 w-5" />
-                  Assigned To
-                </h2>
-                
-                {loadingMembers ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full mb-2" />
-                    <Skeleton className="h-9 w-full" />
-                  </div>
-                ) : (
-                  <div>
-                    {canAssign ? (
-                      <>
-                        <div className="mb-2">
-                          <Select
-                            value={selectedMember || 'none'}
-                            onValueChange={(value) => setSelectedMember(value === 'none' ? null : value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="-- Tidak ada --" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">-- Tidak ada --</SelectItem>
-                              {members.map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.user.email} ({member.role})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <Button 
-                          size="sm" 
-                          className="w-full" 
-                          onClick={handleAssign}
-                          disabled={submittingAssign || selectedMember === errorGroup.assignedTo}
-                        >
-                          {submittingAssign ? (
-                            <>
-                              <FiLoader className="h-4 w-4 mr-2 animate-spin" />
-                              Menyimpan...
-                            </>
-                          ) : (
-                            <>Assign</>
-                          )}
-                        </Button>
-                      </>
-                    ) : null}
-                    
-                    {errorGroup.assignedTo && members.length > 0 && (
-                      <div className={`p-3 bg-primary/20 rounded-md text-sm ${!canAssign ? '' : 'mt-4'}`}>
-                        <div className="font-medium mb-1">Saat ini di-assign ke:</div>
-                        <div>
-                          {members.find(m => m.id === errorGroup.assignedTo)?.user.email || 'Unknown'}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {!errorGroup.assignedTo && !canAssign && (
-                      <div className="text-sm text-muted-foreground">
-                        Belum ada anggota tim yang ditugaskan.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
             
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <FiMessageCircle className="mr-2 h-5 w-5" />
-                  Komentar
-                </h2>
-                
-                {loadingComments ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-20 w-full rounded-md" />
-                    <Skeleton className="h-20 w-full rounded-md" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-4">
-                      {comments.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground">
-                          Belum ada komentar.
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {comments.map((comment) => (
-                            <Comment 
+            {/* Sidebar - 1/3 kolom */}
+            <div className="space-y-6">
+              {/* Assignment card */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center">
+                    <FiUser className="mr-2 h-4 w-4" />
+                    Ditugaskan Kepada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingMembers ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedMember || 'unassigned'}
+                        onValueChange={(value) => {
+                          console.log('Selected member changed:', value);
+                          setSelectedMember(value);
+                        }}
+                        disabled={!canAssign}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="-- Tidak ada --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">-- Tidak ada --</SelectItem>
+                          {members.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.user.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Button 
+                        onClick={handleAssign} 
+                        disabled={
+                          !canAssign || 
+                          submittingAssign || 
+                          (selectedMember === errorGroup.assignedTo) || 
+                          (selectedMember === 'unassigned' && errorGroup.assignedTo === null)
+                        }
+                        className="w-full"
+                      >
+                        {submittingAssign ? 'Menyimpan...' : 'Update Assignment'}
+                      </Button>
+                      
+                      {!canAssign && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Hanya admin atau pemilik project yang dapat mengubah assignment.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Komentar */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center">
+                    <FiMessageCircle className="mr-2 h-4 w-4" />
+                    Komentar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingComments ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
+                        {comments.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Belum ada komentar.
+                          </p>
+                        ) : (
+                          comments.map((comment) => (
+                            <Comment
                               key={comment.id}
                               id={comment.id}
                               content={comment.content}
                               createdAt={comment.createdAt}
                               author={comment.author}
                             />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <form onSubmit={handleSubmitComment}>
-                      <Textarea
-                        placeholder="Tambahkan komentar..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        disabled={submittingComment}
-                        className="mb-2"
-                      />
-                      <Button 
-                        type="submit" 
-                        size="sm"
-                        disabled={!newComment.trim() || submittingComment}
-                      >
-                        {submittingComment ? (
-                          <>
-                            <FiLoader className="h-4 w-4 mr-2 animate-spin" />
-                            Mengirim...
-                          </>
-                        ) : (
-                          <>Kirim Komentar</>
+                          ))
                         )}
-                      </Button>
-                    </form>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                      </div>
+                      
+                      <form onSubmit={handleSubmitComment} className="space-y-2">
+                        <Textarea
+                          placeholder="Tulis komentar..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          className="min-h-[80px]"
+                        />
+                        <Button 
+                          type="submit" 
+                          disabled={!newComment.trim() || submittingComment}
+                          className="w-full"
+                        >
+                          {submittingComment ? 'Mengirim...' : 'Kirim Komentar'}
+                        </Button>
+                      </form>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-10">
+          <FiAlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error Group Tidak Ditemukan</h2>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/projects/${projectId}/groups`)}
+          >
+            <FiArrowLeft className="mr-2 h-4 w-4" />
+            Kembali ke Error Groups
+          </Button>
+        </div>
+      )}
     </DashboardLayout>
   );
 } 

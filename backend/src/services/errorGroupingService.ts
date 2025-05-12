@@ -390,7 +390,7 @@ export class ErrorGroupingService {
   }
   
   // Metode untuk meng-assign ErrorGroup ke member project
-  async assignErrorGroup(groupId: string, memberId: string) {
+  async assignErrorGroup(groupId: string, memberId: string | null) {
     return prisma.errorGroup.update({
       where: { id: groupId },
       data: { assignedTo: memberId }

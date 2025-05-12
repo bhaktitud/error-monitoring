@@ -498,12 +498,15 @@ export const GroupsAPI = {
 
   // Assign group to member
   assignGroup: async (groupId: string, memberId: string | null) => {
+    // Jika memberId null, kirim empty string sebagai gantinya
+    const memberIdToSend = memberId === null ? '' : memberId;
+    
     return apiRequest<{
       id: string;
       assignedTo: string;
     }>(`/groups/${groupId}/assign`, {
       method: 'PUT',
-      body: JSON.stringify({ memberId }),
+      body: JSON.stringify({ memberId: memberIdToSend }),
     });
   },
 

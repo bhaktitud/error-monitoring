@@ -208,12 +208,21 @@ router.put('/:groupId/assign', authenticateToken, checkGroupAccess, async (req: 
     const { groupId } = req.params;
     const { memberId } = req.body;
     
-    if (!memberId) {
-      return res.status(400).json({ error: 'Member ID tidak boleh kosong' });
-    }
+    console.log('Assigning error group:', { groupId, memberId, type: typeof memberId });
     
     if (!req.errorGroup) {
       return res.status(404).json({ error: 'Error group tidak ditemukan' });
+    }
+    
+    // Jika memberId kosong, null, atau string kosong, kosongkan assignedTo (unassign)
+    if (memberId === null || memberId === undefined || memberId === '') {
+      console.log('Unassigning error group (setting assignedTo to null)');
+      const updated = await prisma.errorGroup.update({
+        where: { id: groupId },
+        data: { assignedTo: null }
+      });
+      
+      return res.json(updated);
     }
     
     // Cek apakah member adalah bagian dari project
@@ -233,11 +242,15 @@ router.put('/:groupId/assign', authenticateToken, checkGroupAccess, async (req: 
       }
     });
     
+    console.log('Found member:', member);
+    
     if (!member) {
       return res.status(404).json({ error: 'Member tidak ditemukan di project ini' });
     }
     
+    // Pastikan memberId valid sebelum diteruskan ke service layer
     const updated = await errorGroupingService.assignErrorGroup(groupId, memberId);
+    console.log('Error group updated successfully:', updated);
     
     // Kirim notifikasi ke member yang di-assign
     try {

@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 import { FiClock } from 'react-icons/fi';
 
 interface CommentProps {
-  id: string;
+  id?: string;
   content: string;
   createdAt: string;
   author: {

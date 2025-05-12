@@ -42,17 +42,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className="font-sans">
+      <head />
+      <body
+        className="min-h-screen bg-background font-sans antialiased"
+      >
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
           <CookiesProvider>
             {children}
           </CookiesProvider>
-          <Toaster />
+          <Toaster position="top-right" />
         </ThemeProvider>
       </body>
     </html>

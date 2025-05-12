@@ -11,7 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FiUser, FiMail, FiPhone, FiGlobe, FiGithub, FiFileText, FiMessageSquare, FiUpload, FiSave, FiArrowLeft, FiBarChart, FiCheck, FiX, FiUsers, FiDatabase, FiClock, FiZap } from 'react-icons/fi';
 import { AuthAPI, UserProfile } from '@/lib/api';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -32,7 +38,7 @@ const featureLabel = (key: string) => {
   }
 };
 
-const featureIcon = (key: string, value: any) => {
+const featureIcon = (key: string, value: unknown) => {
   switch (key) {
     case 'teamMembers': return <FiUsers className="inline mr-1" />;
     case 'projects': return <FiDatabase className="inline mr-1" />;
@@ -184,17 +190,8 @@ export default function ProfilePage() {
     setError(null);
     
     try {
-      // Upload avatar jika ada
-      if (avatarPreview) {
-        const formData = new FormData();
-        formData.append('avatar', avatarPreview);
-        const result = await AuthAPI.uploadAvatar(formData);
-        
-        // Update profile dengan URL avatar baru
-        if (result.avatarUrl) {
-          setProfile(prev => ({ ...prev, avatar: result.avatarUrl }));
-        }
-      }
+      // Perhatikan bahwa kita tidak melakukan upload avatar di sini lagi
+      // Upload avatar sudah dilakukan di handleAvatarChange
       
       // Update profil user
       await AuthAPI.updateProfile({
@@ -227,30 +224,7 @@ export default function ProfilePage() {
     }
     return 'U';
   };
-  
-  // Handle pilih plan dari modal
-  const handleSelectPlan = async (planId: string) => {
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const res = await fetch(`${API_BASE_URL}/plans/upgrade`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ userId: profile.id, planId })
-      });
-      if (!res.ok) throw new Error('Gagal mengubah plan');
-      toast.success('Plan berhasil diubah!');
-      // Refresh profile
-      const userData = await AuthAPI.getCurrentUser();
-      setProfile(prev => ({ ...prev, ...userData }));
-      setShowPlanModal(false);
-    } catch (error) {
-      console.error('Error upgrading plan:', error);
-      toast.error('Gagal mengubah plan');
-    }
-  };
+
   
   if (loading) {
     return (
@@ -265,17 +239,23 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <Button 
-            variant="outline" 
-            onClick={() => router.push('/projects')}
+            variant="ghost" 
+            onClick={() => {
+              const lastProjectId = localStorage.getItem('lastProjectId');
+              if (lastProjectId) {
+                router.push(`/projects/${lastProjectId}`);
+              } else {
+                router.push('/projects');
+              }
+            }}
             className="mb-4"
           >
             <FiArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Dashboard
+            <h1 className="text-2xl font-bold">Profil Pengguna</h1>
           </Button>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Profil Pengguna</h1>
         <p className="text-muted-foreground">Kelola informasi profil dan preferensi akun Anda</p>
       </div>
       
@@ -506,41 +486,45 @@ export default function ProfilePage() {
                   <div>
                     <Label htmlFor="timezone">Zona Waktu</Label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
                         <FiGlobe className="text-muted-foreground" />
                       </div>
-                      <select
-                        id="timezone"
-                        name="timezone"
+                      <Select 
                         value={profile.timezone || 'Asia/Jakarta'}
-                        onChange={handleChange}
-                        className="pl-10 w-full p-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-background"
+                        onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}
                       >
-                        <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                        <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                        <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                        <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                      </select>
+                        <SelectTrigger className="w-full pl-10">
+                          <SelectValue placeholder="Pilih zona waktu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Asia/Jakarta">Asia/Jakarta (WIB)</SelectItem>
+                          <SelectItem value="Asia/Makassar">Asia/Makassar (WITA)</SelectItem>
+                          <SelectItem value="Asia/Jayapura">Asia/Jayapura (WIT)</SelectItem>
+                          <SelectItem value="Asia/Singapore">Asia/Singapore (SGT)</SelectItem>
+                          <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   
                   <div>
                     <Label htmlFor="language">Bahasa</Label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
                         <FiMessageSquare className="text-muted-foreground" />
                       </div>
-                      <select
-                        id="language"
-                        name="language"
+                      <Select
                         value={profile.language || 'id'}
-                        onChange={handleChange}
-                        className="pl-10 w-full p-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-background"
+                        onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}
                       >
-                        <option value="id">Bahasa Indonesia</option>
-                        <option value="en">English</option>
-                      </select>
+                        <SelectTrigger className="w-full pl-10">
+                          <SelectValue placeholder="Pilih bahasa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
@@ -590,7 +574,14 @@ export default function ProfilePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => router.push('/projects')}
+                    onClick={() => {
+                      const lastProjectId = localStorage.getItem('lastProjectId');
+                      if (lastProjectId) {
+                        router.push(`/projects/${lastProjectId}`);
+                      } else {
+                        router.push('/projects');
+                      }
+                    }}
                     className="mr-2"
                   >
                     Batal
@@ -617,45 +608,6 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
-
-      {/* Modal Pilih Plan */}
-      <Dialog open={showPlanModal} onOpenChange={setShowPlanModal}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Pilih Paket</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 min-w-[900px]">
-              {plans.map(plan => (
-                <Card key={plan.id} className={`flex flex-col border ${plan.name === profile.plan?.name ? 'border-primary' : 'border-border'} p-4 min-w-64 w-64`}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{plan.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold mb-2">{plan.price === 0 ? 'Rp0' : plan.price === null ? 'Custom' : `Rp${plan.price.toLocaleString()}`}</div>
-                    {plan.price && plan.price > 0 && <div className="text-xs mb-2 text-muted-foreground">/bulan</div>}
-                    <ul className="mb-4 text-xs text-muted-foreground space-y-1">
-                      {plan.features && Object.entries(plan.features).map(([key, value]) => (
-                        <li key={key}>{key}: {Array.isArray(value) ? value.join(', ') : (typeof value === 'boolean' ? (value ? '✔️' : '❌') : value)}</li>
-                      ))}
-                    </ul>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleSelectPlan(plan.id)}
-                    >
-                      {plan.name === profile.plan?.name ? 'Paket Aktif' : 'Pilih Plan'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-          <DialogClose asChild>
-            <Button variant="outline" className="w-full mt-4">Tutup</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 } 

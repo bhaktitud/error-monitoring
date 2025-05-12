@@ -1,9 +1,11 @@
 import { FC } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
 import { Badge } from './badge';
-import { FiAlertTriangle, FiClock, FiUser } from 'react-icons/fi';
+import { Button } from './button';
+import { FiAlertTriangle, FiClock, FiUser, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 
-interface ErrorCardProps {
+// Interface untuk ErrorCard yang menampilkan error groups
+interface ErrorGroupCardProps {
   id: string;
   errorType: string;
   message: string;
@@ -14,6 +16,13 @@ interface ErrorCardProps {
   assignedTo?: string;
   statusCode?: number;
   onClick?: () => void;
+}
+
+// Interface untuk ErrorCard yang menampilkan pesan error umum
+interface ErrorMessageCardProps {
+  title: string;
+  description: string;
+  retryAction?: () => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -27,7 +36,8 @@ const formatDate = (dateString: string) => {
   });
 };
 
-export const ErrorCard: FC<ErrorCardProps> = ({
+// Komponen untuk menampilkan error groups - versi asli
+export const ErrorGroupCard: FC<ErrorGroupCardProps> = ({
   id,
   errorType,
   message,
@@ -87,6 +97,41 @@ export const ErrorCard: FC<ErrorCardProps> = ({
           {count} {count > 1 ? 'events' : 'event'}
         </Badge>
       </CardFooter>
+    </Card>
+  );
+};
+
+// Komponen untuk menampilkan pesan error umum - versi baru
+export const ErrorCard: FC<ErrorMessageCardProps> = ({
+  title,
+  description,
+  retryAction
+}) => {
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader className="pb-3">
+        <div className="flex items-center">
+          <FiAlertCircle className="h-6 w-6 text-destructive mr-3" />
+          <CardTitle>{title}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <CardDescription className="text-base">
+          {description}
+        </CardDescription>
+      </CardContent>
+      {retryAction && (
+        <CardFooter>
+          <Button 
+            onClick={retryAction} 
+            variant="outline" 
+            className="ml-auto"
+          >
+            <FiRefreshCw className="mr-2 h-4 w-4" />
+            Coba Lagi
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }; 

@@ -63,11 +63,11 @@ export const SidebarNav: FC<SidebarNavProps> = ({ projectId }) => {
         {
           title: 'PROJECT',
           items: [
-            {
-              name: 'Projects',
-              href: '/projects',
-              icon: <FiHome className="mr-2 h-4 w-4" />,
-            }
+            // {
+            //   name: 'Projects',
+            //   href: '/projects',
+            //   icon: <FiHome className="mr-2 h-4 w-4" />,
+            // }
           ]
         }
       ];

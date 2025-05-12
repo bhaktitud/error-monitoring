@@ -1,213 +1,505 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ErrorCard } from '@/components/ui/error-card';
-import { ProgressBar } from '@/components/ui/progress-bar';
-import { FiSettings, FiExternalLink, FiCopy, FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
-import { ProjectsAPI, GroupsAPI, EventsAPI } from '@/lib/api';
-
-interface ErrorGroup {
-  id: string;
-  errorType: string;
-  message: string;
-  count: number;
-  firstSeen: string;
-  lastSeen: string;
-  status: 'open' | 'resolved' | 'ignored';
-  assignedTo?: string;
-  statusCode?: number;
-}
+import { FiAlertCircle, FiActivity, FiAlertTriangle, FiCheckCircle, FiClock, FiInfo, FiRefreshCw, FiPieChart, FiCpu } from 'react-icons/fi';
+import { ProjectsAPI, StatsAPI, EventsAPI } from '@/lib/api';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
+import { Progress } from '@/components/ui/progress';
 
 interface Project {
   id: string;
   name: string;
   dsn: string;
-  createdAt?: string;
+  createdAt: string;
 }
 
-export default function ProjectPage() {
+interface ProjectStats {
+  totalEvents: number;
+  totalGroups: number;
+  openGroups: number;
+  resolvedGroups: number;
+  ignoredGroups: number;
+  eventsByHour: Array<{ hour: string; count: number }>;
+}
+
+interface Event {
+  id: string;
+  errorType: string;
+  message: string;
+  timestamp: string;
+  stacktrace: string;
+  userAgent: string;
+  statusCode: number;
+}
+
+// Definisikan komponen chart dengan data dari stats
+const ChartArea = ({ data }: { data: ProjectStats | null }) => {
+  // Jika tidak ada data, tampilkan pesan
+  if (!data || !data.eventsByHour || data.eventsByHour.length === 0) {
+    return (
+      <Card>
+        <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
+          Belum ada data events untuk ditampilkan
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="px-6 py-4">
+        <CardTitle className="text-lg font-medium flex items-center">
+          <FiActivity className="mr-2 h-5 w-5" />
+          Distribusi Events per Jam
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-6 pb-6">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={data.eventsByHour}
+              margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis 
+                dataKey="hour" 
+                stroke="var(--muted-foreground)"
+                tick={{ fontSize: 12 }}
+                tickMargin={10}
+              />
+              <YAxis 
+                stroke="var(--muted-foreground)" 
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--card-foreground)'
+                }}
+                itemStyle={{ color: 'var(--card-foreground)' }}
+                labelStyle={{ fontSize: 12, color: 'var(--card-foreground)' }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="count" 
+                name="Jumlah Events"
+                stroke="var(--primary)" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                dot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Komponen untuk menampilkan distribusi status error groups
+const ErrorGroupsChart = ({ data }: { data: ProjectStats | null }) => {
+  // Jika tidak ada data, tampilkan pesan
+  if (!data) {
+    return (
+      <Card>
+        <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
+          Belum ada data groups untuk ditampilkan
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Siapkan data untuk bar chart
+  const chartData = [
+    { name: 'Unresolved', value: data.openGroups },
+    { name: 'Resolved', value: data.resolvedGroups },
+    { name: 'Ignored', value: data.ignoredGroups || 0 }
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="px-6 py-4">
+        <CardTitle className="text-lg font-medium flex items-center">
+          <FiPieChart className="mr-2 h-5 w-5" />
+          Status Error Groups
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-6 pb-6">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis 
+                dataKey="name" 
+                stroke="var(--muted-foreground)"
+                tick={{ fontSize: 12 }}
+                tickMargin={10}
+              />
+              <YAxis 
+                stroke="var(--muted-foreground)" 
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--card-foreground)'
+                }}
+                itemStyle={{ color: 'var(--card-foreground)' }}
+                labelStyle={{ fontSize: 12, color: 'var(--card-foreground)' }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="value" 
+                name="Jumlah Groups"
+                fill="var(--primary)"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const DataTable = ({ events }: { events: Event[] }) => (
+  <div className="rounded-xl overflow-hidden border">
+    {events.length === 0 ? (
+      <div className="p-6 flex items-center justify-center text-muted-foreground">
+        Belum ada event yang tercatat
+      </div>
+    ) : (
+      <table className="w-full">
+        <thead className="bg-muted/50">
+          <tr>
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Error Type</th>
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Message</th>
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {events.map((event) => (
+            <tr key={event.id} className="border-t hover:bg-muted/30">
+              <td className="p-3 text-sm">{event.errorType}</td>
+              <td className="p-3 text-sm truncate max-w-[300px]">{event.message}</td>
+              <td className="p-3 text-sm text-muted-foreground">
+                {format(new Date(event.timestamp), 'dd MMM yyyy, HH:mm', { locale: id })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+);
+
+// Komponen untuk menampilkan penggunaan kuota events
+const UsageChart = ({ data }: { data: { totalEvents: number; quota: number; percent: number } | null }) => {
+  if (!data) {
+    return (
+      <Card>
+        <CardContent className="h-40 flex items-center justify-center text-muted-foreground">
+          Belum ada data penggunaan untuk ditampilkan
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Menentukan status penggunaan
+  const getStatusColor = (percent: number) => {
+    if (percent > 90) return 'var(--destructive)';
+    if (percent > 75) return 'var(--warning)';
+    return 'var(--primary)';
+  };
+
+  const color = getStatusColor(data.percent);
+
+  return (
+    <Card>
+      <CardHeader className="px-6 py-4">
+        <CardTitle className="text-lg font-medium flex items-center">
+          <FiCpu className="mr-2 h-5 w-5" />
+          Penggunaan Kuota Events
+        </CardTitle>
+        <CardDescription>
+          {data.totalEvents.toLocaleString()} dari {data.quota.toLocaleString()} events
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-6 pb-6">
+        <Progress value={data.percent} className="h-4 mb-2" style={{ "--progress-color": color } as React.CSSProperties} />
+        <div className="text-sm font-medium mt-2">
+          {data.percent}% terpakai
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default function ProjectDashboardPage() {
   const params = useParams();
   const projectId = params.id as string;
-  const router = useRouter();
-  const [project, setProject] = useState<Project | null>(null);
-  const [errorGroups, setErrorGroups] = useState<ErrorGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingErrorGroups, setLoadingErrorGroups] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [eventsUsage, setEventsUsage] = useState<{ totalEvents: number; quota: number; percent: number } | null>(null);
-
-  // Fungsi untuk menyalin DSN ke clipboard
-  const copyDSN = () => {
-    if (project?.dsn) {
-      navigator.clipboard.writeText(project.dsn);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  const [stats, setStats] = useState<ProjectStats | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [projectData, groupsData, usageData] = await Promise.all([
-          ProjectsAPI.getProject(projectId),
-          GroupsAPI.getGroups(projectId),
-          EventsAPI.getEventsUsage(projectId)
-        ]);
+        setLoading(true);
         
+        // Ambil data proyek
+        const projectData = await ProjectsAPI.getProject(projectId);
         setProject(projectData);
-        const typedGroups = groupsData.map(group => ({
-          ...group,
-          status: group.status as 'open' | 'resolved' | 'ignored'
-        }));
-        setErrorGroups(typedGroups);
-        setEventsUsage(usageData);
+        
+        // Ambil statistik proyek
+        try {
+          const statsData = await StatsAPI.getProjectStats(projectId);
+          setStats(statsData);
+        } catch (statsErr) {
+          console.error('Error fetching stats data:', statsErr);
+          // Gunakan data default jika gagal
+          setStats({
+            totalEvents: 0,
+            totalGroups: 0,
+            openGroups: 0,
+            resolvedGroups: 0,
+            ignoredGroups: 0,
+            eventsByHour: []
+          });
+        }
+        
+        // Ambil recent events
+        try {
+          const eventsData = await EventsAPI.getEvents(projectId);
+          setEvents(eventsData.slice(0, 10)); // Hanya tampilkan 10 event terbaru
+        } catch (eventsErr) {
+          console.error('Error fetching events data:', eventsErr);
+          setEvents([]);
+        }
+        
+        // Ambil penggunaan events
+        try {
+          const usageData = await EventsAPI.getEventsUsage(projectId);
+          setEventsUsage(usageData);
+        } catch (usageErr) {
+          console.error('Error fetching events usage:', usageErr);
+          setEventsUsage({
+            totalEvents: 0,
+            quota: 10000,  // Nilai default
+            percent: 0
+          });
+        }
+        
+        setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data');
+        console.error('Error fetching project data:', err);
+        setError('Gagal memuat data proyek. Silakan coba lagi nanti.');
       } finally {
         setLoading(false);
-        setLoadingErrorGroups(false);
       }
     };
-
+    
     fetchData();
   }, [projectId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Ambil semua data terbaru
+      const statsData = await StatsAPI.getProjectStats(projectId);
+      setStats(statsData);
+      
+      const eventsData = await EventsAPI.getEvents(projectId);
+      setEvents(eventsData.slice(0, 10));
+      
+      const usageData = await EventsAPI.getEventsUsage(projectId);
+      setEventsUsage(usageData);
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setError('Gagal menyegarkan data. Silakan coba lagi nanti.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
       <DashboardLayout projectId={projectId}>
-        <div className="text-center p-12">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Memuat proyek...</p>
+        <div className="flex justify-center items-center h-96">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+            <p className="text-muted-foreground">Memuat data proyek...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (!project) {
+  if (error) {
     return (
-      <DashboardLayout>
-        <div className="text-center p-12">
-          <FiAlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Proyek tidak ditemukan</h2>
-          <p className="mb-4">Proyek yang Anda cari tidak dapat ditemukan.</p>
-          <Button onClick={() => router.push('/projects')}>
-            Kembali ke Daftar Proyek
-          </Button>
-        </div>
+      <DashboardLayout projectId={projectId}>
+        <ErrorCard
+          title="Gagal memuat proyek"
+          description={error}
+          retryAction={() => window.location.reload()}
+        />
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout projectId={projectId}>
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push(`/projects`)}
-              className="mr-4"
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              {/* Kembali */}
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
-          </div>
-          <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
-            <FiSettings className="mr-2 h-4 w-4" />
-            Pengaturan Proyek
-          </Button>
-        </div>
+      <div className="flex justify-between items-center mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            {/* <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/projects">Projects</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator /> */}
+            <BreadcrumbItem>
+              <BreadcrumbPage>{loading ? 'Loading...' : project?.name || 'Project'}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-        {error && (
-          <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">DSN (Data Source Name)</h3>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={copyDSN}>
-                    <FiCopy className="mr-1 h-4 w-4" />
-                    {copied ? 'Disalin!' : 'Salin'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${projectId}/settings`)}>
-                    <FiExternalLink className="mr-1 h-4 w-4" />
-                    Setup Guide
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-muted p-3 rounded font-mono text-sm border">{project.dsn}</div>
-            </CardContent>
-          </Card>
-
-          {eventsUsage && (
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-medium mb-4">Kuota Events Bulanan</h3>
-                <ProgressBar 
-                  percent={eventsUsage.percent} 
-                  total={eventsUsage.totalEvents} 
-                  quota={eventsUsage.quota} 
-                />
-              </CardContent>
-            </Card>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <>
+              <FiRefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <FiRefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </>
           )}
-        </div>
-
-        <h2 className="text-xl font-semibold mb-4">Error Terbaru</h2>
-        
-        {loadingErrorGroups ? (
-          <div className="text-center p-12">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p>Memuat error groups...</p>
-          </div>
-        ) : errorGroups.length === 0 ? (
-          <div className="text-center p-12 bg-card rounded-lg border border-dashed border-border">
-            <FiAlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg mb-2">Belum ada error yang dilaporkan</h3>
-            <p className="text-muted-foreground mb-4">Error akan muncul disini setelah aplikasi Anda mengirimkan error melalui SDK.</p>
-            <Button variant="outline" onClick={() => router.push(`/projects/${projectId}/settings`)}>
-              Lihat Panduan Integrasi
-            </Button>
-          </div>
-        ) : (
-          <div>
-            {errorGroups.map((errorGroup) => (
-              <ErrorCard
-                key={errorGroup.id}
-                id={errorGroup.id}
-                errorType={errorGroup.errorType}
-                message={errorGroup.message}
-                count={errorGroup.count}
-                firstSeen={errorGroup.firstSeen}
-                lastSeen={errorGroup.lastSeen}
-                status={errorGroup.status}
-                assignedTo={errorGroup.assignedTo}
-                statusCode={errorGroup.statusCode}
-                onClick={() => router.push(`/projects/${projectId}/groups/${errorGroup.id}`)}
-              />
-            ))}
-            <div className="mt-4 text-center">
-              <Button 
-                variant="outline"
-                onClick={() => router.push(`/projects/${projectId}/groups`)}
-              >
-                Lihat Semua Error Groups
-              </Button>
-            </div>
-          </div>
-        )}
+        </Button>
       </div>
+
+      {error && (
+        <div className="bg-destructive/10 border-l-4 border-destructive p-4 mb-6 rounded-md">
+          <div className="flex">
+            <FiAlertCircle className="h-5 w-5 text-destructive mr-3" />
+            <span className="text-destructive">{error}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+            <FiActivity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">{eventsUsage?.totalEvents || stats?.totalEvents || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Error Groups</CardTitle>
+            <FiAlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.totalGroups || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+            <FiCheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.resolvedGroups || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
+            <FiInfo className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.openGroups || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid md:grid-cols-2">
+          <TabsTrigger value="overview">
+            <FiActivity className="mr-2 h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="recent">
+            <FiClock className="mr-2 h-4 w-4" />
+            Recent Events
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
+          <UsageChart data={eventsUsage} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <ChartArea data={stats} />
+            <ErrorGroupsChart data={stats} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="recent" className="space-y-4">
+          <DataTable events={events} />
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 } 

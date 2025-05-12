@@ -1,12 +1,14 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { FiMenu, FiX, FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
+import { FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { AuthAPI, UserProfile } from '@/lib/api';
 import { useCookies } from 'next-client-cookies';
 import { logout } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import Link from 'next/link';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { Separator } from './separator';
+import { SidebarTrigger } from './sidebar';
 
 interface HeaderProps {
   projectId?: string;
@@ -14,7 +16,7 @@ interface HeaderProps {
   isSidebarOpen?: boolean;
 }
 
-export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpen }) => {
+export const Header: FC<HeaderProps> = ({ projectId }) => {
   const pathname = usePathname();
   const router = useRouter();
   const cookies = useCookies();
@@ -85,6 +87,8 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
     if (pathname.includes(`/projects/${projectId}/notifications`)) return 'Notifications';
     if (pathname.includes(`/projects/${projectId}/members`)) return 'Team Members';
     if (pathname.includes(`/projects/${projectId}/settings`)) return 'Settings';
+
+    console.log(pathname);
     
     return 'Project';
   };
@@ -117,20 +121,18 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
   };
 
   return (
-    <header className="bg-sidebar border-b border-sidebar-border sticky top-0 z-10">
+    <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mx-2 data-[orientation=vertical]:h-4"
+            />
+            <Link href="/">
+              <h1 className="text-base font-medium">LogRaven - {`${pageTitle}`}</h1>
+        </Link>
+      </div>
       <div className="px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center">
-          {toggleSidebar && (
-            <button
-              onClick={toggleSidebar}
-              className="mr-4 p-2 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden"
-            >
-              {isSidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
-            </button>
-          )}
-          
-          <h1 className="text-lg font-medium text-sidebar-foreground">{pageTitle}</h1>
-        </div>
         
         <div className="flex items-center space-x-3">
           {/* Search form */}
@@ -241,7 +243,15 @@ export const Header: FC<HeaderProps> = ({ projectId, toggleSidebar, isSidebarOpe
                   </div>
                 )}
                 
-                <Link href="/account/profile" className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
+                <Link 
+                  href="/account/profile" 
+                  className="block px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                  onClick={() => {
+                    if (projectId) {
+                      localStorage.setItem('lastProjectId', projectId);
+                    }
+                  }}
+                >
                   <FiUser className="inline-block mr-2 h-4 w-4" />
                   Profil
                 </Link>

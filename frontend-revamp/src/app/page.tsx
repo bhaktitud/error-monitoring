@@ -137,7 +137,7 @@ export default function LandingPage() {
   };
 
   const handleDashboard = () => {
-    router.push('/projects');
+    console.log("Navigasi ke /projects telah dihapus. Tentukan tujuan baru jika diperlukan.");
   };
 
   // Simple check for client-side
@@ -396,7 +396,7 @@ export default function LandingPage() {
       {/* Call to Action */}
       <motion.section 
         ref={ctaRef} 
-        className="px-6 py-16 lg:px-8 text-primary-foreground" 
+        className="px-6 py-16 lg:px-8" 
         style={{opacity: 1}}
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -405,7 +405,7 @@ export default function LandingPage() {
       >
         <div className="max-w-3xl mx-auto text-center">
           <motion.h2 
-            className="text-3xl font-bold mb-4 text-primary"
+            className="text-2xl font-bold mb-4"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -414,7 +414,7 @@ export default function LandingPage() {
             Mulai Pantau Error Aplikasi Anda Hari Ini
           </motion.h2>
           <motion.p 
-            className="text-lg mb-8 text-primary/80"
+            className="text-lg mb-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

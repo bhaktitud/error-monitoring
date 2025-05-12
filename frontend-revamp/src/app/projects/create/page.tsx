@@ -51,20 +51,7 @@ export default function CreateProjectPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex items-center">
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => router.back()}
-          className="mr-4"
-        >
-          <FiArrowLeft className="h-4 w-4 mr-2" />
-          Kembali
-        </Button>
-        <h1 className="text-2xl font-bold text-foreground">Buat Proyek Baru</h1>
-      </div>
-
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto mt-6">
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>

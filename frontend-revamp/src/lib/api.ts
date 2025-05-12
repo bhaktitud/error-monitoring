@@ -349,6 +349,14 @@ export const ProjectsAPI = {
       method: 'DELETE',
     });
   },
+
+  // Update project settings
+  updateProject: async (projectId: string, settings: Record<string, any>) => {
+    return apiRequest<{ success: boolean; message?: string; project?: any }>(`/projects/${projectId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
+    });
+  },
 };
 
 /**

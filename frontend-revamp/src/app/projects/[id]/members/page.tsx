@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getSession } from '@/lib/auth';
 
 interface Member {
   id: string;
@@ -26,6 +27,7 @@ interface Member {
     email: string;
     avatar?: string;
   };
+  isCurrentUser?: boolean;
 }
 
 interface Invitation {
@@ -66,13 +68,42 @@ export default function MembersPage() {
   const [inviteToResend, setInviteToResend] = useState<{id: string, email: string} | null>(null);
   const [resendingInvite, setResendingInvite] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+  const [isProjectOwner, setIsProjectOwner] = useState(false);
 
   useEffect(() => {
     const fetchMembers = async () => {
       try {
         setLoading(true);
         const data = await ProjectsAPI.getProjectMembers(projectId);
-        setMembers(data);
+        
+        // Identifikasi peran pengguna saat ini
+        let loggedInUserId = '';
+        try {
+          const session = await getSession();
+          if (session) {
+            const userData = JSON.parse(atob(session.split('.')[1]));
+            loggedInUserId = userData.userId;
+          }
+        } catch (e) {
+          console.error('Error parsing user session:', e);
+        }
+        
+        // Tandai anggota saat ini dan tetapkan peran
+        const updatedMembers = data.map(member => {
+          if (member.user.id === loggedInUserId) {
+            setCurrentUserRole(member.role);
+            return { ...member, isCurrentUser: true };
+          }
+          return { ...member, isCurrentUser: false };
+        });
+        
+        // Cek apakah pengguna adalah project owner
+        setIsProjectOwner(data.some(member => 
+          member.user.id === loggedInUserId && member.isOwner === true
+        ));
+        
+        setMembers(updatedMembers);
         setError(null);
       } catch (err) {
         console.error('Error fetching project members:', err);
@@ -246,27 +277,18 @@ export default function MembersPage() {
     }).format(date);
   };
 
+  // Fungsi untuk memeriksa apakah pengguna saat ini memiliki izin admin
+  const hasAdminPermission = () => {
+    return isProjectOwner || currentUserRole === 'admin';
+  };
+
   return (
     <DashboardLayout projectId={projectId}>
       <div className="mb-6 ">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push(`/projects/${projectId}`)}
-              className="mr-4 hover:bg-muted transition-colors"
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
+            <h1 className="text-2xl font-semibold">Anggota Tim</h1>
           </div>
-          
-          {!showInviteForm && (
-            <Button onClick={() => setShowInviteForm(true)} variant="default">
-              <FiPlus className="mr-2 h-4 w-4" />
-              Undang Anggota
-            </Button>
-          )}
         </div>
 
         {error && (
@@ -367,7 +389,9 @@ export default function MembersPage() {
         
         {/* Tabs */}
         <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as 'members' | 'invitations')} className="w-full">
-          <TabsList className="mb-6 w-full max-w-md grid grid-cols-2 p-1 rounded-lg">
+
+          <div className="mb-4 flex items-center justify-between">
+          <TabsList className="w-full max-w-md grid grid-cols-2 p-1 rounded-lg">
             <TabsTrigger value="members" className="rounded-md py-2 transition-all">
               <FiUser className="mr-2 h-4 w-4" />
               Anggota ({members.length})
@@ -377,6 +401,13 @@ export default function MembersPage() {
               Undangan ({invitations.length})
             </TabsTrigger>
           </TabsList>
+            {!showInviteForm && (
+              <Button onClick={() => setShowInviteForm(true)} variant="default">
+                <FiPlus className="mr-2 h-4 w-4" />
+                Undang Anggota
+              </Button>
+            )}
+          </div>
 
           <TabsContent value="members" className="mt-0">
             {loading ? (
@@ -404,13 +435,13 @@ export default function MembersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted">
-                        <TableHead className="w-[50%] px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Anggota
                         </TableHead>
-                        <TableHead className="w-[20%] px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Role
                         </TableHead>
-                        <TableHead className="w-[30%] px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Aksi
                         </TableHead>
                       </TableRow>
@@ -418,7 +449,7 @@ export default function MembersPage() {
                     <TableBody className="bg-card divide-y divide-border">
                       {members.map((member) => (
                         <TableRow key={member.id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell>
                             <div className="flex items-center">
                               <Avatar className="h-10 w-10 cursor-pointer" onClick={() => setSelectedMember(member)}>
                                 {member.user.avatar ? (
@@ -438,43 +469,94 @@ export default function MembersPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={member.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
-                              {member.role === 'admin' ? 'Admin' : 'Member'}
-                            </Badge>
+                          <TableCell>
+                            <div className="flex items-center">
+                              {hasAdminPermission() && !member.isCurrentUser && (
+                                <>
+                                  <Select
+                                    value={member.role}
+                                    onValueChange={(value) => handleRoleChange(member.id, value)}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                      <SelectItem value="member">Member</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => handleRemoveMember(member.id, member.user.email)}
+                                          className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors ml-3"
+                                        >
+                                          <FiTrash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Hapus anggota</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </>
+                              )}
+                              {(!hasAdminPermission() || member.isCurrentUser) && (
+                                <Badge variant={member.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
+                                  {member.role === 'admin' ? 'Admin' : 'Member'}
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end space-x-3">
-                              <Select
-                                value={member.role}
-                                onValueChange={(value) => handleRoleChange(member.id, value)}
-                              >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Member</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleRemoveMember(member.id, member.user.email)}
-                                      className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                    >
-                                      <FiTrash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Hapus anggota</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                          <TableCell>
+                            <div className="flex items-center">
+                              {hasAdminPermission() && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => handleResendInvitation(member.id, member.user.email)}
+                                        className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                        disabled={resendingInvite === member.id}
+                                      >
+                                        {resendingInvite === member.id ? (
+                                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                                        ) : (
+                                          <FiMail className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Kirim ulang undangan</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {(!hasAdminPermission() || member.isCurrentUser) && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => handleCancelInvitation(member.id, member.user.email)}
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors ml-2"
+                                      >
+                                        <FiX className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Batalkan undangan</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -512,19 +594,19 @@ export default function MembersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted">
-                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Email
                         </TableHead>
-                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Role
                         </TableHead>
-                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Status
                         </TableHead>
-                        <TableHead className="px-6 py-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Kadaluarsa
                         </TableHead>
-                        <TableHead className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <TableHead>
                           Aksi
                         </TableHead>
                       </TableRow>
@@ -532,7 +614,7 @@ export default function MembersPage() {
                     <TableBody className="bg-card divide-y divide-border">
                       {invitations.map(invite => (
                         <TableRow key={invite.id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell>
                             <div className="flex items-center">
                               <Avatar className="h-8 w-8 mr-3">
                                 <AvatarFallback className={`${
@@ -544,12 +626,12 @@ export default function MembersPage() {
                               <div className="text-sm font-medium text-foreground">{invite.email}</div>
                             </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell>
                             <Badge variant={invite.role === 'admin' ? 'secondary' : 'default'} className="px-3 py-1">
                               {invite.role === 'admin' ? 'Admin' : 'Member'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell>
                             <div className="text-sm text-foreground">
                               Diundang oleh {invite.inviter.name || invite.inviter.email}
                             </div>
@@ -557,51 +639,60 @@ export default function MembersPage() {
                               {formatDate(invite.createdAt)}
                             </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell>
                             <div className="text-sm text-foreground">{formatDate(invite.expiresAt)}</div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleResendInvitation(invite.id, invite.email)}
-                                      className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                                      disabled={resendingInvite === invite.id}
-                                    >
-                                      {resendingInvite === invite.id ? (
-                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                                      ) : (
-                                        <FiMail className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Kirim ulang undangan</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => handleCancelInvitation(invite.id, invite.email)}
-                                      className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                    >
-                                      <FiX className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Batalkan undangan</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                          <TableCell>
+                            <div>
+                              {hasAdminPermission() && (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => handleResendInvitation(invite.id, invite.email)}
+                                          className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                          disabled={resendingInvite === invite.id}
+                                        >
+                                          {resendingInvite === invite.id ? (
+                                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                                          ) : (
+                                            <FiMail className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Kirim ulang undangan</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => handleCancelInvitation(invite.id, invite.email)}
+                                          className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors ml-2"
+                                        >
+                                          <FiX className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Batalkan undangan</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </>
+                              )}
+                              {!hasAdminPermission() && (
+                                <div className="text-sm text-muted-foreground">
+                                  Menunggu respons
+                                </div>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

@@ -3,11 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EventsAPI } from '@/lib/api';
-import { FiArrowLeft, FiAlertCircle, FiCalendar, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiAlertCircle, FiInfo, FiSearch, FiClock } from 'react-icons/fi';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Interface untuk userContext dan tags
 interface UserContext {
@@ -39,6 +50,9 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -58,36 +72,83 @@ export default function EventsPage() {
     fetchEvents();
   }, [projectId]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
+  // Filter events berdasarkan pencarian
+  const filteredEvents = events.filter(event => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      event.errorType.toLowerCase().includes(query) ||
+      event.message.toLowerCase().includes(query) ||
+      String(event.statusCode).includes(query)
+    );
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+  const paginatedEvents = filteredEvents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
   };
 
-  const viewEventDetails = (eventId: string) => {
-    // Dalam aplikasi sebenarnya, kita bisa membuat halaman detail event
-    // atau menampilkan modal dengan detail lengkap
-    alert(`Detail Event ID: ${eventId}`);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm:ss', { locale: id });
+  };
+
+  const viewEventDetails = (event: Event) => {
+    router.push(`/projects/${projectId}/events/${event.id}`);
+  };
+
+  // Extracting browser info from user agent
+  const getBrowserInfo = (userAgent: string) => {
+    if (!userAgent) return 'Unknown';
+    
+    if (userAgent.includes('Chrome')) return 'Chrome';
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+    if (userAgent.includes('Edge')) return 'Edge';
+    if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) return 'Internet Explorer';
+    
+    return 'Other';
   };
 
   return (
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
-        <div className="flex items-center mb-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push(`/projects/${projectId}`)}
-            className="mr-4"
-          >
-            <FiArrowLeft className="mr-2 h-4 w-4" />
-            Kembali
-          </Button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push(`/projects/${projectId}`)}
+              className="mr-4"
+            >
+              <FiArrowLeft className="mr-2 h-4 w-4" />
+            </Button>
+            <h1 className="text-xl font-bold">Events</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <FiSearch className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <input 
+                type="text" 
+                className="py-2 pl-10 pr-4 block w-full border border-input rounded-md focus:outline-none focus:ring-ring focus:border-ring"
+                placeholder="Cari event..." 
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -115,53 +176,93 @@ export default function EventsPage() {
               Lihat Panduan Integrasi
             </Button>
           </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="text-center p-12 bg-card rounded-lg border border-border">
+            <h3 className="font-medium text-lg mb-2">Tidak ada event yang cocok dengan pencarian</h3>
+            <Button 
+              variant="outline" 
+              onClick={() => setSearchQuery('')}
+            >
+              Reset Pencarian
+            </Button>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <Card key={event.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center mb-1">
-                          <span className="font-medium text-foreground">{event.errorType}</span>
-                          {event.statusCode && (
-                            <Badge className="ml-2" variant="outline">
-                              {event.statusCode}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-foreground mb-1">{event.message}</p>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <FiCalendar className="mr-1 h-3 w-3" />
-                          <span>{formatDate(event.timestamp)}</span>
-                        </div>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">Error Type</TableHead>
+                  <TableHead className="w-[250px]">Message</TableHead>
+                  <TableHead className="w-[120px]">Status Code</TableHead>
+                  <TableHead className="w-[150px]">Browser</TableHead>
+                  <TableHead className="w-[180px]">Timestamp</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedEvents.map((event) => (
+                  <TableRow 
+                    key={event.id}
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium">
+                      {event.errorType}
+                    </TableCell>
+                    <TableCell className="max-w-[250px] truncate">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>{event.message}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{event.message}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell>
+                      {event.statusCode ? (
+                        <Badge variant={event.statusCode >= 500 ? "destructive" : "outline"}>
+                          {event.statusCode}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {getBrowserInfo(event.userAgent)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <FiClock className="mr-1 h-3 w-3 text-muted-foreground" />
+                        {formatDate(event.timestamp)}
                       </div>
+                    </TableCell>
+                    <TableCell>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => viewEventDetails(event.id)}
+                        onClick={() => viewEventDetails(event)}
+                        className="w-full"
                       >
                         <FiInfo className="mr-1 h-4 w-4" />
                         Detail
                       </Button>
-                    </div>
-                    <div className="mt-2 text-xs font-mono bg-muted p-2 rounded border overflow-hidden text-muted-foreground">
-                      {event.stacktrace?.split('\n')[0]}...
-                    </div>
-                    {(event.tags && Object.keys(event.tags).length > 0) && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {Object.entries(event.tags).map(([key, value]) => (
-                          <Badge key={key} variant="secondary" className="text-xs">
-                            {key}: {String(value)}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center py-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,8 +1,14 @@
-import { FC, ReactNode, useState } from 'react';
-import { SidebarNav } from '@/components/ui/sidebar-nav';
-import { Header } from '@/components/ui/header';
+'use client';
+
+import { FC, ReactNode } from 'react';
 import Footer from '@/components/ui/footer';
 import PageTransition from '@/components/ui/page-transition';
+import { AppSidebar } from '@/components/app-sidebar';
+import { 
+  SidebarInset, 
+  SidebarProvider,
+} from '@/components/ui/sidebar';
+import { Header } from '../ui/header';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -10,31 +16,26 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: FC<DashboardLayoutProps> = ({ children, projectId }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-  };
-  
+
+  const lastProjectId = localStorage.getItem('lastProjectId');
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <div className="flex flex-1 h-screen overflow-hidden">
-        <div className={`${isSidebarOpen ? 'block' : 'hidden'} lg:block flex-shrink-0`}>
-          <SidebarNav projectId={projectId} />
-        </div>
+    <SidebarProvider>
+      <AppSidebar projectId={lastProjectId ? lastProjectId : projectId} variant="inset" />
+      
+      <SidebarInset className="max-w-full">
+        <Header />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header projectId={projectId} toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-          
-          <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto px-2 py-3 md:px-5 lg:px-6">
+          <div className="mx-auto w-full">
             <PageTransition>
               {children}
             </PageTransition>
-          </main>
-          
-          <Footer />
-        </div>
-      </div>
-    </div>
+          </div>
+        </main>
+        
+        <Footer />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }; 

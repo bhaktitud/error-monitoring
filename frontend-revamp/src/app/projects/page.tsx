@@ -58,6 +58,7 @@ export default function ProjectsPage() {
   };
 
   const handleProjectClick = (projectId: string) => {
+    localStorage.setItem('lastProjectId', projectId);
     router.push(`/projects/${projectId}`);
   };
 

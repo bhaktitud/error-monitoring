@@ -106,14 +106,7 @@ export default function NotificationsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push(`/projects/${projectId}`)}
-              className="mr-4"
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
+            <h1 className="text-2xl font-semibold">Notifikasi</h1>
           </div>
           
           <Button 

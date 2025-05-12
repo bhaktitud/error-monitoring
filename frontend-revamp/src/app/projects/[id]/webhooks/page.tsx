@@ -141,23 +141,10 @@ export default function WebhooksPage() {
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
         <div className="flex items-center mb-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push(`/projects/${projectId}`)}
-              className="mr-4"
-            >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
+          <div className="flex items-center">
+            <h1 className="text-2xl font-semibold">Webhooks</h1>
           </div>
-        {/* <div className="flex justify-between items-center mb-6">
-          {!showAddForm && (
-            <Button onClick={() => setShowAddForm(true)}>
-              <FiPlus className="mr-2 h-4 w-4" />
-              Tambah Webhook
-            </Button>
-          )}
-        </div> */}
+        </div>
 
         {error && (
           <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">

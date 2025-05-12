@@ -1,116 +1,296 @@
 # LogRaven SDK
 
-SDK untuk mengirim error ke LogRaven dari berbagai platform.
+SDK untuk integrasi dengan LogRaven Error Monitoring Platform.
 
 ## Instalasi
 
 ```bash
 npm install @lograven/sdk
-# atau
-yarn add @lograven/sdk
 ```
 
-## Penggunaan
+## Penggunaan Dasar
 
 ### Node.js (Backend)
 
 ```javascript
-import { LogRaven } from '@lograven/sdk';
+const LogRaven = require('@lograven/sdk');
 
-const logRaven = new LogRaven({
-  apiKey: 'YOUR_API_KEY',
-  projectId: 'YOUR_PROJECT_ID'
+// Inisialisasi SDK dengan DSN dari project LogRaven Anda
+LogRaven.init({
+  dsn: 'YOUR_DSN_HERE',
+  environment: 'production', // atau 'development', 'staging', etc.
+  release: '1.0.0' // versi aplikasi Anda
 });
 
-// Mengirim error
-logRaven.captureError(new Error('Something went wrong'));
-```
+// Tambahkan middleware untuk Express
+const app = express();
+app.use(LogRaven.withErrorMonitoring());
 
-### Next.js
-
-```javascript
-// pages/_app.js atau app/layout.js
-import { LogRaven } from '@lograven/sdk';
-
-const logRaven = new LogRaven({
-  apiKey: process.env.NEXT_PUBLIC_LOGRaven_API_KEY,
-  projectId: process.env.NEXT_PUBLIC_LOGRaven_PROJECT_ID
-});
-
-// Tambahkan ke window untuk akses global
-if (typeof window !== 'undefined') {
-  window.LogRaven = logRaven;
+// Contoh pengiriman error manual
+try {
+  throw new Error('Contoh error manual');
+} catch (error) {
+  LogRaven.captureException(error);
 }
+
+// Menangkap pesan (tanpa error)
+LogRaven.captureMessage('Pesan penting', 'info');
 ```
 
-### Vue.js
+### Browser (Frontend)
 
 ```javascript
-// main.js
-import { createApp } from 'vue';
-import { LogRaven } from '@lograven/sdk';
-import App from './App.vue';
+import * as LogRaven from '@lograven/sdk';
 
-const app = createApp(App);
-
-const logRaven = new LogRaven({
-  apiKey: import.meta.env.VITE_LOGRaven_API_KEY,
-  projectId: import.meta.env.VITE_LOGRaven_PROJECT_ID
+// Inisialisasi SDK di aplikasi frontend
+LogRaven.init({
+  dsn: 'YOUR_DSN_HERE',
+  environment: 'production',
+  release: '1.0.0',
+  sdk: {
+    captureUnhandledErrors: true,
+    captureConsoleErrors: true,
+    captureNetworkErrors: true
+  }
 });
 
-// Tambahkan ke global properties
-app.config.globalProperties.$logRaven = logRaven;
+// Track user saat login
+LogRaven.setUser({
+  id: 'user123',
+  email: 'user@example.com',
+  username: 'username',
+  // bisa tambah field custom lainnya
+});
 
-app.mount('#app');
+// Track breadcrumbs untuk melihat langkah user sebelum error
+LogRaven.addBreadcrumb({
+  category: 'ui',
+  message: 'User klik tombol submit',
+  data: { formData: true }
+});
+
+// Tangkap error manual
+try {
+  // Simulasi error
+  const items = null;
+  const count = items.length; // Ini akan error
+} catch (error) {
+  LogRaven.captureException(error, {
+    extraContext: { page: 'homepage' }
+  });
+}
 ```
 
 ### React
 
-```javascript
-// App.jsx
-import { LogRaven } from '@lograven/sdk';
+```jsx
+import React from 'react';
+import * as LogRaven from '@lograven/sdk';
 
-const logRaven = new LogRaven({
-  apiKey: process.env.REACT_APP_LOGRaven_API_KEY,
-  projectId: process.env.REACT_APP_LOGRaven_PROJECT_ID
-});
-
-// Gunakan dalam komponen
-function App() {
-  const handleError = () => {
-    try {
-      // kode yang mungkin error
-    } catch (error) {
-      logRaven.captureError(error);
+// Error boundary untuk menangkap error di komponen React
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, info) {
+    // Kirim error ke LogRaven
+    LogRaven.captureException(error, {
+      extraContext: {
+        componentStack: info.componentStack,
+        reactComponent: true,
+        componentName: this.props.componentName || 'UnknownComponent'
+      }
+    });
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div>Terjadi kesalahan.</div>;
     }
-  };
+    return this.props.children;
+  }
+}
 
-  return <button onClick={handleError}>Test Error</button>;
+// Penggunaan:
+function App() {
+  return (
+    <ErrorBoundary 
+      componentName="App" 
+      fallback={<div>Maaf, terjadi kesalahan. Refresh halaman.</div>}
+    >
+      <YourComponent />
+    </ErrorBoundary>
+  );
 }
 ```
 
-## Konfigurasi
+### React Native
 
 ```javascript
-const logRaven = new LogRaven({
-  apiKey: 'YOUR_API_KEY',
-  projectId: 'YOUR_PROJECT_ID',
-  environment: 'production', // opsional
-  release: '1.0.0', // opsional
-  // konfigurasi tambahan
+import * as LogRaven from '@lograven/sdk';
+
+// Inisialisasi khusus React Native
+LogRaven.initReactNative({
+  dsn: 'YOUR_DSN_HERE',
+  environment: 'production',
+  release: '1.0.0'
+});
+
+// Untuk menambahkan context di setiap screen
+function HomeScreen() {
+  React.useEffect(() => {
+    // Set tags untuk environment
+    LogRaven.setTags({
+      screen: 'HomeScreen',
+      networkState: 'connected'
+    });
+    
+    // Track breadcrumb
+    LogRaven.addBreadcrumb({
+      category: 'navigation',
+      message: 'User masuk ke HomeScreen'
+    });
+  }, []);
+  
+  // ...
+}
+```
+
+## Konfigurasi Lanjutan
+
+### Opsi SDK Lengkap
+
+```javascript
+LogRaven.init({
+  dsn: 'YOUR_DSN_HERE',
+  apiUrl: 'https://api.example.com', // Opsional, default: endpoint dari dsn
+  environment: 'production',
+  release: '1.0.0',
+  sdk: {
+    captureUnhandledRejections: true, // Tangkap unhandled promise rejections
+    captureUncaughtExceptions: true, // Tangkap uncaught exceptions
+    captureUnhandledErrors: true, // Untuk browser
+    captureConsoleErrors: true, // Tangkap console.error
+    captureNetworkErrors: true, // Tangkap error fetch/XHR
+    breadcrumbs: true, // Aktifkan breadcrumb tracking
+    maxBreadcrumbs: 100, // Jumlah maksimal breadcrumbs yang disimpan
+    
+    // Hook untuk mengubah data sebelum dikirim
+    beforeSend: (payload, error) => {
+      // Contoh: Cek apakah error dari library tertentu yang bisa diabaikan
+      if (error.message.includes('IgnorableError')) {
+        return null; // Abaikan error ini
+      }
+      
+      // Contoh: Tambahkan data tambahan
+      payload.extraContext.custom = 'nilai tambahan';
+      return payload;
+    }
+  }
 });
 ```
 
-## API
+### Filter Sensitif Data
 
-### captureError(error: Error, context?: object)
+LogRaven secara otomatis memfilter header sensitif dan field dalam request seperti password, token, dll. Anda juga bisa mengimplementasikan filter custom dengan `beforeSend`:
 
-Mengirim error ke LogRaven dengan konteks tambahan opsional.
+```javascript
+LogRaven.init({
+  dsn: 'YOUR_DSN_HERE',
+  sdk: {
+    beforeSend: (payload, error) => {
+      // Hapus semua data sensitif dari payload
+      if (payload.userContext && payload.userContext.creditCard) {
+        payload.userContext.creditCard = '[REDACTED]';
+      }
+      return payload;
+    }
+  }
+});
+```
 
-### captureMessage(message: string, level?: 'info' | 'warning' | 'error')
+## API Reference
 
-Mengirim pesan ke LogRaven dengan level yang ditentukan.
+### Core
 
-## Lisensi
+- `init(options)` - Inisialisasi SDK
+- `initReactNative(options)` - Inisialisasi SDK untuk React Native
+- `captureException(error, options)` - Tangkap exception
+- `captureMessage(message, level, options)` - Tangkap pesan
 
-MIT 
+### Context
+
+- `setUser(user)` - Set informasi user
+- `setTags(tags)` - Set tags yang akan disertakan di semua error
+- `addBreadcrumb(breadcrumb)` - Tambahkan breadcrumb
+
+### Integration
+
+- `withErrorMonitoring()` - Middleware untuk Express
+- `withErrorBoundary(Component, options)` - HOC untuk React
+
+## Langkah Integrasi Tambahan
+
+### Tambahan untuk Next.js
+
+Buat file `pages/_app.js` (atau `.tsx` untuk TypeScript):
+
+```javascript
+import * as LogRaven from '@lograven/sdk';
+
+// Inisialisasi hanya di sisi client
+if (typeof window !== 'undefined') {
+  LogRaven.init({
+    dsn: process.env.NEXT_PUBLIC_LOGRAVEN_DSN,
+    environment: process.env.NODE_ENV,
+    release: process.env.NEXT_PUBLIC_VERSION || '1.0.0'
+  });
+}
+
+function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+
+export default MyApp
+```
+
+### Tambahan untuk Vue.js
+
+```javascript
+import * as LogRaven from '@lograven/sdk';
+import Vue from 'vue';
+
+LogRaven.init({
+  dsn: 'YOUR_DSN_HERE',
+  environment: process.env.NODE_ENV
+});
+
+// Error handler global untuk Vue
+Vue.config.errorHandler = (error, vm, info) => {
+  LogRaven.captureException(error, {
+    extraContext: {
+      vueInfo: info,
+      componentName: vm.$options.name || 'AnonymousComponent'
+    }
+  });
+};
+```
+
+## Troubleshooting
+
+Jika Anda menghadapi masalah:
+
+1. Pastikan DSN yang digunakan benar
+2. Periksa koneksi ke server LogRaven
+3. Lihat apakah ada CORS issue jika digunakan di browser
+4. Cek firewall/network rules yang mungkin memblokir koneksi
+
+## Referensi
+
+Untuk informasi lebih lanjut, kunjungi [dokumentasi resmi LogRaven](https://lograven.docs.example.com) atau lihat [contoh integrasi](https://github.com/lograven/examples). 

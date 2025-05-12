@@ -32,7 +32,7 @@ export interface UserProfile {
   };
   plan?: {
     name: string;
-    features: Record<string, any>;
+    features: Record<string, unknown>;
   };
 }
 
@@ -351,8 +351,12 @@ export const ProjectsAPI = {
   },
 
   // Update project settings
-  updateProject: async (projectId: string, settings: Record<string, any>) => {
-    return apiRequest<{ success: boolean; message?: string; project?: any }>(`/projects/${projectId}`, {
+  updateProject: async (projectId: string, settings: Record<string, unknown>) => {
+    return apiRequest<{ 
+      success: boolean; 
+      message?: string; 
+      project?: Record<string, unknown> 
+    }>(`/projects/${projectId}`, {
       method: 'PATCH',
       body: JSON.stringify(settings),
     });
@@ -365,17 +369,34 @@ export const ProjectsAPI = {
 export const EventsAPI = {
   // Get events for a project
   getEvents: async (projectId: string) => {
-    return apiRequest<Array<{
-      id: string;
-      errorType: string;
-      message: string;
-      timestamp: string;
-      stacktrace: string;
-      userAgent: string;
-      statusCode: number;
-      userContext: UserContext;
-      tags: Tags;
-    }>>(`/events/project/${projectId}`);
+    const response = await apiRequest<{
+      events: Array<{
+        id: string;
+        errorType: string;
+        message: string;
+        timestamp: string;
+        stacktrace: string;
+        userAgent: string;
+        statusCode: number;
+        userContext: UserContext;
+        tags: Tags;
+        group?: {
+          id: string;
+          errorType: string;
+          status: string;
+          count: number;
+        };
+      }>,
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+    }>(`/events/project/${projectId}`);
+    
+    // Mengembalikan hanya array events untuk kompatibilitas
+    return response.events;
   },
   
   // Get events usage and quota
@@ -413,33 +434,55 @@ export const EventsAPI = {
 export const GroupsAPI = {
   // Get error groups for a project
   getGroups: async (projectId: string) => {
-    return apiRequest<Array<{
-      id: string;
-      errorType: string;
-      message: string;
-      count: number;
-      firstSeen: string;
-      lastSeen: string;
-      status: string;
-      statusCode: number;
-      assignedTo: string;
-      updatedAt: string;
-    }>>(`/projects/${projectId}/groups`);
+    const response = await apiRequest<{
+      errorGroups: Array<{
+        id: string;
+        errorType: string;
+        message: string;
+        count: number;
+        firstSeen: string;
+        lastSeen: string;
+        status: string;
+        statusCode: number;
+        assignedTo: string;
+        updatedAt: string;
+      }>,
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+    }>(`/groups/project/${projectId}`);
+    
+    // Mengembalikan hanya array errorGroups untuk menjaga kompatibilitas dengan kode yang sudah ada
+    return response.errorGroups;
   },
 
   // Get events in a group
   getGroupEvents: async (groupId: string) => {
-    return apiRequest<Array<{
-      id: string;
-      errorType: string;
-      message: string;
-      timestamp: string;
-      stacktrace: string;
-      userAgent: string;
-      statusCode: number;
-      userContext: UserContext;
-      tags: Tags;
-    }>>(`/groups/${groupId}/events`);
+    const response = await apiRequest<{
+      events: Array<{
+        id: string;
+        errorType: string;
+        message: string;
+        timestamp: string;
+        stacktrace: string;
+        userAgent: string;
+        statusCode: number;
+        userContext: UserContext;
+        tags: Tags;
+      }>,
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+    }>(`/groups/${groupId}/events`);
+    
+    // Mengembalikan hanya array events untuk kompatibilitas
+    return response.events;
   },
 
   // Change group status
@@ -448,7 +491,7 @@ export const GroupsAPI = {
       id: string;
       status: string;
     }>(`/groups/${groupId}/status`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ status }),
     });
   },
@@ -459,7 +502,7 @@ export const GroupsAPI = {
       id: string;
       assignedTo: string;
     }>(`/groups/${groupId}/assign`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ memberId }),
     });
   },

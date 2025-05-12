@@ -5,9 +5,12 @@ import { Request, Response, NextFunction } from 'express';
 interface SDKOptions {
   captureUnhandledRejections?: boolean;
   captureUncaughtExceptions?: boolean;
+  captureUnhandledErrors?: boolean; // Untuk browser
   breadcrumbs?: boolean;
   maxBreadcrumbs?: number;
   beforeSend?: (payload: EventPayload, error: Error) => EventPayload | null;
+  captureConsoleErrors?: boolean; // Menangkap console.error
+  captureNetworkErrors?: boolean; // Menangkap error fetch/XHR
 }
 
 // Definisi tipe untuk inisialisasi
@@ -61,6 +64,16 @@ interface EventPayload {
   tags: Tags;
   breadcrumbs: Breadcrumb[];
   extraContext: Record<string, any>;
+  // Tambahan metadata
+  os?: string;
+  osVersion?: string;
+  browser?: string;
+  browserVersion?: string;
+  deviceType?: string;
+  screenSize?: string;
+  ip?: string;
+  language?: string;
+  referrer?: string;
 }
 
 // Variabel global
@@ -73,12 +86,105 @@ let RELEASE: string = '';
 let SDK_OPTIONS: SDKOptions = {
   captureUnhandledRejections: true,
   captureUncaughtExceptions: true,
+  captureUnhandledErrors: true,
+  captureConsoleErrors: true,
+  captureNetworkErrors: true,
   breadcrumbs: true,
   maxBreadcrumbs: 100,
   beforeSend: undefined,
 };
 
 const breadcrumbs: Breadcrumb[] = [];
+
+/**
+ * Deteksi informasi browser dan OS
+ */
+function detectBrowserAndOS(): {
+  os: string;
+  osVersion: string;
+  browser: string;
+  browserVersion: string;
+  deviceType: string;
+  screenSize: string;
+  language: string;
+} {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return {
+      os: 'unknown',
+      osVersion: 'unknown',
+      browser: 'unknown',
+      browserVersion: 'unknown',
+      deviceType: 'unknown',
+      screenSize: 'unknown',
+      language: 'unknown',
+    };
+  }
+
+  const userAgent = navigator.userAgent;
+
+  // OS detection
+  let os = 'unknown';
+  let osVersion = 'unknown';
+  
+  if (userAgent.indexOf('Win') !== -1) os = 'Windows';
+  else if (userAgent.indexOf('Mac') !== -1) os = 'MacOS';
+  else if (userAgent.indexOf('Linux') !== -1) os = 'Linux';
+  else if (userAgent.indexOf('Android') !== -1) os = 'Android';
+  else if (userAgent.indexOf('like Mac') !== -1) os = 'iOS';
+
+  // Browser detection
+  let browser = 'unknown';
+  let browserVersion = 'unknown';
+  
+  if (userAgent.indexOf('Chrome') !== -1 && userAgent.indexOf('Edg') === -1 && userAgent.indexOf('OPR') === -1) {
+    browser = 'Chrome';
+    const match = userAgent.match(/Chrome\/(\d+\.\d+)/);
+    if (match) browserVersion = match[1];
+  } else if (userAgent.indexOf('Safari') !== -1 && userAgent.indexOf('Chrome') === -1) {
+    browser = 'Safari';
+    const match = userAgent.match(/Version\/(\d+\.\d+)/);
+    if (match) browserVersion = match[1];
+  } else if (userAgent.indexOf('Firefox') !== -1) {
+    browser = 'Firefox';
+    const match = userAgent.match(/Firefox\/(\d+\.\d+)/);
+    if (match) browserVersion = match[1];
+  } else if (userAgent.indexOf('Edg') !== -1) {
+    browser = 'Edge';
+    const match = userAgent.match(/Edg\/(\d+\.\d+)/);
+    if (match) browserVersion = match[1];
+  } else if (userAgent.indexOf('OPR') !== -1) {
+    browser = 'Opera';
+    const match = userAgent.match(/OPR\/(\d+\.\d+)/);
+    if (match) browserVersion = match[1];
+  }
+
+  // Device type detection
+  let deviceType = 'Desktop';
+  if (userAgent.match(/iPad|iPhone|iPod/i)) {
+    deviceType = 'Mobile iOS';
+  } else if (userAgent.match(/Android/i)) {
+    deviceType = 'Mobile Android';
+  } else if (userAgent.match(/Windows Phone/i)) {
+    deviceType = 'Mobile Windows';
+  }
+
+  // Screen size
+  const screenSize = typeof window !== 'undefined' ? 
+    `${window.screen.width}x${window.screen.height}` : 'unknown';
+
+  // Language
+  const language = navigator.language || 'unknown';
+
+  return {
+    os,
+    osVersion,
+    browser,
+    browserVersion,
+    deviceType,
+    screenSize,
+    language,
+  };
+}
 
 /**
  * Inisialisasi SDK
@@ -94,17 +200,171 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
   RELEASE = release || '';
   SDK_OPTIONS = { ...SDK_OPTIONS, ...sdk };
 
-  if (SDK_OPTIONS.captureUnhandledRejections && typeof process !== 'undefined') {
-    process.on('unhandledRejection', (reason: any) => {
-      captureException(
-        reason instanceof Error ? reason : new Error(`Unhandled Promise rejection: ${reason}`)
-      );
-    });
+  if (SDK_OPTIONS.captureUnhandledRejections) {
+    if (typeof process !== 'undefined') {
+      // Node.js
+      process.on('unhandledRejection', (reason: any) => {
+        captureException(
+          reason instanceof Error ? reason : new Error(`Unhandled Promise rejection: ${reason}`)
+        );
+      });
+    } else if (typeof window !== 'undefined') {
+      // Browser
+      window.addEventListener('unhandledrejection', (event) => {
+        captureException(
+          event.reason instanceof Error 
+            ? event.reason 
+            : new Error(`Unhandled Promise rejection: ${event.reason}`)
+        );
+      });
+    }
   }
 
-  if (SDK_OPTIONS.captureUncaughtExceptions && typeof process !== 'undefined') {
-    process.on('uncaughtException', (error: Error) => {
-      captureException(error);
+  if (SDK_OPTIONS.captureUncaughtExceptions) {
+    if (typeof process !== 'undefined') {
+      // Node.js
+      process.on('uncaughtException', (error: Error) => {
+        captureException(error);
+      });
+    } else if (typeof window !== 'undefined') {
+      // Browser
+      window.addEventListener('error', (event) => {
+        if (event.error) {
+          captureException(event.error);
+        } else {
+          captureException(
+            new Error(`Error in ${event.filename} at line ${event.lineno}:${event.colno}`)
+          );
+        }
+      });
+    }
+  }
+
+  // Hook untuk console.error
+  if (SDK_OPTIONS.captureConsoleErrors && typeof console !== 'undefined' && typeof window !== 'undefined') {
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+      const error = args[0] instanceof Error 
+        ? args[0] 
+        : new Error(`Console error: ${args.map(arg => String(arg)).join(' ')}`);
+      
+      captureException(error, { 
+        extraContext: { 
+          console: true, 
+          arguments: args.map(arg => 
+            arg instanceof Error 
+              ? { name: arg.name, message: arg.message, stack: arg.stack } 
+              : arg
+          )
+        } 
+      });
+      
+      originalConsoleError.apply(console, args);
+    };
+  }
+
+  // Hook untuk network errors (fetch dan XMLHttpRequest)
+  if (SDK_OPTIONS.captureNetworkErrors && typeof window !== 'undefined') {
+    // Patch fetch
+    if (typeof fetch !== 'undefined') {
+      const originalFetch = window.fetch;
+      window.fetch = async function(...args) {
+        try {
+          const response = await originalFetch.apply(window, args);
+          
+          if (!response.ok) {
+            const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown';
+            addBreadcrumb({
+              category: 'http',
+              message: `Fetch error: ${response.status} ${response.statusText}`,
+              data: { url, status: response.status, method: args[1]?.method || 'GET' },
+              level: 'error'
+            });
+          }
+          
+          return response;
+        } catch (error) {
+          captureException(error, { 
+            extraContext: { 
+              networkRequest: 'fetch', 
+              url: typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown',
+              options: args[1] 
+            } 
+          });
+          throw error;
+        }
+      };
+    }
+
+    // Patch XMLHttpRequest
+    if (typeof XMLHttpRequest !== 'undefined') {
+      const originalOpen = XMLHttpRequest.prototype.open;
+      const originalSend = XMLHttpRequest.prototype.send;
+
+      XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+        this._logRavenUrl = url;
+        this._logRavenMethod = method;
+        return originalOpen.apply(this, [method, url, ...rest]);
+      };
+
+      XMLHttpRequest.prototype.send = function(...args) {
+        this.addEventListener('error', () => {
+          captureException(new Error(`XHR failed: ${this._logRavenMethod} ${this._logRavenUrl}`), {
+            extraContext: { 
+              networkRequest: 'xhr', 
+              url: this._logRavenUrl, 
+              method: this._logRavenMethod 
+            }
+          });
+        });
+
+        this.addEventListener('load', () => {
+          if (this.status >= 400) {
+            addBreadcrumb({
+              category: 'http',
+              message: `XHR error: ${this.status} for ${this._logRavenMethod} ${this._logRavenUrl}`,
+              data: { url: this._logRavenUrl, status: this.status, method: this._logRavenMethod },
+              level: 'error'
+            });
+          }
+        });
+        
+        return originalSend.apply(this, args);
+      };
+    }
+  }
+
+  // Tambahkan breadcrumb inisialisasi
+  addBreadcrumb({
+    category: 'sdk',
+    message: 'SDK initialized',
+    data: {
+      environment: ENVIRONMENT,
+      release: RELEASE,
+    },
+  });
+}
+
+/**
+ * Inisialisasi SDK untuk React Native
+ */
+function initReactNative({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): void {
+  init({ dsn, apiUrl, environment, release, sdk });
+
+  // Set global error handler untuk React Native
+  if (typeof global !== 'undefined' && global.ErrorUtils) {
+    const originalHandler = global.ErrorUtils.getGlobalHandler();
+    
+    global.ErrorUtils.setGlobalHandler((error, isFatal) => {
+      captureException(error, {
+        extraContext: {
+          reactNative: true,
+          isFatal
+        }
+      });
+      
+      // Juga panggil handler asli
+      originalHandler(error, isFatal);
     });
   }
 }
@@ -162,6 +422,17 @@ async function captureException(
     error = new Error(String(error));
   }
 
+  // Detect browser dan OS info
+  const deviceInfo = typeof window !== 'undefined' ? detectBrowserAndOS() : {
+    os: 'unknown',
+    osVersion: 'unknown',
+    browser: 'unknown',
+    browserVersion: 'unknown',
+    deviceType: 'unknown',
+    screenSize: 'unknown',
+    language: 'unknown'
+  };
+
   const payload: EventPayload = {
     errorType: error.name,
     message: error.message,
@@ -173,14 +444,24 @@ async function captureException(
     statusCode: options.statusCode || null,
     url: options.url || (typeof window !== 'undefined' ? window.location.href : ''),
     method: options.method || '',
-    path: options.path || '',
-    query: options.query || {},
+    path: options.path || (typeof window !== 'undefined' ? window.location.pathname : ''),
+    query: options.query || (typeof window !== 'undefined' ? 
+      Object.fromEntries(new URLSearchParams(window.location.search)) : {}),
     params: options.params || {},
     headers: sanitizeHeaders(options.headers || {}),
     userContext: options.userContext || USER,
     tags: { ...(TAGS || {}), ...(options.tags || {}) },
     breadcrumbs: SDK_OPTIONS.breadcrumbs ? [...breadcrumbs] : [],
     extraContext: options.extraContext || {},
+    // Metadata browser dan OS
+    os: deviceInfo.os,
+    osVersion: deviceInfo.osVersion,
+    browser: deviceInfo.browser,
+    browserVersion: deviceInfo.browserVersion,
+    deviceType: deviceInfo.deviceType,
+    screenSize: deviceInfo.screenSize,
+    language: deviceInfo.language,
+    referrer: typeof document !== 'undefined' ? document.referrer : undefined
   };
 
   let modifiedPayload = payload;
@@ -294,15 +575,74 @@ function withErrorMonitoring() {
   };
 }
 
+/**
+ * Wrap untuk React Component
+ */
+function withErrorBoundary(Component: any, options: {
+  fallback?: any;
+  onError?: (error: Error, componentStack: string, componentName: string) => void;
+} = {}) {
+  if (typeof window === 'undefined') {
+    // Server-side rendering, return component unchanged
+    return Component;
+  }
+
+  // Fungsi ini akan diimplementasikan oleh pengguna di React
+  // Sebagai panduan implementasi
+  const guideline = `
+    // Contoh implementasi:
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+      }
+      
+      static getDerivedStateFromError() {
+        return { hasError: true };
+      }
+      
+      componentDidCatch(error, info) {
+        // Kirim error ke LogRaven
+        LogRaven.captureException(error, {
+          extraContext: {
+            componentStack: info.componentStack,
+            reactComponent: true,
+            componentName: Component.displayName || Component.name || 'UnknownComponent'
+          }
+        });
+        
+        if (options.onError) {
+          options.onError(error, info.componentStack, 
+            Component.displayName || Component.name || 'UnknownComponent');
+        }
+      }
+      
+      render() {
+        if (this.state.hasError) {
+          return options.fallback || <div>Something went wrong.</div>;
+        }
+        return <Component {...this.props} />;
+      }
+    }
+    
+    return ErrorBoundary;
+  `;
+  
+  // Ini hanya placeholder - implementasi nyata memerlukan React
+  return Component;
+}
+
 // Ekspor semua fungsi
 export {
   init,
+  initReactNative,
   setUser,
   setTags,
   addBreadcrumb,
   captureException,
   captureMessage,
   withErrorMonitoring,
+  withErrorBoundary,
   type SDKOptions,
   type InitOptions,
   type User,

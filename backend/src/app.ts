@@ -334,7 +334,7 @@ io.on('connection', (socket) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api', groupRoutes);
+app.use('/api/groups', groupRoutes);
 app.use('/api', webhookRoutes);
 app.use('/api', statsRoutes);
 app.use('/api/notifications', createNotificationRoutes(io));

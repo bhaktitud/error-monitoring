@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, useState, useEffect } from 'react';
 import Footer from '@/components/ui/footer';
 import PageTransition from '@/components/ui/page-transition';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -16,12 +16,24 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: FC<DashboardLayoutProps> = ({ children, projectId }) => {
+  // Gunakan state untuk menyimpan lastProjectId
+  const [lastProjectId, setLastProjectId] = useState<string | null>(null);
 
-  const lastProjectId = localStorage.getItem('lastProjectId');
+  // Akses localStorage di useEffect untuk memastikan hanya dijalankan di client-side
+  useEffect(() => {
+    // Cek apakah localStorage tersedia (client-side)
+    if (typeof window !== 'undefined') {
+      const storedProjectId = localStorage.getItem('lastProjectId');
+      setLastProjectId(storedProjectId);
+    }
+  }, []);
+
+  // Tentukan project ID yang digunakan (dari localStorage atau props)
+  const activeProjectId = lastProjectId ? lastProjectId : projectId;
 
   return (
     <SidebarProvider>
-      <AppSidebar projectId={lastProjectId ? lastProjectId : projectId} variant="inset" />
+      <AppSidebar projectId={activeProjectId} variant="inset" />
       
       <SidebarInset className="max-w-full">
         <Header />

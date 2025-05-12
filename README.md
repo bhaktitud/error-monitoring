@@ -13,6 +13,40 @@ LogRaven adalah platform error monitoring open source yang memungkinkan develope
 - **Team Collaboration** (invite anggota, opsional)
 - **Statistik & Visualisasi** (pie/bar chart, filter/search event)
 
+## Fitur Error Monitoring Yang Terimplementasi
+
+### 1. Catch Error
+- **Frontend (Browser)**: Menangkap unhandled exceptions, unhandled rejections, console errors, dan network errors
+- **Backend (Node.js)**: Middleware Express untuk menangkap error
+- **Mobile (React Native)**: Support untuk menangkap error di aplikasi React Native
+- **Integration**: React Error Boundary untuk menangkap error di komponen React
+
+### 2. Stack Trace & Metadata
+- **Informasi lengkap**: Error message, stack trace, line numbers
+- **Browser & OS Info**: Deteksi otomatis browser, versi, OS, device type
+- **User Session**: Mendukung tracking user context, URL, referrer
+- **Network Info**: Capturing request data, query params, method
+
+### 3. Grouping & Deduplication
+- **Smart Fingerprinting**: Grouping berdasarkan error type, stack trace dan normalisasi pesan error
+- **Deduplication**: Menghindari duplikasi error dengan algoritma fingerprinting canggih
+- **Status Management**: Open, Resolved, Ignored untuk mengelola error
+- **Assignment**: Fitur untuk meng-assign error ke anggota tim
+
+### 4. Notifikasi Real-time
+- **Email**: Notifikasi email saat terjadi error baru
+- **In-App**: Notifikasi real-time di dashboard menggunakan WebSocket
+- **Slack**: Webhook integration untuk mengirim alert ke channel Slack
+- **Discord**: Webhook ke channel Discord dengan format yang informatif
+- **Telegram**: Notifikasi ke bot Telegram dengan format markdown
+
+### 5. Dashboard Dengan Filter
+- **Filter Error**: Berdasarkan project, environment, browser, OS
+- **Search**: Pencarian berdasarkan error message dan type
+- **Pagination**: Navigasi antar halaman untuk daftar error
+- **Sorting**: Pengurutan berdasarkan waktu, frekuensi, status
+- **Detail View**: Tampilan detail untuk melihat informasi lengkap error
+
 ---
 
 ## Struktur Folder
@@ -51,8 +85,9 @@ LogRaven adalah platform error monitoring open source yang memungkinkan develope
 #### `/sdk`
 - SDK Node.js untuk mengirim error ke backend monitoring
 - Fungsi utama: `init`, `captureException`
+- Support untuk browser, Node.js, dan React Native
 - Bisa di-publish ke npm
-- File penting: `index.js`, `package.json`, `README.md`
+- File penting: `index.ts`, `package.json`, `README.md`
 
 #### `/example`
 - Contoh backend Express yang mengintegrasikan SDK

@@ -8,8 +8,18 @@ import { Button } from '@/components/ui/button';
 import { EventDetail } from '@/components/ui/event-detail';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader } from 'react-icons/fi';
 import { GroupsAPI, ProjectsAPI } from '@/lib/api';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserContext {
   [key: string]: unknown;
@@ -83,6 +93,7 @@ export default function ErrorGroupPage() {
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [submittingAssign, setSubmittingAssign] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [canAssign, setCanAssign] = useState(false);
 
   useEffect(() => {
     const fetchErrorGroup = async () => {
@@ -167,6 +178,23 @@ export default function ErrorGroupPage() {
         if (errorGroup?.assignedTo) {
           setSelectedMember(errorGroup.assignedTo);
         }
+
+        // Cek apakah user saat ini adalah admin atau pemilik
+        // Ambil user ID dari token JWT
+        const token = localStorage.getItem('authToken') || '';
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userId = payload.userId;
+            const currentUser = data.find(member => member.user.id === userId);
+            
+            if (currentUser) {
+              setCanAssign(currentUser.role === 'admin' || currentUser.role === 'owner');
+            }
+          } catch (error) {
+            console.error('Error parsing JWT token:', error);
+          }
+        }
       } catch (err) {
         console.error('Error fetching project members:', err);
       } finally {
@@ -229,8 +257,8 @@ export default function ErrorGroupPage() {
     return (
       <DashboardLayout projectId={projectId}>
         <div className="text-center p-12">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Memuat detail error group...</p>
+          <Skeleton className="h-8 w-8 rounded-full mx-auto mb-4" />
+          <Skeleton className="h-4 w-48 mx-auto" />
         </div>
       </DashboardLayout>
     );
@@ -271,9 +299,10 @@ export default function ErrorGroupPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-destructive/20 border border-destructive text-destructive rounded-md">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <FiAlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
         
         <div className="mb-8">
@@ -311,29 +340,41 @@ export default function ErrorGroupPage() {
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium">Status:</div>
-              <Button 
-                size="sm" 
-                variant={errorGroup.status === 'open' ? 'default' : 'outline'} 
-                onClick={() => handleStatusChange('open')}
-              >
-                Terbuka
-              </Button>
-              <Button 
-                size="sm" 
-                variant={errorGroup.status === 'resolved' ? 'default' : 'outline'}
-                onClick={() => handleStatusChange('resolved')}
-              >
-                <FiCheck className="mr-1 h-4 w-4" />
-                Selesai
-              </Button>
-              <Button 
-                size="sm" 
-                variant={errorGroup.status === 'ignored' ? 'default' : 'outline'}
-                onClick={() => handleStatusChange('ignored')}
-              >
-                <FiEyeOff className="mr-1 h-4 w-4" />
-                Abaikan
-              </Button>
+              {canAssign ? (
+                <>
+                  <Button 
+                    size="sm" 
+                    variant={errorGroup.status === 'open' ? 'default' : 'outline'} 
+                    onClick={() => handleStatusChange('open')}
+                  >
+                    Terbuka
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={errorGroup.status === 'resolved' ? 'default' : 'outline'}
+                    onClick={() => handleStatusChange('resolved')}
+                  >
+                    <FiCheck className="mr-1 h-4 w-4" />
+                    Selesai
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={errorGroup.status === 'ignored' ? 'default' : 'outline'}
+                    onClick={() => handleStatusChange('ignored')}
+                  >
+                    <FiEyeOff className="mr-1 h-4 w-4" />
+                    Abaikan
+                  </Button>
+                </>
+              ) : (
+                <Badge variant={
+                  errorGroup.status === 'resolved' ? 'default' : 
+                  errorGroup.status === 'ignored' ? 'secondary' : 'destructive'
+                }>
+                  {errorGroup.status === 'open' ? 'Terbuka' : 
+                  errorGroup.status === 'resolved' ? 'Selesai' : 'Diabaikan'}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -347,9 +388,10 @@ export default function ErrorGroupPage() {
                 </h2>
                 
                 {loadingEvents ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Memuat events...</p>
+                  <div className="space-y-4">
+                    <Skeleton className="h-24 w-full rounded-md" />
+                    <Skeleton className="h-24 w-full rounded-md" />
+                    <Skeleton className="h-24 w-full rounded-md" />
                   </div>
                 ) : events.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
@@ -385,49 +427,63 @@ export default function ErrorGroupPage() {
                 </h2>
                 
                 {loadingMembers ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin h-5 w-5 border-3 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm">Memuat anggota tim...</p>
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full mb-2" />
+                    <Skeleton className="h-9 w-full" />
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-2">
-                      <select 
-                        className="w-full p-2 border border-input rounded-md mb-2"
-                        value={selectedMember || ''}
-                        onChange={(e) => setSelectedMember(e.target.value || null)}
-                      >
-                        <option value="">-- Tidak ada --</option>
-                        {members.map((member) => (
-                          <option key={member.id} value={member.id}>
-                            {member.user.email} ({member.role})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <Button 
-                      size="sm" 
-                      className="w-full" 
-                      onClick={handleAssign}
-                      disabled={submittingAssign || selectedMember === errorGroup.assignedTo}
-                    >
-                      {submittingAssign ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
-                          Menyimpan...
-                        </>
-                      ) : (
-                        <>Assign</>
-                      )}
-                    </Button>
+                    {canAssign ? (
+                      <>
+                        <div className="mb-2">
+                          <Select
+                            value={selectedMember || 'none'}
+                            onValueChange={(value) => setSelectedMember(value === 'none' ? null : value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="-- Tidak ada --" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-- Tidak ada --</SelectItem>
+                              {members.map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.user.email} ({member.role})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          className="w-full" 
+                          onClick={handleAssign}
+                          disabled={submittingAssign || selectedMember === errorGroup.assignedTo}
+                        >
+                          {submittingAssign ? (
+                            <>
+                              <FiLoader className="h-4 w-4 mr-2 animate-spin" />
+                              Menyimpan...
+                            </>
+                          ) : (
+                            <>Assign</>
+                          )}
+                        </Button>
+                      </>
+                    ) : null}
                     
                     {errorGroup.assignedTo && members.length > 0 && (
-                      <div className="mt-4 p-3 bg-primary/20 rounded-md text-sm">
+                      <div className={`p-3 bg-primary/20 rounded-md text-sm ${!canAssign ? '' : 'mt-4'}`}>
                         <div className="font-medium mb-1">Saat ini di-assign ke:</div>
                         <div>
                           {members.find(m => m.id === errorGroup.assignedTo)?.user.email || 'Unknown'}
                         </div>
+                      </div>
+                    )}
+                    
+                    {!errorGroup.assignedTo && !canAssign && (
+                      <div className="text-sm text-muted-foreground">
+                        Belum ada anggota tim yang ditugaskan.
                       </div>
                     )}
                   </div>
@@ -435,65 +491,67 @@ export default function ErrorGroupPage() {
               </CardContent>
             </Card>
             
-            <div className="bg-card rounded-lg border p-4">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <FiMessageCircle className="mr-2 h-5 w-5" />
-                Komentar
-              </h2>
-              
-              {loadingComments ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                  <p className="text-sm">Memuat komentar...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4">
-                    {comments.length === 0 ? (
-                      <div className="text-center py-6 text-muted-foreground">
-                        Belum ada komentar.
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {comments.map((comment) => (
-                          <Comment 
-                            key={comment.id}
-                            id={comment.id}
-                            content={comment.content}
-                            createdAt={comment.createdAt}
-                            author={comment.author}
-                          />
-                        ))}
-                      </div>
-                    )}
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                  <FiMessageCircle className="mr-2 h-5 w-5" />
+                  Komentar
+                </h2>
+                
+                {loadingComments ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-20 w-full rounded-md" />
+                    <Skeleton className="h-20 w-full rounded-md" />
                   </div>
-                  
-                  <form onSubmit={handleSubmitComment}>
-                    <textarea
-                      className="w-full p-3 border border-input rounded-md mb-2 min-h-24 focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Tambahkan komentar..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      disabled={submittingComment}
-                    ></textarea>
-                    <Button 
-                      type="submit" 
-                      size="sm"
-                      disabled={!newComment.trim() || submittingComment}
-                    >
-                      {submittingComment ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2"></div>
-                          Mengirim...
-                        </>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      {comments.length === 0 ? (
+                        <div className="text-center py-6 text-muted-foreground">
+                          Belum ada komentar.
+                        </div>
                       ) : (
-                        <>Kirim Komentar</>
+                        <div className="space-y-4">
+                          {comments.map((comment) => (
+                            <Comment 
+                              key={comment.id}
+                              id={comment.id}
+                              content={comment.content}
+                              createdAt={comment.createdAt}
+                              author={comment.author}
+                            />
+                          ))}
+                        </div>
                       )}
-                    </Button>
-                  </form>
-                </>
-              )}
-            </div>
+                    </div>
+                    
+                    <form onSubmit={handleSubmitComment}>
+                      <Textarea
+                        placeholder="Tambahkan komentar..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        disabled={submittingComment}
+                        className="mb-2"
+                      />
+                      <Button 
+                        type="submit" 
+                        size="sm"
+                        disabled={!newComment.trim() || submittingComment}
+                      >
+                        {submittingComment ? (
+                          <>
+                            <FiLoader className="h-4 w-4 mr-2 animate-spin" />
+                            Mengirim...
+                          </>
+                        ) : (
+                          <>Kirim Komentar</>
+                        )}
+                      </Button>
+                    </form>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

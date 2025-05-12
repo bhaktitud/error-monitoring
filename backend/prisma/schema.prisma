@@ -44,6 +44,7 @@ model User {
   plan         Plan?     @relation(fields: [planId], references: [id])
   planExpiry   DateTime? // masa aktif plan (jika berbayar)
   planHistories PlanHistory[]
+  notifications Notification[] // Relasi ke notifikasi
 }
 
 model Project {
@@ -180,4 +181,20 @@ model PlanHistory {
   endDate   DateTime?
   action    String   // 'upgrade', 'downgrade', 'auto-downgrade', dsb
   note      String?
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  type      String   // 'PROJECT_INVITE', 'ERROR_ASSIGNED', dll
+  title     String
+  message   String
+  data      Json?    // Data tambahan dalam format JSON
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
 } 

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProjectsAPI } from '@/lib/api';
-import { FiArrowLeft, FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX, FiCheck, FiAlertCircle, FiAlertTriangle } from 'react-icons/fi';
+import { FiPlus, FiUser, FiMail, FiTrash2, FiClock, FiUserPlus, FiX, FiCheck, FiAlertCircle, FiAlertTriangle } from 'react-icons/fi';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -46,7 +46,7 @@ interface Invitation {
 export default function MembersPage() {
   const params = useParams();
   const projectId = params.id as string;
-  const router = useRouter();
+
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);

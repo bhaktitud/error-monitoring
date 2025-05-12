@@ -12,6 +12,7 @@ const COOKIE_OPTIONS = {
 export const login = (token: string, cookies: Cookies) => {
   // Set token di localStorage untuk client-side check
   localStorage.setItem('authToken', token);
+  localStorage.setItem('token', token); // Tambahkan juga dengan key 'token' untuk kompatibilitas
   
   // Set token di cookies untuk server-side check
   cookies.set('authToken', token, COOKIE_OPTIONS);

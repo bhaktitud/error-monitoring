@@ -217,6 +217,30 @@ router.post('/:id/members/invite', auth, async (req: any, res) => {
       }
     });
     
+    // Kirim notifikasi in-app jika user sudah terdaftar
+    if (user && user.id) {
+      // Import NotificationService
+      const { NotificationService } = require('../services/notificationService');
+      const io = req.app.get('io'); // Ambil objek Socket.IO dari Express app
+      
+      if (io) {
+        const notificationService = new NotificationService(io);
+        
+        // Buat notifikasi
+        await notificationService.createNotification({
+          userId: user.id,
+          type: 'PROJECT_INVITE',
+          title: 'Undangan Proyek',
+          message: `Anda diundang untuk bergabung dengan proyek "${projectName}" sebagai ${role}`,
+          data: {
+            projectId: id,
+            projectName: projectName,
+            inviteId: projectInvite.id
+          }
+        });
+      }
+    }
+    
     res.status(201).json({ 
       success: true, 
       message: `Undangan berhasil dikirim ke ${email}`,
@@ -252,6 +276,12 @@ router.post('/accept-invite', async (req, res) => {
         projectId,
         email,
         status: 'PENDING'
+      },
+      include: {
+        inviter: {
+          select: { id: true, email: true, name: true }
+        },
+        project: true
       }
     });
     
@@ -316,6 +346,30 @@ router.post('/accept-invite', async (req, res) => {
       where: { id: invite.id },
       data: { status: 'ACCEPTED' }
     });
+    
+    // Kirim notifikasi ke inviter bahwa undangan diterima
+    if (invite.inviter && invite.inviter.id) {
+      // Import NotificationService
+      const { NotificationService } = require('../services/notificationService');
+      const io = req.app.get('io'); // Ambil objek Socket.IO dari Express app
+      
+      if (io) {
+        const notificationService = new NotificationService(io);
+        
+        // Kirim notifikasi ke inviter
+        await notificationService.createNotification({
+          userId: invite.inviter.id,
+          type: 'PROJECT_INVITE_ACCEPTED',
+          title: 'Undangan Diterima',
+          message: `${user.name || user.email} telah menerima undangan untuk bergabung dengan proyek "${invite.project.name}"`,
+          data: {
+            projectId: projectId,
+            projectName: invite.project.name,
+            memberId: member.id
+          }
+        });
+      }
+    }
     
     // Ambil detail project
     const project = await prisma.project.findUnique({

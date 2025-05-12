@@ -41,7 +41,7 @@ export function AppSidebar({ projectId, variant = "sidebar", ...props }: AppSide
     user: {
       name: user?.name || "You",
       email: user?.email || "you@example.com",
-      avatar: user?.avatar || "/avatars/shadcn.jpg",
+      avatar: user?.avatar || "",
     },
     navDashboard: [
       {

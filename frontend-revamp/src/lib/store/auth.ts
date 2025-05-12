@@ -43,6 +43,7 @@ export function getUser(): User | null {
 export function createUser(user: User, token: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem('token', token);
     setUser(user);
   }
 }
@@ -54,6 +55,8 @@ export function removeUser(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
   }
 }
 

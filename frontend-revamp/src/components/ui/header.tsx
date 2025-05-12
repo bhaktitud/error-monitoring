@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { FiBell, FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
+import { FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { AuthAPI, UserProfile } from '@/lib/api';
 import { useCookies } from 'next-client-cookies';
 import { logout } from '@/lib/auth';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Separator } from './separator';
 import { SidebarTrigger } from './sidebar';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface HeaderProps {
   projectId?: string;
@@ -24,11 +25,9 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const helpMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,11 +50,6 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
       // Tutup profile menu jika klik di luar
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
-      }
-      
-      // Tutup notifications jika klik di luar
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
       }
       
       // Tutup help menu jika klik di luar
@@ -123,17 +117,16 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mx-2 data-[orientation=vertical]:h-4"
-            />
-            <Link href="/">
-              <h1 className="text-base font-medium">LogRaven - {`${pageTitle}`}</h1>
+        <SidebarTrigger className="-ml-1" />
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+        />
+        <Link href="/">
+          <h1 className="text-base font-medium">LogRaven - {`${pageTitle}`}</h1>
         </Link>
       </div>
       <div className="px-6 h-16 flex items-center justify-between">
-        
         <div className="flex items-center space-x-3">
           {/* Search form */}
           <form onSubmit={handleSearch} className="relative hidden md:flex items-center">
@@ -149,30 +142,8 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
             />
           </form>
           
-          {/* Tombol notifikasi */}
-          <div className="relative" ref={notificationsRef}>
-            <button 
-              className="p-1.5 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground relative"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <FiBell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
-            </button>
-            
-            {/* Dropdown notifikasi */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-sidebar border border-sidebar-border rounded-md shadow-lg py-2 z-20">
-                <div className="px-4 py-2 border-b border-sidebar-border/50">
-                  <h3 className="text-sm font-semibold text-sidebar-foreground">Notifikasi</h3>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  <div className="py-8 text-center text-sidebar-foreground/60">
-                    <p>Tidak ada notifikasi baru</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Notification Bell */}
+          <NotificationBell />
           
           {/* Tombol bantuan */}
           <div className="relative" ref={helpMenuRef}>

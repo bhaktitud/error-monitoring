@@ -1,7 +1,6 @@
 import { FC } from 'react';
 import { Card, CardContent, CardFooter } from './card';
-import { Avatar } from './avatar';
-import { AvatarFallback } from './avatar';
+import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 import { FiClock } from 'react-icons/fi';
 
 interface CommentProps {
@@ -13,6 +12,8 @@ interface CommentProps {
     user: {
       id: string;
       email: string;
+      avatar?: string;
+      name?: string;
     };
   };
 }
@@ -33,21 +34,27 @@ export const Comment: FC<CommentProps> = ({
   createdAt,
   author
 }) => {
-  const initials = author.user.email
-    .split('@')[0]
-    .slice(0, 2)
-    .toUpperCase();
+  const { user } = author;
+  const initials = user.name 
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : user.email.split('@')[0].slice(0, 2).toUpperCase();
+
+  // Mendapatkan URL avatar dari database atau relative path
+  const avatarUrl = user.avatar 
+    ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`)
+    : undefined;
 
   return (
     <Card className="mb-3">
       <CardContent className="pt-4">
-        <div className="flex gap-3">
-          <Avatar>
+        <div className="flex gap-3 items-start">
+          <Avatar className="size-10">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={user.name || user.email} />}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="font-medium text-foreground">{author.user.email}</div>
-            <p className="mt-1 text-foreground/90">{content}</p>
+            <div className="font-medium text-foreground">{user.name || user.email}</div>
+            <p className="mt-1 text-foreground/90 whitespace-pre-wrap">{content}</p>
           </div>
         </div>
       </CardContent>

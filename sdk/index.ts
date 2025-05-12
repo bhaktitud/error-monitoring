@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Request, Response, NextFunction } from 'express';
+import { transformStackTrace, uploadSourceMap, UploadSourceMapOptions } from './src/sourcemap';
 
 // Definisi tipe untuk opsi SDK
 interface SDKOptions {
@@ -11,6 +12,8 @@ interface SDKOptions {
   beforeSend?: (payload: EventPayload, error: Error) => EventPayload | null;
   captureConsoleErrors?: boolean; // Menangkap console.error
   captureNetworkErrors?: boolean; // Menangkap error fetch/XHR
+  useSourceMaps?: boolean;
+  sourceMapUploadEndpoint?: string;
 }
 
 // Definisi tipe untuk inisialisasi
@@ -92,6 +95,7 @@ let SDK_OPTIONS: SDKOptions = {
   breadcrumbs: true,
   maxBreadcrumbs: 100,
   beforeSend: undefined,
+  useSourceMaps: true,
 };
 
 const breadcrumbs: Breadcrumb[] = [];
@@ -243,10 +247,19 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
   // Hook untuk console.error
   if (SDK_OPTIONS.captureConsoleErrors && typeof console !== 'undefined' && typeof window !== 'undefined') {
     const originalConsoleError = console.error;
-    console.error = function(...args) {
+    console.error = async function(...args) {
       const error = args[0] instanceof Error 
         ? args[0] 
         : new Error(`Console error: ${args.map(arg => String(arg)).join(' ')}`);
+      
+      // Transformasi stack trace jika opsi useSourceMaps diaktifkan
+      if (SDK_OPTIONS.useSourceMaps && error.stack) {
+        try {
+          error.stack = await transformStackTrace(error.stack);
+        } catch (err) {
+          originalConsoleError.call(console, 'Error transforming stack trace for console.error:', err);
+        }
+      }
       
       captureException(error, { 
         extraContext: { 
@@ -284,6 +297,15 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
           
           return response;
         } catch (error) {
+          // Transformasi stack trace jika opsi useSourceMaps diaktifkan
+          if (SDK_OPTIONS.useSourceMaps && error instanceof Error && error.stack) {
+            try {
+              error.stack = await transformStackTrace(error.stack);
+            } catch (err) {
+              console.error('Error transforming stack trace for fetch error:', err);
+            }
+          }
+          
           captureException(
             error instanceof Error ? error : new Error(`Fetch error: ${String(error)}`), 
             { 
@@ -324,9 +346,20 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
       };
 
       XMLHttpRequest.prototype.send = function(this: ExtendedXMLHttpRequest, ...args) {
-        this.addEventListener('error', () => {
+        this.addEventListener('error', async () => {
           if (this._logRavenMethod && this._logRavenUrl) {
-            captureException(new Error(`XHR failed: ${this._logRavenMethod} ${this._logRavenUrl}`), {
+            const error = new Error(`XHR failed: ${this._logRavenMethod} ${this._logRavenUrl}`);
+            
+            // Transformasi stack trace jika opsi useSourceMaps diaktifkan
+            if (SDK_OPTIONS.useSourceMaps && error.stack) {
+              try {
+                error.stack = await transformStackTrace(error.stack);
+              } catch (err) {
+                console.error('Error transforming stack trace for XHR error:', err);
+              }
+            }
+            
+            captureException(error, {
               extraContext: { 
                 networkRequest: 'xhr', 
                 url: this._logRavenUrl?.toString(), 
@@ -456,6 +489,16 @@ async function captureException(
     error = new Error(String(error));
   }
 
+  // Ambil stack trace dan transform jika perlu
+  let stacktrace = error.stack;
+  if (SDK_OPTIONS.useSourceMaps && stacktrace) {
+    try {
+      stacktrace = await transformStackTrace(stacktrace);
+    } catch (err) {
+      console.error('Error transforming stack trace:', err);
+    }
+  }
+
   // Detect browser dan OS info
   const deviceInfo = typeof window !== 'undefined' ? detectBrowserAndOS() : {
     os: 'unknown',
@@ -470,7 +513,7 @@ async function captureException(
   const payload: EventPayload = {
     errorType: error.name,
     message: error.message,
-    stacktrace: error.stack,
+    stacktrace: stacktrace,
     timestamp: new Date().toISOString(),
     environment: ENVIRONMENT,
     release: RELEASE,
@@ -666,6 +709,17 @@ function withErrorBoundary(Component: any, options: {
   return Component;
 }
 
+/**
+ * Upload source map ke server
+ */
+export { uploadSourceMap }; // Export langsung dari src/sourcemap
+
+/**
+ * Transform stack trace menggunakan source map
+ * Fungsi ini bisa digunakan secara manual oleh pengembang jika diperlukan
+ */
+export { transformStackTrace };
+
 // Ekspor semua fungsi
 export {
   init,
@@ -682,5 +736,5 @@ export {
   type User,
   type Tags,
   type Breadcrumb,
-  type EventPayload
+  type EventPayload,
 }; 

@@ -293,4 +293,65 @@ Jika Anda menghadapi masalah:
 
 ## Referensi
 
-Untuk informasi lebih lanjut, kunjungi [dokumentasi resmi LogRaven](https://lograven.docs.example.com) atau lihat [contoh integrasi](https://github.com/lograven/examples). 
+Untuk informasi lebih lanjut, kunjungi [dokumentasi resmi LogRaven](https://lograven.docs.example.com) atau lihat [contoh integrasi](https://github.com/lograven/examples).
+
+## Fitur Source Maps
+
+LogRaven SDK mendukung source maps untuk membantu Anda melacak error di kode asli, bukan kode yang telah di-minify atau di-bundle.
+
+### Mengaktifkan Source Maps
+
+Untuk mengaktifkan fitur source maps, tambahkan opsi `useSourceMaps: true` saat menginisialisasi SDK:
+
+```javascript
+import { init } from '@lograven/sdk';
+
+init({
+  dsn: 'YOUR_DSN',
+  environment: 'production',
+  release: '1.0.0',
+  sdk: {
+    useSourceMaps: true
+  }
+});
+```
+
+### Mengupload Source Maps
+
+Anda bisa mengupload source maps ke server LogRaven agar error yang dilaporkan bisa diterjemahkan ke lokasi kode asli:
+
+```javascript
+import { uploadSourceMap } from '@lograven/sdk';
+
+await uploadSourceMap({
+  dsn: 'YOUR_DSN',
+  release: '1.0.0',
+  sourceMap: sourceMapContent, // String atau objek JSON
+  sourceFile: 'app.js',        // Nama file JavaScript yang dikompresi
+  minifiedFile: 'app.min.js'   // Opsional, nama file minified jika berbeda dengan sourceFile
+});
+```
+
+### Transformasi Stack Trace Manual
+
+Jika Anda memerlukan transformasi stack trace secara manual, Anda bisa menggunakan fungsi `transformStackTrace`:
+
+```javascript
+import { transformStackTrace } from '@lograven/sdk';
+
+const originalStackTrace = error.stack;
+const transformedStackTrace = await transformStackTrace(originalStackTrace);
+console.log(transformedStackTrace);
+```
+
+### Cara Kerja Integrasi Source Maps
+
+Ketika opsi `useSourceMaps` diaktifkan, SDK akan secara otomatis:
+1. Mentransformasi stack trace error yang ditangkap sebelum mengirimkannya ke server
+2. Mencari source maps yang sesuai untuk file JavaScript yang terlibat dalam error
+3. Menggunakan source map untuk memetakan lokasi error ke file sumber asli
+
+Integrasi source maps juga bekerja untuk:
+- Error XHR dan fetch
+- Error yang ditangkap melalui window.onerror
+- Error yang dilaporkan melalui console.error 

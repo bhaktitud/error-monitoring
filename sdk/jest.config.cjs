@@ -1,11 +1,11 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-export default {
+module.exports = {
   transform: {
-    '^.+\\.(ts|tsx)$': 'babel-jest'
+    '^.+\\.(ts|tsx)$': ['babel-jest', { configFile: './.babelrc' }]
   },
   testEnvironment: 'node',
   testMatch: ["**/?(*.)+(test).[tj]s"],
-  extensionsToTreatAsEsm: ['.ts'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
     '*.ts',
     '!**/node_modules/**',

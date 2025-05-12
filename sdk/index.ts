@@ -284,13 +284,16 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
           
           return response;
         } catch (error) {
-          captureException(error, { 
-            extraContext: { 
-              networkRequest: 'fetch', 
-              url: typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown',
-              options: args[1] 
-            } 
-          });
+          captureException(
+            error instanceof Error ? error : new Error(`Fetch error: ${String(error)}`), 
+            { 
+              extraContext: { 
+                networkRequest: 'fetch', 
+                url: typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown',
+                options: args[1] 
+              } 
+            }
+          );
           throw error;
         }
       };
@@ -301,29 +304,48 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
       const originalOpen = XMLHttpRequest.prototype.open;
       const originalSend = XMLHttpRequest.prototype.send;
 
-      XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-        this._logRavenUrl = url;
-        this._logRavenMethod = method;
-        return originalOpen.apply(this, [method, url, ...rest]);
+      // Tambahkan definisi tipe untuk properties tambahan pada XMLHttpRequest
+      type ExtendedXMLHttpRequest = XMLHttpRequest & {
+        _logRavenUrl?: string | URL;
+        _logRavenMethod?: string;
       };
 
-      XMLHttpRequest.prototype.send = function(...args) {
+      XMLHttpRequest.prototype.open = function(
+        this: ExtendedXMLHttpRequest,
+        method: string, 
+        url: string | URL, 
+        async: boolean = true, 
+        username?: string | null, 
+        password?: string | null
+      ) {
+        this._logRavenUrl = url;
+        this._logRavenMethod = method;
+        return originalOpen.apply(this, [method, url, async, username as string, password as string]);
+      };
+
+      XMLHttpRequest.prototype.send = function(this: ExtendedXMLHttpRequest, ...args) {
         this.addEventListener('error', () => {
-          captureException(new Error(`XHR failed: ${this._logRavenMethod} ${this._logRavenUrl}`), {
-            extraContext: { 
-              networkRequest: 'xhr', 
-              url: this._logRavenUrl, 
-              method: this._logRavenMethod 
-            }
-          });
+          if (this._logRavenMethod && this._logRavenUrl) {
+            captureException(new Error(`XHR failed: ${this._logRavenMethod} ${this._logRavenUrl}`), {
+              extraContext: { 
+                networkRequest: 'xhr', 
+                url: this._logRavenUrl?.toString(), 
+                method: this._logRavenMethod 
+              }
+            });
+          }
         });
 
         this.addEventListener('load', () => {
-          if (this.status >= 400) {
+          if (this.status >= 400 && this._logRavenMethod && this._logRavenUrl) {
             addBreadcrumb({
               category: 'http',
               message: `XHR error: ${this.status} for ${this._logRavenMethod} ${this._logRavenUrl}`,
-              data: { url: this._logRavenUrl, status: this.status, method: this._logRavenMethod },
+              data: { 
+                url: this._logRavenUrl?.toString(), 
+                status: this.status, 
+                method: this._logRavenMethod 
+              },
               level: 'error'
             });
           }
@@ -352,20 +374,32 @@ function initReactNative({ dsn, apiUrl, environment, release, sdk = {} }: InitOp
   init({ dsn, apiUrl, environment, release, sdk });
 
   // Set global error handler untuk React Native
-  if (typeof global !== 'undefined' && global.ErrorUtils) {
-    const originalHandler = global.ErrorUtils.getGlobalHandler();
+  if (typeof global !== 'undefined') {
+    // Define interface for React Native ErrorUtils
+    interface ReactNativeGlobal {
+      ErrorUtils?: {
+        getGlobalHandler: () => (error: Error, isFatal: boolean) => void;
+        setGlobalHandler: (handler: (error: Error, isFatal: boolean) => void) => void;
+      };
+    }
+
+    const reactNativeGlobal = global as unknown as ReactNativeGlobal;
     
-    global.ErrorUtils.setGlobalHandler((error, isFatal) => {
-      captureException(error, {
-        extraContext: {
-          reactNative: true,
-          isFatal
-        }
-      });
+    if (reactNativeGlobal.ErrorUtils) {
+      const originalHandler = reactNativeGlobal.ErrorUtils.getGlobalHandler();
       
-      // Juga panggil handler asli
-      originalHandler(error, isFatal);
-    });
+      reactNativeGlobal.ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
+        captureException(error, {
+          extraContext: {
+            reactNative: true,
+            isFatal
+          }
+        });
+        
+        // Juga panggil handler asli
+        originalHandler(error, isFatal);
+      });
+    }
   }
 }
 

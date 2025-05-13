@@ -151,8 +151,6 @@ export default function EventDetailPage() {
             <FiAlertCircle className="mr-2 h-5 w-5 text-destructive" />
             {event.errorType}
           </h1>
-          <p className="text-lg mb-4">{event.message}</p>
-          
           <div className="flex flex-wrap gap-2 items-center mb-6">
             {event.statusCode && (
               <Badge variant={event.statusCode >= 500 ? "destructive" : "outline"} className="text-sm">

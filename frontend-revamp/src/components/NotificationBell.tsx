@@ -12,9 +12,28 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useNotification } from '../hooks/useNotification';
+import { useRouter } from 'next/navigation';
+
+interface NotificationData {
+  errorGroupId?: string;
+  projectId?: string;
+  commentId?: string;
+  [key: string]: unknown;
+}
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data?: NotificationData;
+}
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const {
     notifications,
@@ -28,10 +47,6 @@ export function NotificationBell() {
     deleteNotification
   } = useNotification();
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    await markAsRead(notificationId);
-  };
-
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
   };
@@ -43,6 +58,34 @@ export function NotificationBell() {
 
   const handleTestNotification = async () => {
     await sendTestNotification();
+  };
+
+  // Handle navigasi ketika notifikasi diklik
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    // Tandai notifikasi sebagai telah dibaca jika belum dibaca
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    
+    // Tutup dropdown setelah navigasi
+    setIsOpen(false);
+    
+    // Navigasi berdasarkan data notifikasi
+    const { data } = notification;
+    
+    // Handle navigasi berdasarkan data
+    if (data) {
+      // Notifikasi terkait error group (komentar, assignment, dll)
+      if (data.errorGroupId && data.projectId) {
+        // Navigasi ke halaman error group detail
+        router.push(`/projects/${data.projectId}/groups/${data.errorGroupId}`);
+      }
+      // Notifikasi terkait project
+      else if (data.projectId) {
+        // Navigasi ke dashboard project
+        router.push(`/projects/${data.projectId}`);
+      }
+    }
   };
 
   const connectionStatus = !isConnected ? (
@@ -120,8 +163,8 @@ export function NotificationBell() {
               key={notification.id}
               className={`p-4 border-b last:border-0 ${
                 !notification.read ? 'bg-muted/50' : ''
-              }`}
-              onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+              } cursor-pointer`}
+              onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex flex-col gap-1 w-full">
                 <div className="flex items-start justify-between">

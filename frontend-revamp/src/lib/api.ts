@@ -40,6 +40,7 @@ export interface Event {
   language?: string;
   referrer?: string;
   screenSize?: string;
+  code?: string;
   group?: {
     id: string;
     errorType: string;
@@ -517,6 +518,7 @@ export const GroupsAPI = {
         statusCode: number;
         assignedTo: string;
         updatedAt: string;
+        code: string;
       }>,
       pagination: {
         total: number;

@@ -95,6 +95,7 @@ model ErrorGroup {
   assignedTo  String?
   status      String              @default("open")
   updatedAt   DateTime            @updatedAt
+  code        String              @unique
   assignee    ProjectMember?      @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
   project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments    ErrorGroupComment[]
@@ -142,6 +143,7 @@ model Event {
   language       String?
   referrer       String?
   screenSize     String?
+  code           String      @unique
   group          ErrorGroup? @relation(fields: [groupId], references: [id])
   project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

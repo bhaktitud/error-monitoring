@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Button } from '@/components/ui/button';
-import { GroupsAPI } from '@/lib/api';
-import { FiArrowLeft, FiFilter, FiChevronDown, FiSearch, FiAlertTriangle, FiCheckCircle, FiEyeOff } from 'react-icons/fi';
+import { GroupsAPI, ProjectsAPI } from '@/lib/api';
+import { FiArrowLeft, FiFilter, FiChevronDown, FiAlertTriangle, FiCheckCircle, FiEyeOff, FiMoreVertical, FiUser } from 'react-icons/fi';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -18,6 +18,18 @@ import {
 import { Pagination } from '@/components/ui/pagination';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface ErrorGroup {
   id: string;
@@ -30,6 +42,16 @@ interface ErrorGroup {
   statusCode: number;
   assignedTo: string;
   updatedAt: string;
+  code: string;
+}
+
+interface ProjectMember {
+  id: string;
+  role: string;
+  user: {
+    id: string;
+    email: string;
+  }
 }
 
 export default function ErrorGroupsPage() {
@@ -37,11 +59,14 @@ export default function ErrorGroupsPage() {
   const projectId = params.id as string;
   const router = useRouter();
   const [groups, setGroups] = useState<ErrorGroup[]>([]);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all'); // all, open, resolved, ignored
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -60,6 +85,35 @@ export default function ErrorGroupsPage() {
     };
 
     fetchGroups();
+  }, [projectId]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const data = await ProjectsAPI.getProjectMembers(projectId);
+        setMembers(data);
+        
+        // Cek role pengguna saat ini
+        const token = localStorage.getItem('authToken') || '';
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userId = payload.userId;
+            const currentUser = data.find(member => member.user.id === userId);
+            
+            if (currentUser) {
+              setUserRole(currentUser.role);
+            }
+          } catch (error) {
+            console.error('Error parsing JWT token:', error);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching project members:', err);
+      }
+    };
+
+    fetchMembers();
   }, [projectId]);
 
   // Filter error groups berdasarkan status dan search query
@@ -127,6 +181,59 @@ export default function ErrorGroupsPage() {
     }
   };
 
+  // Handle status change
+  const handleStatusChange = async (groupId: string, newStatus: 'open' | 'resolved' | 'ignored') => {
+    try {
+      setIsActionLoading(groupId);
+      await GroupsAPI.changeGroupStatus(groupId, newStatus);
+      
+      // Update local state untuk menghindari refresh
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId ? { ...group, status: newStatus } : group
+        )
+      );
+      
+      toast.success(`Status berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      toast.error('Gagal mengubah status error group');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  // Handle assignment
+  const handleAssign = async (groupId: string, memberId: string | null) => {
+    try {
+      setIsActionLoading(groupId);
+      await GroupsAPI.assignGroup(groupId, memberId);
+      
+      // Update local state untuk menghindari refresh
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId ? { ...group, assignedTo: memberId || '' } : group
+        )
+      );
+      
+      toast.success(memberId ? 'Error group berhasil ditugaskan' : 'Assignment dihapus');
+    } catch (err) {
+      console.error('Error assigning error group:', err);
+      toast.error('Gagal menugaskan error group');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  // Mendapatkan informasi member yang ditugaskan
+  const getAssignedMember = (memberId: string | null) => {
+    if (!memberId) return null;
+    return members.find(member => member.id === memberId);
+  };
+
+  // Cek apakah user dapat mengedit (admin atau owner)
+  const canEdit = userRole === 'admin' || userRole === 'owner';
+
   return (
     <DashboardLayout projectId={projectId}>
       <div className="mb-6">
@@ -143,62 +250,41 @@ export default function ErrorGroupsPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FiSearch className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <input 
-                type="text" 
-                className="py-2 pl-10 pr-4 block w-full border border-input rounded-md focus:outline-none focus:ring-ring focus:border-ring"
+            <div className="relative w-full max-w-sm">
+              <Input 
+                type="search" 
                 placeholder="Cari error..." 
                 value={searchQuery}
                 onChange={handleSearch}
               />
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={() => {}}
-              className="flex items-center"
-            >
-              <FiFilter className="mr-2 h-4 w-4" />
-              {filter === 'all' ? 'Semua Status' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-              <FiChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-            <div className="relative">
-              <div className="absolute z-10 mt-1 w-56 rounded-md shadow-lg bg-popover ring-1 ring-black ring-opacity-5 hidden">
-                <div className="py-1" role="menu" aria-orientation="vertical">
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('all')}
-                  >
-                    Semua Status
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('open')}
-                  >
-                    Open
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('resolved')}
-                  >
-                    Resolved
-                  </button>
-                  <button 
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground w-full text-left"
-                    role="menuitem"
-                    onClick={() => handleFilterChange('ignored')}
-                  >
-                    Ignored
-                  </button>
-                </div>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center"
+                >
+                  <FiFilter className="mr-2 h-4 w-4" />
+                  {filter === 'all' ? 'Semua Status' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  <FiChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleFilterChange('all')}>
+                  Semua Status
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleFilterChange('open')}>
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleFilterChange('resolved')}>
+                  Resolved
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleFilterChange('ignored')}>
+                  Ignored
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -247,31 +333,147 @@ export default function ErrorGroupsPage() {
                   <TableHead className="w-[180px]">Error Type</TableHead>
                   <TableHead className="w-[250px]">Message</TableHead>
                   <TableHead className="w-[100px]">Status</TableHead>
+                  <TableHead className="w-[100px]">Code</TableHead>
                   <TableHead className="w-[80px]">Count</TableHead>
-                  <TableHead className="w-[180px]">Last Seen</TableHead>
-                  <TableHead className="w-[180px]">First Seen</TableHead>
+                  <TableHead className="w-[150px]">Last Seen</TableHead>
+                  <TableHead className="w-[150px]">First Seen</TableHead>
+                  <TableHead className="w-[120px]">Assigned To</TableHead>
+                  {canEdit && <TableHead className="w-[50px]">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedGroups.map((group) => (
-                  <TableRow 
-                    key={group.id}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/projects/${projectId}/groups/${group.id}`)}
-                  >
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <span className="mr-2">{getStatusIcon(group.status)}</span>
-                        {group.errorType}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-[250px] truncate">{group.message}</TableCell>
-                    <TableCell>{getStatusBadge(group.status)}</TableCell>
-                    <TableCell>{group.count}</TableCell>
-                    <TableCell>{formatDate(group.lastSeen)}</TableCell>
-                    <TableCell>{formatDate(group.firstSeen)}</TableCell>
-                  </TableRow>
-                ))}
+                {paginatedGroups.map((group) => {
+                  const assignedMember = getAssignedMember(group.assignedTo);
+                  
+                  return (
+                    <TableRow 
+                      key={group.id}
+                      className={canEdit ? "" : "cursor-pointer"}
+                      onClick={() => {
+                        // Jika tidak ada canEdit, seluruh baris bisa diklik
+                        if (!canEdit) {
+                          router.push(`/projects/${projectId}/groups/${group.id}`);
+                        }
+                      }}
+                    >
+                      <TableCell 
+                        className="font-medium"
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        <div className={`flex items-center ${canEdit ? "cursor-pointer" : ""}`}>
+                          <span className="mr-2">{getStatusIcon(group.status)}</span>
+                          {group.errorType}
+                        </div>
+                      </TableCell>
+                      <TableCell 
+                        className="max-w-[250px] truncate"
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {group.message}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {getStatusBadge(group.status)}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        <Badge variant="outline" className="font-mono text-xs">{group.code}</Badge>
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {group.count}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {formatDate(group.lastSeen)}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {formatDate(group.firstSeen)}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => canEdit && router.push(`/projects/${projectId}/groups/${group.id}`)}
+                      >
+                        {assignedMember ? (
+                          <div className="flex items-center">
+                            <FiUser className="mr-1 h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs truncate" title={assignedMember.user.email}>
+                              {assignedMember.user.email}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Tidak ada</span>
+                        )}
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell className="action-menu">
+                          {isActionLoading === group.id ? (
+                            <div className="flex justify-center">
+                              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                            </div>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <FiMoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => handleStatusChange(group.id, 'open')}
+                                  disabled={group.status === 'open'}
+                                >
+                                  <FiAlertTriangle className="mr-2 h-4 w-4" />
+                                  Status: Open
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleStatusChange(group.id, 'resolved')}
+                                  disabled={group.status === 'resolved'}
+                                >
+                                  <FiCheckCircle className="mr-2 h-4 w-4" />
+                                  Status: Resolved
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleStatusChange(group.id, 'ignored')}
+                                  disabled={group.status === 'ignored'}
+                                >
+                                  <FiEyeOff className="mr-2 h-4 w-4" />
+                                  Status: Ignored
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <FiUser className="mr-2 h-4 w-4" />
+                                    Tugaskan Kepada
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuItem onClick={() => handleAssign(group.id, null)}>
+                                      -- Tidak Ada --
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {members.map((member) => (
+                                      <DropdownMenuItem 
+                                        key={member.id}
+                                        onClick={() => handleAssign(group.id, member.id)}
+                                      >
+                                        {member.user.email}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
 

@@ -39,6 +39,7 @@ interface Event {
   statusCode?: number;
   userContext?: UserContext;
   tags?: Tags;
+  code?: string;
 }
 
 interface Comment {
@@ -64,6 +65,7 @@ interface ErrorGroup {
   status: 'open' | 'resolved' | 'ignored';
   assignedTo?: string | null;
   statusCode?: number;
+  code?: string;
 }
 
 interface ProjectMember {
@@ -116,7 +118,8 @@ export default function ErrorGroupPage() {
           lastSeen: group.lastSeen,
           status: group.status as 'open' | 'resolved' | 'ignored',
           assignedTo: group.assignedTo,
-          statusCode: group.statusCode
+          statusCode: group.statusCode,
+          code: group.code
         });
         
         setError(null);
@@ -246,7 +249,7 @@ export default function ErrorGroupPage() {
     try {
       const newCommentObj = await GroupsAPI.addComment(groupId, newComment.trim());
       
-      setComments(prev => [...prev, newCommentObj]);
+      setComments(prev => [newCommentObj, ...prev]);
       setNewComment('');
       setError(null);
     } catch (err) {
@@ -320,10 +323,14 @@ export default function ErrorGroupPage() {
               >
                 <FiArrowLeft className="mr-2 h-4 w-4" />
               </Button>
-              <h1 className="text-xl font-semibold truncate">{errorGroup.errorType}</h1>
               {errorGroup.statusCode && (
                 <Badge variant={errorGroup.statusCode >= 500 ? "destructive" : "outline"}>
                   {errorGroup.statusCode}
+                </Badge>
+              )}
+              {errorGroup.code && (
+                <Badge variant="secondary" className="ml-2 text-sm">
+                  {errorGroup.code}
                 </Badge>
               )}
             </div>
@@ -467,7 +474,14 @@ export default function ErrorGroupPage() {
                         <details className="group">
                           <summary className="flex justify-between items-center p-4 cursor-pointer hover:bg-muted/50">
                             <div className="flex-1">
-                              <span className="font-medium">{event.message.substring(0, 100)}{event.message.length > 100 ? '...' : ''}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{event.message.substring(0, 80)}{event.message.length > 80 ? '...' : ''}</span>
+                                {event.code && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {event.code}
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="mt-1 text-sm text-muted-foreground">{formatDate(event.timestamp)}</div>
                             </div>
                             <div className="ml-4 transition-transform group-open:rotate-180">

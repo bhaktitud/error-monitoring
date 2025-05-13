@@ -190,29 +190,30 @@ export default function ProjectSettingsPage() {
         </div>
       </div>
 
+
       <Tabs defaultValue="general">
-        <TabsList className="bg-card border w-full max-w-xl p-0 h-auto">
+        <TabsList className="w-full max-w-md grid grid-cols-4 p-1 rounded-lg">
           <TabsTrigger 
             value="general" 
-            className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
+            className="rounded-md py-2 transition-all"
           >
             Umum
           </TabsTrigger>
           <TabsTrigger 
             value="sdk" 
-            className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
+            className="rounded-md py-2 transition-all"
           >
             SDK
           </TabsTrigger>
           <TabsTrigger 
             value="sourcemaps" 
-            className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
+            className="rounded-md py-2 transition-all"
           >
             <FiCpu className="mr-2" /> Source Maps
           </TabsTrigger>
           <TabsTrigger 
             value="danger" 
-            className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none text-destructive"
+            className="rounded-md py-2 transition-all text-destructive"
           >
             Danger Zone
           </TabsTrigger>

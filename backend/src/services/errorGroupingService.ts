@@ -28,6 +28,7 @@ export class ErrorGroupingService {
       lastSeen: Date;
       status: string;
       statusCode: number | null;
+      code: string;
     };
     isNewGroup: boolean;
   }> {
@@ -59,6 +60,16 @@ export class ErrorGroupingService {
             status: errorGroup.status === 'resolved' ? 'open' : undefined,
           },
         });
+
+        // Jika errorGroup lama tidak memiliki kode, tambahkan
+        if (!errorGroup.code) {
+          const code = this.generateErrorGroupCode();
+          await prisma.errorGroup.update({
+            where: { id: errorGroup.id },
+            data: { code }
+          });
+          errorGroup.code = code;
+        }
       } else {
         // Grup belum ada, buat baru
         errorGroup = await prisma.errorGroup.create({
@@ -72,12 +83,27 @@ export class ErrorGroupingService {
             lastSeen: new Date(),
             status: 'open',
             statusCode: errorData.statusCode || null,
+            code: this.generateErrorGroupCode()
           },
         });
         isNewGroup = true;
       }
+
+      // Menyiapkan objek yang sesuai dengan tipe kembalian
+      const result = {
+        id: errorGroup.id,
+        fingerprint: errorGroup.fingerprint,
+        errorType: errorGroup.errorType,
+        message: errorGroup.message,
+        count: errorGroup.count,
+        firstSeen: errorGroup.firstSeen,
+        lastSeen: errorGroup.lastSeen,
+        status: errorGroup.status,
+        statusCode: errorGroup.statusCode,
+        code: errorGroup.code
+      };
       
-      return { errorGroup, isNewGroup };
+      return { errorGroup: result, isNewGroup };
     } catch (error: unknown) {
       console.error('Error in grouping error:', error);
       throw new Error(`Failed to group error: ${error instanceof Error ? error.message : String(error)}`);
@@ -241,6 +267,22 @@ export class ErrorGroupingService {
       // URL invalid, skip
       return '';
     }
+  }
+  
+  // Menghasilkan kode unik untuk error group
+  private generateErrorGroupCode(): string {
+    // Format: ERG-[6 karakter acak]-[timestamp 3 digit]
+    const randomPart = crypto.randomBytes(3).toString('hex');
+    const timestampPart = Math.floor(Date.now() % 1000).toString().padStart(3, '0');
+    return `ERG-${randomPart}-${timestampPart}`;
+  }
+  
+  // Menghasilkan kode unik untuk event
+  private generateEventCode(): string {
+    // Format: EVT-[6 karakter acak]-[timestamp 3 digit]
+    const randomPart = crypto.randomBytes(3).toString('hex');
+    const timestampPart = Math.floor(Date.now() % 1000).toString().padStart(3, '0');
+    return `EVT-${randomPart}-${timestampPart}`;
   }
   
   // Metode untuk mendapatkan ErrorGroup dengan paginasi

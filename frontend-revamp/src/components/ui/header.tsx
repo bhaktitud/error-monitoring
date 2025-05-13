@@ -18,7 +18,6 @@ interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({ projectId }) => {
-  const pathname = usePathname();
   const router = useRouter();
   const cookies = useCookies();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -64,30 +63,6 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
     };
   }, []);
 
-  const isProjectPage = projectId !== undefined;
-  
-  // Fungsi untuk mendapatkan judul halaman berdasarkan pathname
-  const getPageTitle = () => {
-    if (!isProjectPage) return 'Projects';
-    
-    if (pathname.endsWith(`/projects/${projectId}`)) return 'Dashboard';
-    if (pathname.includes(`/projects/${projectId}/groups`)) {
-      if (pathname.split('/').length > 4) return 'Error Detail';
-      return 'Error Groups';
-    }
-    if (pathname.includes(`/projects/${projectId}/events`)) return 'Events';
-    if (pathname.includes(`/projects/${projectId}/stats`)) return 'Statistics';
-    if (pathname.includes(`/projects/${projectId}/webhooks`)) return 'Webhooks';
-    if (pathname.includes(`/projects/${projectId}/notifications`)) return 'Notifications';
-    if (pathname.includes(`/projects/${projectId}/members`)) return 'Team Members';
-    if (pathname.includes(`/projects/${projectId}/settings`)) return 'Settings';
-
-    console.log(pathname);
-    
-    return 'Project';
-  };
-
-  const pageTitle = getPageTitle();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +98,7 @@ export const Header: FC<HeaderProps> = ({ projectId }) => {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <Link href="/">
-          <h1 className="text-base font-medium">LogRaven - {`${pageTitle}`}</h1>
+          <h1 className="text-base font-medium">LogRaven</h1>
         </Link>
       </div>
       <div className="px-6 h-16 flex items-center justify-between">

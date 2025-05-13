@@ -19,6 +19,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
 
 // Interface untuk userContext dan tags
 interface UserContext {
@@ -137,12 +138,9 @@ export default function EventsPage() {
           
           <div className="flex items-center gap-2">
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FiSearch className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <input 
-                type="text" 
-                className="py-2 pl-10 pr-4 block w-full border border-input rounded-md focus:outline-none focus:ring-ring focus:border-ring"
+
+            <Input 
+                type="search" 
                 placeholder="Cari event..." 
                 value={searchQuery}
                 onChange={handleSearch}

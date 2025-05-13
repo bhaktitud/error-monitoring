@@ -30,7 +30,9 @@ export function setupSocketIO(httpServer: HttpServer): Server {
   const io = new Server(httpServer, socketOptions);
 
   // Terapkan middleware
-  io.use(socketRateLimitMiddleware);
+  // DINONAKTIFKAN SEMENTARA: Rate limit untuk socket.io 
+  // io.use(socketRateLimitMiddleware);
+  
   io.use(socketAuthMiddleware);
 
   // Setup event handlers

@@ -11,6 +11,14 @@ import crypto from 'crypto';
 const router = express.Router();
 const errorGroupingService = new ErrorGroupingService();
 
+// Fungsi untuk menghasilkan kode unik event
+function generateEventCode(): string {
+  // Format: EVT-[6 karakter acak]-[timestamp 3 digit]
+  const randomPart = crypto.randomBytes(3).toString('hex');
+  const timestampPart = Math.floor(Date.now() % 1000).toString().padStart(3, '0');
+  return `EVT-${randomPart}-${timestampPart}`;
+}
+
 // Terima event/error dari SDK
 router.post('/', async (req, res) => {
   const dsn = req.headers['x-dsn'] as string;
@@ -107,7 +115,8 @@ router.post('/', async (req, res) => {
         browserVersion,
         deviceType,
         environment,
-        release
+        release,
+        code: generateEventCode()
       }
     });
 

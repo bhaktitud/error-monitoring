@@ -10,12 +10,6 @@ import { FiAlertCircle, FiActivity, FiAlertTriangle, FiCheckCircle, FiClock, FiI
 import { ProjectsAPI, StatsAPI, EventsAPI } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from '@/components/ui/breadcrumb';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
@@ -378,20 +372,10 @@ export default function ProjectDashboardPage() {
   return (
     <DashboardLayout projectId={projectId}>
       <div className="flex justify-between items-center mb-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            {/* <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/projects">Projects</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator /> */}
-            <BreadcrumbItem>
-              <BreadcrumbPage>{loading ? 'Loading...' : project?.name || 'Project'}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
+        
+        <div className="flex items-center">
+          <h1 className="text-xl font-semibold">Dashboard - {project?.name}</h1>
+        </div>
         <Button 
           variant="outline" 
           size="sm" 

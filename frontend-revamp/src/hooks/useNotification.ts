@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from './useSocket';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -132,6 +133,38 @@ export function useNotification({
         throw new Error(`Error sending test notification: ${response.status} ${errorText}`);
       }
       
+      // Play notification sound for test notification
+      playNotificationSound();
+      
+      // Generate random ID untuk test notification
+      const testId = 'test-' + Date.now();
+      
+      // Simulasi notifikasi baru
+      const testNotification = {
+        id: testId,
+        type: 'TEST',
+        title: 'Test Notification',
+        message: 'Ini adalah notifikasi test untuk memverifikasi fitur notifikasi',
+        read: false,
+        createdAt: new Date().toISOString(),
+        data: {
+          // Ambil projectId dari URL jika ada
+          projectId: window.location.pathname.split('/').filter(Boolean)[1] || null
+        }
+      };
+      
+      // Tambahkan ke daftar notifikasi
+      setNotifications(prev => [testNotification, ...prev]);
+      
+      // Tambah unread count
+      setUnreadCount(prev => prev + 1);
+      
+      // Show toast for test notification
+      toast('Test Notification', {
+        description: 'Ini adalah notifikasi test untuk memverifikasi fitur notifikasi',
+        duration: 5000
+      });
+      
       return true;
     } catch (err) {
       console.error('Error sending test notification:', err);
@@ -254,6 +287,19 @@ export function useNotification({
     }
   }, [socketUrl, notifications]);
 
+  // Function untuk memainkan suara notifikasi
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audio = new Audio('/sounds/notification.mp3');
+      audio.volume = 0.5; // Setel volume ke 50%
+      audio.play().catch(err => {
+        console.error('Error playing notification sound:', err);
+      });
+    } catch (err) {
+      console.error('Error creating audio element:', err);
+    }
+  }, []);
+
   // Setup listeners when socket connection is established
   useEffect(() => {
     if (isConnected) {
@@ -262,6 +308,13 @@ export function useNotification({
         setNotifications(prev => [notification, ...prev]);
         if (!notification.read) {
           setUnreadCount(prev => prev + 1);
+          // Mainkan suara notifikasi
+          playNotificationSound();
+          // Tampilkan toast notification
+          toast(notification.title, {
+            description: notification.message,
+            duration: 5000
+          });
         }
       });
       
@@ -273,7 +326,7 @@ export function useNotification({
         removeNotificationListener();
       };
     }
-  }, [isConnected, on, fetchNotifications, fetchUnreadCount]);
+  }, [isConnected, on, fetchNotifications, fetchUnreadCount, playNotificationSound]);
 
   // Update error state when socket error changes
   useEffect(() => {
@@ -306,6 +359,7 @@ export function useNotification({
     markAllAsRead,
     deleteNotification,
     refreshNotifications: fetchNotifications,
-    refreshUnreadCount: fetchUnreadCount
+    refreshUnreadCount: fetchUnreadCount,
+    playNotificationSound
   };
 } 

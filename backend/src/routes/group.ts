@@ -318,6 +318,57 @@ router.post('/:groupId/comments', authenticateToken, checkGroupAccess, async (re
     
     const comment = await errorGroupingService.addComment(groupId, memberId, content);
     
+    // Kirim notifikasi ke semua member project kecuali pengirim
+    try {
+      const io = req.app.get('io');
+      
+      if (io && req.user && req.errorGroup) {
+        // Ambil semua member project
+        const projectMembers = await prisma.projectMember.findMany({
+          where: { 
+            projectId: req.errorGroup.projectId,
+            userId: { not: req.user.id } // Exclude pengirim komentar
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        });
+        
+        // Import NotificationService
+        const { NotificationService } = require('../services/notificationService');
+        const notificationService = new NotificationService(io);
+        
+        // Buat notifikasi untuk setiap member
+        for (const member of projectMembers) {
+          await notificationService.createNotification({
+            userId: member.user.id,
+            type: 'comment_added',
+            title: `Komentar baru di ${req.errorGroup.errorType}`,
+            message: `${req.user.email} mengomentari: ${content.length > 50 ? content.substring(0, 50) + '...' : content}`,
+            data: {
+              projectId: req.errorGroup.projectId,
+              errorGroupId: groupId,
+              commentId: comment.id,
+              commentContent: content,
+              commentAuthor: {
+                id: req.user.id,
+                email: req.user.email
+              }
+            }
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Error sending comment notification:', notifError);
+      // Tetap lanjutkan meskipun ada error pada pengiriman notifikasi
+    }
+    
     res.status(201).json(comment);
   } catch (error) {
     console.error('Error adding comment:', error);

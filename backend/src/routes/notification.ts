@@ -426,4 +426,63 @@ router.get('/paths', (req, res) => {
   });
 });
 
+// Endpoint untuk URL yang digunakan frontend
+router.get('/projects/:id/:version/settings', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verifikasi project
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: { owner: true }
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project tidak ditemukan' });
+    }
+    
+    // Ambil settings dari memory atau default
+    const settings = notificationSettings.get(id) || getDefaultSettings();
+    
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching notification settings:', error);
+    res.status(500).json({ error: 'Gagal mengambil pengaturan notifikasi' });
+  }
+});
+
+// Endpoint untuk URL yang digunakan frontend (PATCH)
+router.patch('/projects/:id/:version/settings', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    // Verifikasi project
+    const project = await prisma.project.findUnique({
+      where: { id }
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project tidak ditemukan' });
+    }
+    
+    // Ambil settings yang ada atau default
+    const currentSettings = notificationSettings.get(id) || getDefaultSettings();
+    
+    // Update settings
+    const newSettings = {
+      ...currentSettings,
+      ...updates
+    };
+    
+    // Simpan ke memory
+    notificationSettings.set(id, newSettings);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating notification settings:', error);
+    res.status(500).json({ error: 'Gagal memperbarui pengaturan notifikasi' });
+  }
+});
+
 export default router; 

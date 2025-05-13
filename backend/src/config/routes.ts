@@ -27,7 +27,11 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api/groups', groupRoutes);
   app.use('/api', webhookRoutes);
   app.use('/api', statsRoutes);
-  app.use('/api/notifications', createNotificationRoutes(io));
+  
+  // Notifikasi routes - ada 2 implementasi berbeda
+  app.use('/api/notifications', createNotificationRoutes(io)); // Untuk in-app notifications
+  app.use('/api', notificationRoutes); // Untuk settings notifikasi
+  
   app.use('/api/plans', planRoutes);
   app.use('/api/media', mediaRoutes);
   app.use('/', sourceMapRoutes);

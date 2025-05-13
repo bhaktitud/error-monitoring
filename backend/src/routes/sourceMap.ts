@@ -291,7 +291,7 @@ router.delete('/api/sourcemaps/:id', authenticateToken, async (req, res) => {
     const sourceMap = await prisma.sourceMap.findUnique({
       where: { id },
       include: {
-        project: true,
+        Project: true,
       },
     });
 
@@ -306,8 +306,13 @@ router.delete('/api/sourcemaps/:id', authenticateToken, async (req, res) => {
         userId: (req as any).user.id,
       },
     });
+    
+    // Ambil informasi project untuk cek owner
+    const project = await prisma.project.findUnique({
+      where: { id: sourceMap.projectId }
+    });
 
-    const isOwner = sourceMap.project.ownerId === (req as any).user.id;
+    const isOwner = project?.ownerId === (req as any).user.id;
 
     if (!isOwner && !projectMember) {
       return res.status(403).json({ error: 'Tidak memiliki izin untuk menghapus source map ini' });

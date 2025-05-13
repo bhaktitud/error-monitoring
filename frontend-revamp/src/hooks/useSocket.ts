@@ -64,7 +64,7 @@ export function useSocket({
           'Authorization': `Bearer ${token}`
         },
         reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
+        reconnectionDelay: 10000,
       });
 
       // Event handlers

@@ -8,193 +8,234 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  createdAt    DateTime  @default(now())
-  
-  // Field profil pengguna yang baru
-  name         String?
-  phoneNumber  String?
-  avatar       String?
-  timezone     String?   @default("Asia/Jakarta")
-  language     String?   @default("id")
-  jobTitle     String?
-  department   String?
-  githubUsername String?
-  
-  // Status Verifikasi Email
-  emailVerified  Boolean  @default(false)
-  verificationToken String? // Token untuk verifikasi email
-  verificationTokenExpiry DateTime? // Waktu kedaluwarsa token verifikasi
-  
-  // Field untuk reset password
-  resetPasswordToken String? // Token untuk reset password
-  resetPasswordTokenExpiry DateTime? // Waktu kedaluwarsa token reset password
-  
-  // Preferensi notifikasi
-  notifyEmail  Boolean   @default(true)
-  notifyInApp  Boolean   @default(true)
-  notifySms    Boolean   @default(false)
-  
-  projects     Project[] @relation("ProjectOwner")
-  memberships  ProjectMember[]
-  sentInvitations ProjectInvite[] @relation("InviteSender")
-  planId       String?   // relasi ke Plan
-  plan         Plan?     @relation(fields: [planId], references: [id])
-  planExpiry   DateTime? // masa aktif plan (jika berbayar)
-  planHistories PlanHistory[]
-  notifications Notification[] // Relasi ke notifikasi
+  id                       String          @id @default(uuid())
+  email                    String          @unique
+  passwordHash             String
+  createdAt                DateTime        @default(now())
+  avatar                   String?
+  department               String?
+  githubUsername           String?
+  jobTitle                 String?
+  language                 String?         @default("id")
+  name                     String?
+  notifyEmail              Boolean         @default(true)
+  notifyInApp              Boolean         @default(true)
+  notifySms                Boolean         @default(false)
+  phoneNumber              String?
+  timezone                 String?         @default("Asia/Jakarta")
+  emailVerified            Boolean         @default(false)
+  resetPasswordToken       String?
+  resetPasswordTokenExpiry DateTime?
+  verificationToken        String?
+  verificationTokenExpiry  DateTime?
+  planExpiry               DateTime?
+  planId                   String?
+  notifications            Notification[]
+  planHistories            PlanHistory[]
+  projects                 Project[]       @relation("ProjectOwner")
+  sentInvitations          ProjectInvite[] @relation("InviteSender")
+  memberships              ProjectMember[]
+  SourceMap                SourceMap[]
+  plan                     Plan?           @relation(fields: [planId], references: [id])
 }
 
 model Project {
-  id        String         @id @default(uuid())
-  name      String
-  owner     User           @relation("ProjectOwner", fields: [ownerId], references: [id])
-  ownerId   String
-  dsn       String         @unique
-  createdAt DateTime       @default(now())
-  members   ProjectMember[]
-  events    Event[]
+  id          String          @id @default(uuid())
+  name        String
+  ownerId     String
+  dsn         String          @unique
+  createdAt   DateTime        @default(now())
   errorGroups ErrorGroup[]
-  webhooks  Webhook[]
-  invites   ProjectInvite[]
+  events      Event[]
+  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  invites     ProjectInvite[]
+  members     ProjectMember[]
+  SourceMap   SourceMap[]
+  webhooks    Webhook[]
 }
 
 model ProjectMember {
-  id        String   @id @default(uuid())
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  role      String   // e.g. 'admin', 'member'
-  errorGroupsAssigned ErrorGroup[] @relation("ProjectMemberAssignedTo")
+  id                         String              @id @default(uuid())
+  projectId                  String
+  userId                     String
+  role                       String
+  errorGroupsAssigned        ErrorGroup[]        @relation("ProjectMemberAssignedTo")
   errorGroupCommentsAuthored ErrorGroupComment[] @relation("ProjectMemberCommentAuthor")
+  project                    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                       User                @relation(fields: [userId], references: [id])
 }
 
-// Model untuk undangan project
 model ProjectInvite {
-  id            String    @id @default(uuid())
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId     String
-  email         String
-  role          String
-  token         String    @unique
-  status        String    @default("PENDING") // PENDING, ACCEPTED, EXPIRED, CANCELLED
-  expiresAt     DateTime
-  createdAt     DateTime  @default(now())
-  invitedBy     String
-  inviter       User      @relation("InviteSender", fields: [invitedBy], references: [id])
-  
+  id        String   @id @default(uuid())
+  projectId String
+  email     String
+  role      String
+  token     String   @unique
+  status    String   @default("PENDING")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  invitedBy String
+  inviter   User     @relation("InviteSender", fields: [invitedBy], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@index([token])
   @@index([email, projectId])
 }
 
 model ErrorGroup {
-  id          String   @id @default(uuid())
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id          String              @id @default(uuid())
   projectId   String
   fingerprint String
   errorType   String
   message     String
-  count       Int      @default(1)
-  firstSeen   DateTime @default(now())
-  lastSeen    DateTime @default(now())
-  status      String   @default("open") // open, resolved, ignored
-  assignedTo  String?  // relasi ke ProjectMember.id (bisa null)
-  assignee    ProjectMember? @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
-  updatedAt   DateTime @updatedAt
-  events      Event[]
+  count       Int                 @default(1)
+  firstSeen   DateTime            @default(now())
+  lastSeen    DateTime            @default(now())
   statusCode  Int?
+  assignedTo  String?
+  status      String              @default("open")
+  updatedAt   DateTime            @updatedAt
+  assignee    ProjectMember?      @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments    ErrorGroupComment[]
+  events      Event[]
+
   @@unique([projectId, fingerprint])
 }
 
 model ErrorGroupComment {
-  id        String   @id @default(uuid())
-  group     ErrorGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
   groupId   String
-  author    ProjectMember @relation("ProjectMemberCommentAuthor", fields: [authorId], references: [id])
   authorId  String
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
+  author    ProjectMember @relation("ProjectMemberCommentAuthor", fields: [authorId], references: [id])
+  group     ErrorGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
 
 model Event {
-  id         String   @id @default(uuid())
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId  String
-  timestamp  DateTime @default(now())
-  errorType  String
-  message    String
-  stacktrace String?
-  userAgent  String?
-  group      ErrorGroup? @relation(fields: [groupId], references: [id])
-  groupId    String?
-  statusCode  Int?
-  userContext Json?
-  tags       Json?
+  id             String      @id @default(uuid())
+  projectId      String
+  timestamp      DateTime    @default(now())
+  errorType      String
+  message        String
+  stacktrace     String?
+  userAgent      String?
+  groupId        String?
+  statusCode     Int?
+  tags           Json?
+  userContext    Json?
+  browser        String?
+  browserVersion String?
+  deviceType     String?
+  environment    String?
+  os             String?
+  osVersion      String?
+  release        String?
+  url            String?     @default("")
+  method         String?     @default("GET")
+  path           String?
+  query          Json?
+  params         Json?
+  headers        Json?
+  ip             String?
+  language       String?
+  referrer       String?
+  screenSize     String?
+  group          ErrorGroup? @relation(fields: [groupId], references: [id])
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Webhook {
-  id        String   @id @default(uuid())
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String
-  url       String
-  enabled   Boolean  @default(true)
-  eventType String?  // opsional: 'all', 'error', dsb
-  secret    String?  // opsional: untuk signature
-  createdAt DateTime @default(now())
+  id         String            @id @default(uuid())
+  projectId  String
+  url        String
+  enabled    Boolean           @default(true)
+  eventType  String?
+  secret     String?
+  createdAt  DateTime          @default(now())
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
 }
 
 model WebhookDelivery {
-  id           String   @id @default(uuid())
-  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  id           String    @id @default(uuid())
   webhookId    String
   eventId      String?
-  requestBody  String   // JSON payload yang dikirim
-  responseBody String?  // Response dari webhook endpoint
-  statusCode   Int?     // HTTP status code dari response
-  success      Boolean  // Status keberhasilan pengiriman
-  error        String?  // Error message jika gagal
-  sentAt       DateTime @default(now())
+  requestBody  String
+  responseBody String?
+  statusCode   Int?
+  success      Boolean
+  error        String?
+  sentAt       DateTime  @default(now())
   responseAt   DateTime?
+  webhook      Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 }
 
 model Plan {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  price     Int?     // harga dalam rupiah, null untuk custom/enterprise
-  features  Json?    // fitur plan (opsional)
-  users     User[]
+  id            String        @id @default(uuid())
+  name          String        @unique
+  price         Int?
+  features      Json?
   planHistories PlanHistory[]
+  users         User[]
 }
 
 model PlanHistory {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
+  id        String    @id @default(uuid())
   userId    String
-  plan      Plan     @relation(fields: [planId], references: [id])
   planId    String
   startDate DateTime
   endDate   DateTime?
-  action    String   // 'upgrade', 'downgrade', 'auto-downgrade', dsb
+  action    String
   note      String?
+  plan      Plan      @relation(fields: [planId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Notification {
   id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  type      String   // 'PROJECT_INVITE', 'ERROR_ASSIGNED', dll
+  type      String
   title     String
   message   String
-  data      Json?    // Data tambahan dalam format JSON
+  data      Json?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
-} 
+}
+
+model SourceMap {
+  id            String   @id
+  projectId     String
+  release       String
+  sourceFile    String
+  minifiedFile  String?
+  sourceMap     Json
+  originalFiles String[]
+  filename      String
+  fileSize      Int?
+  contentType   String?
+  uploadedBy    String?
+  isActive      Boolean  @default(true)
+  environment   String?
+  buildNumber   String?
+  gitCommit     String?
+  metadata      Json?
+  source        String?  @db.Text
+  version       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  Project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  User          User?    @relation(fields: [uploadedBy], references: [id])
+
+  @@unique([projectId, release, sourceFile])
+  @@index([environment, release])
+  @@index([isActive])
+  @@index([projectId, release])
+  @@index([uploadedBy])
+}

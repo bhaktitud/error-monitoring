@@ -4,7 +4,7 @@ import crypto from 'crypto';
 const prisma = new PrismaClient();
 
 export class ErrorGroupingService {
-  // Method untuk mengelompokkan error dan mengembalikan groupId
+  // Method untuk mengelompokkan error dan mengembalikan errorGroup dan isNewGroup
   async groupError(errorData: {
     projectId: string;
     errorType: string;
@@ -17,7 +17,20 @@ export class ErrorGroupingService {
     url?: string;
     browser?: string;
     os?: string;
-  }): Promise<string> {
+  }): Promise<{
+    errorGroup: {
+      id: string;
+      fingerprint: string;
+      errorType: string;
+      message: string;
+      count: number;
+      firstSeen: Date;
+      lastSeen: Date;
+      status: string;
+      statusCode: number | null;
+    };
+    isNewGroup: boolean;
+  }> {
     try {
       // Generate fingerprint untuk error
       const fingerprint = this.generateFingerprint(errorData);
@@ -32,6 +45,8 @@ export class ErrorGroupingService {
         },
       });
       
+      let isNewGroup = false;
+      
       if (errorGroup) {
         // Grup sudah ada, update count dan lastSeen
         errorGroup = await prisma.errorGroup.update({
@@ -44,11 +59,9 @@ export class ErrorGroupingService {
             status: errorGroup.status === 'resolved' ? 'open' : undefined,
           },
         });
-        
-        return errorGroup.id;
       } else {
         // Grup belum ada, buat baru
-        const newGroup = await prisma.errorGroup.create({
+        errorGroup = await prisma.errorGroup.create({
           data: {
             projectId: errorData.projectId,
             fingerprint: fingerprint,
@@ -61,9 +74,10 @@ export class ErrorGroupingService {
             statusCode: errorData.statusCode || null,
           },
         });
-        
-        return newGroup.id;
+        isNewGroup = true;
       }
+      
+      return { errorGroup, isNewGroup };
     } catch (error: unknown) {
       console.error('Error in grouping error:', error);
       throw new Error(`Failed to group error: ${error instanceof Error ? error.message : String(error)}`);

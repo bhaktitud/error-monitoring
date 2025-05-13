@@ -305,8 +305,8 @@ export default function ErrorGroupPage() {
         </div>
       ) : error ? (
         <Alert variant="destructive" className="mb-6">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
       ) : errorGroup ? (
         <div className="space-y-6">
           {/* Header dengan navigasi kembali dan status */}
@@ -319,7 +319,6 @@ export default function ErrorGroupPage() {
                 className="h-9 px-2"
               >
                 <FiArrowLeft className="mr-2 h-4 w-4" />
-                Kembali
               </Button>
               <h1 className="text-xl font-semibold truncate">{errorGroup.errorType}</h1>
               {errorGroup.statusCode && (
@@ -330,36 +329,36 @@ export default function ErrorGroupPage() {
             </div>
             
             <div className="flex flex-wrap items-center gap-2">
-              <Button
+                  <Button 
                 variant={errorGroup.status === 'open' ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('open')}
+                    size="sm" 
+                    onClick={() => handleStatusChange('open')}
                 className="h-9"
                 disabled={errorGroup.status === 'open'}
-              >
+                  >
                 <FiLoader className="mr-2 h-4 w-4" />
                 Open
-              </Button>
-              <Button
+                  </Button>
+                  <Button 
                 variant={errorGroup.status === 'resolved' ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('resolved')}
+                    size="sm" 
+                    onClick={() => handleStatusChange('resolved')}
                 className="h-9"
                 disabled={errorGroup.status === 'resolved'}
-              >
+                  >
                 <FiCheck className="mr-2 h-4 w-4" />
                 Resolved
-              </Button>
-              <Button
+                  </Button>
+                  <Button 
                 variant={errorGroup.status === 'ignored' ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('ignored')}
+                    size="sm" 
+                    onClick={() => handleStatusChange('ignored')}
                 className="h-9"
                 disabled={errorGroup.status === 'ignored'}
-              >
+                  >
                 <FiEyeOff className="mr-2 h-4 w-4" />
                 Ignore
-              </Button>
+                  </Button>
             </div>
           </div>
 
@@ -367,26 +366,85 @@ export default function ErrorGroupPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Error details dan events - 2/3 kolom */}
             <div className="lg:col-span-2 space-y-6">
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
               {/* Card informasi error group */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="grid gap-4">
-                    <div>
-                      <h2 className="text-xl font-semibold mb-2">{errorGroup.message}</h2>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center">
-                          <FiAlertTriangle className="mr-1 h-4 w-4" />
-                          {errorGroup.count} kejadian
-                        </span>
-                        <span>•</span>
-                        <span>Pertama: {formatDate(errorGroup.firstSeen)}</span>
-                        <span>•</span>
-                        <span>Terakhir: {formatDate(errorGroup.lastSeen)}</span>
-                      </div>
-                    </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="grid gap-4">
+                      <div>
+                        <h2 className="text-xl font-semibold mb-2">{errorGroup.message}</h2>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center">
+                            <FiAlertTriangle className="mr-1 h-4 w-4" />
+                            {errorGroup.count} kejadian
+                          </span>
+                          <span>•</span>
+                          <span>Pertama: {formatDate(errorGroup.firstSeen)}</span>
+                          <span>•</span>
+                          <span>Terakhir: {formatDate(errorGroup.lastSeen)}</span>
+              </div>
+            </div>
+          </div>
+                  </CardContent>
+                </Card>
+
+              {/* Assignment card */}
+                <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center">
+                    <FiUser className="mr-2 h-4 w-4" />
+                    Ditugaskan Kepada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                {loadingMembers ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                  <div className="space-y-2">
+                          <Select
+                            value={selectedMember || 'unassigned'}
+                            onValueChange={(value) => {
+                              console.log('Selected member changed:', value);
+                              setSelectedMember(value);
+                            }}
+                            disabled={!canAssign}
+                          >
+                            <SelectTrigger className='w-full'>
+                              <SelectValue placeholder="-- Tidak ada --" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="unassigned">-- Tidak ada --</SelectItem>
+                                {members.map((member) => (
+                                  <SelectItem key={member.id} value={member.id}>
+                                {member.user.email}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                        
+                        <Button 
+                          onClick={handleAssign} 
+                          disabled={
+                            !canAssign || 
+                            submittingAssign || 
+                            (selectedMember === errorGroup.assignedTo) || 
+                            (selectedMember === 'unassigned' && errorGroup.assignedTo === null)
+                          }
+                            className="w-full" 
+                        >
+                        {submittingAssign ? 'Menyimpan...' : 'Update Assignment'}
+                        </Button>
+                      
+                      {!canAssign && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Hanya admin atau pemilik project yang dapat mengubah assignment.
+                        </p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+                </Card>
+              </div>
 
               {/* Tab panel untuk menampilkan event details */}
               <div className="bg-card border rounded-md shadow-sm">
@@ -466,7 +524,7 @@ export default function ErrorGroupPage() {
                                   <h4 className="text-sm font-medium mb-2">Tags</h4>
                                   <div className="flex flex-wrap gap-1">
                                     {Object.entries(event.tags).map(([key, value]) => (
-                                      <Badge key={key} variant="outline" className="text-xs">
+                                      <Badge key={key} variant="secondary" className="text-xs">
                                         {key}: {value as string}
                                       </Badge>
                                     ))}
@@ -481,91 +539,36 @@ export default function ErrorGroupPage() {
                   </div>
                 )}
               </div>
-            </div>
-            
+          </div>
+          
             {/* Sidebar - 1/3 kolom */}
             <div className="space-y-6">
-              {/* Assignment card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium flex items-center">
-                    <FiUser className="mr-2 h-4 w-4" />
-                    Ditugaskan Kepada
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingMembers ? (
-                    <Skeleton className="h-10 w-full" />
-                  ) : (
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedMember || 'unassigned'}
-                        onValueChange={(value) => {
-                          console.log('Selected member changed:', value);
-                          setSelectedMember(value);
-                        }}
-                        disabled={!canAssign}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="-- Tidak ada --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unassigned">-- Tidak ada --</SelectItem>
-                          {members.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.user.email}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      <Button 
-                        onClick={handleAssign} 
-                        disabled={
-                          !canAssign || 
-                          submittingAssign || 
-                          (selectedMember === errorGroup.assignedTo) || 
-                          (selectedMember === 'unassigned' && errorGroup.assignedTo === null)
-                        }
-                        className="w-full"
-                      >
-                        {submittingAssign ? 'Menyimpan...' : 'Update Assignment'}
-                      </Button>
-                      
-                      {!canAssign && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Hanya admin atau pemilik project yang dapat mengubah assignment.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
               
+            
               {/* Komentar */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-medium flex items-center">
                     <FiMessageCircle className="mr-2 h-4 w-4" />
-                    Komentar
+                  Komentar
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {loadingComments ? (
-                    <div className="space-y-4">
+                {loadingComments ? (
+                  <div className="space-y-4">
                       <Skeleton className="h-20 w-full" />
                       <Skeleton className="h-20 w-full" />
-                    </div>
-                  ) : (
-                    <>
+                  </div>
+                ) : (
+                  <>
                       <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
-                        {comments.length === 0 ? (
+                      {comments.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            Belum ada komentar.
+                          Belum ada komentar.
                           </p>
-                        ) : (
+                      ) : (
                           comments.map((comment) => (
-                            <Comment
+                            <Comment 
                               key={comment.id}
                               id={comment.id}
                               content={comment.content}
@@ -573,31 +576,31 @@ export default function ErrorGroupPage() {
                               author={comment.author}
                             />
                           ))
-                        )}
-                      </div>
-                      
+                      )}
+                    </div>
+                    
                       <form onSubmit={handleSubmitComment} className="space-y-2">
-                        <Textarea
+                      <Textarea
                           placeholder="Tulis komentar..."
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
                           className="min-h-[80px]"
-                        />
-                        <Button 
-                          type="submit" 
-                          disabled={!newComment.trim() || submittingComment}
+                      />
+                      <Button 
+                        type="submit" 
+                        disabled={!newComment.trim() || submittingComment}
                           className="w-full"
-                        >
+                      >
                           {submittingComment ? 'Mengirim...' : 'Kirim Komentar'}
-                        </Button>
-                      </form>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                      </Button>
+                    </form>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
+      </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-10">
           <FiAlertTriangle className="h-12 w-12 text-destructive mb-4" />

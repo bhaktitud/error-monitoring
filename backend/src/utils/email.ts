@@ -10,14 +10,24 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendErrorNotification(to: string, projectName: string, errorMessage: string, errorType: string, timestamp: string) {
+interface ErrorNotificationData {
+  projectName: string;
+  errorType: string;
+  message: string;
+  count: number;
+  url?: string;
+}
+
+export async function sendErrorNotification(to: string, data: ErrorNotificationData) {
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'noreply@sentry-clone.com',
+    from: process.env.SMTP_FROM || 'noreply@lograven.com',
     to,
-    subject: `[Sentry Clone] Error Baru di Project ${projectName}`,
-    html: `<h3>Error Baru di Project <b>${projectName}</b></h3>
-      <p><b>Waktu:</b> ${timestamp}</p>
-      <p><b>Tipe Error:</b> ${errorType}</p>
-      <p><b>Pesan:</b> ${errorMessage}</p>`
+    subject: `[LogRaven] Error Baru di Project ${data.projectName}`,
+    html: `<h3>Error Baru di Project <b>${data.projectName}</b></h3>
+      <p><b>Waktu:</b> ${new Date().toLocaleString()}</p>
+      <p><b>Tipe Error:</b> ${data.errorType}</p>
+      <p><b>Pesan:</b> ${data.message}</p>
+      <p><b>Jumlah:</b> ${data.count}</p>
+      ${data.url ? `<p><a href="${data.url}">Lihat Detail Error</a></p>` : ''}`
   });
 } 

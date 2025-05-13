@@ -5,6 +5,23 @@ const sourceMapCache: Record<string, SourceMapConsumer> = {};
 // Cache untuk source map consumers per file
 const sourceMapConsumers: Record<string, SourceMapConsumer | null> = {};
 
+// Deteksi lingkungan - browser atau Node.js
+const isNodeEnvironment = typeof process !== 'undefined' && 
+                         process.versions != null && 
+                         process.versions.node != null;
+
+// Import fs dan path jika di lingkungan Node.js
+let fs: any;
+let path: any;
+if (isNodeEnvironment) {
+  try {
+    fs = require('fs');
+    path = require('path');
+  } catch (e) {
+    console.warn('Failed to load Node.js modules in Node environment');
+  }
+}
+
 // Tipe untuk hasil transformasi stack trace
 interface StackFrameInfo {
   originalFile: string;
@@ -27,7 +44,7 @@ export interface UploadSourceMapOptions {
 }
 
 /**
- * Mengambil source map dari URL
+ * Mengambil source map dari URL atau file lokal
  */
 async function fetchSourceMap(url: string): Promise<SourceMapConsumer | null> {
   // Cek apakah sudah ada di cache
@@ -36,12 +53,39 @@ async function fetchSourceMap(url: string): Promise<SourceMapConsumer | null> {
   }
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch source map: ${response.statusText}`);
+    let sourceMapData;
+
+    // Pendekatan berbeda untuk Node.js vs browser
+    if (isNodeEnvironment && (url.startsWith('/') || url.startsWith('file:'))) {
+      // Handle file path di Node.js
+      let filePath = url;
+      if (url.startsWith('file:')) {
+        // Convert file:// URL to file path
+        filePath = new URL(url).pathname;
+      }
+      
+      if (!fs.existsSync(filePath)) {
+        console.warn(`Source map file not found: ${filePath}`);
+        return null;
+      }
+      
+      // Baca file sebagai string
+      const content = fs.readFileSync(filePath, 'utf8');
+      try {
+        sourceMapData = JSON.parse(content);
+      } catch (e) {
+        console.error(`Invalid source map JSON in ${filePath}`);
+        return null;
+      }
+    } else {
+      // Menggunakan fetch di browser atau untuk URL http/https di Node.js
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch source map: ${response.statusText}`);
+      }
+      sourceMapData = await response.json();
     }
 
-    const sourceMapData = await response.json();
     const consumer = await new SourceMapConsumer(sourceMapData);
     
     // Simpan di cache
@@ -110,12 +154,32 @@ export async function uploadSourceMap({
  */
 export async function extractSourceMapUrl(fileUrl: string): Promise<string | null> {
   try {
-    const response = await fetch(fileUrl);
-    if (!response.ok) {
-      return null;
-    }
+    let jsContent: string;
 
-    const jsContent = await response.text();
+    // Pendekatan berbeda untuk Node.js vs browser
+    if (isNodeEnvironment && (fileUrl.startsWith('/') || fileUrl.startsWith('file:'))) {
+      // Handle file path di Node.js
+      let filePath = fileUrl;
+      if (fileUrl.startsWith('file:')) {
+        // Convert file:// URL to file path
+        filePath = new URL(fileUrl).pathname;
+      }
+      
+      if (!fs.existsSync(filePath)) {
+        console.warn(`JavaScript file not found: ${filePath}`);
+        return null;
+      }
+      
+      // Baca file sebagai string
+      jsContent = fs.readFileSync(filePath, 'utf8');
+    } else {
+      // Menggunakan fetch di browser atau untuk URL http/https di Node.js
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        return null;
+      }
+      jsContent = await response.text();
+    }
     
     // Regex untuk mencari source map URL
     const sourceMapComment = /\/\/# sourceMappingURL=(.+)$/m;
@@ -126,7 +190,15 @@ export async function extractSourceMapUrl(fileUrl: string): Promise<string | nul
       const sourceMapUrl = match[1];
       if (sourceMapUrl.startsWith('http')) {
         return sourceMapUrl;
+      } else if (isNodeEnvironment && (fileUrl.startsWith('/') || fileUrl.startsWith('file:'))) {
+        // File path handling for Node.js
+        let basePath = fileUrl;
+        if (fileUrl.startsWith('file:')) {
+          basePath = new URL(fileUrl).pathname;
+        }
+        return path.join(path.dirname(basePath), sourceMapUrl);
       } else {
+        // URL handling for browser
         const baseUrl = fileUrl.substring(0, fileUrl.lastIndexOf('/') + 1);
         return `${baseUrl}${sourceMapUrl}`;
       }

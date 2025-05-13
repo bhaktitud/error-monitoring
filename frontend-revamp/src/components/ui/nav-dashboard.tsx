@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { LucideIcon } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export function NavDashboard({
   items,
@@ -19,17 +19,16 @@ export function NavDashboard({
     icon?: LucideIcon
   }[]
 }) {
+  const router = useRouter();
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.title} onClick={() => router.push(item.url)}>
               <SidebarMenuButton tooltip={item.title}>
                 {item.icon && <item.icon />}
-                <Link href={item.url} className="flex items-center">
                   <span>{item.title}</span>
-                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

@@ -12,6 +12,42 @@ interface Tags {
   [key: string]: unknown;
 }
 
+// Interface untuk Event
+export interface Event {
+  id: string;
+  errorType: string;
+  message: string;
+  timestamp: string;
+  stacktrace?: string;
+  userAgent?: string;
+  statusCode?: number;
+  userContext?: UserContext;
+  tags?: Tags;
+  browser?: string;
+  browserVersion?: string;
+  deviceType?: string;
+  environment?: string;
+  os?: string;
+  osVersion?: string;
+  release?: string;
+  url?: string;
+  method?: string;
+  path?: string;
+  query?: Record<string, unknown>;
+  params?: Record<string, unknown>;
+  headers?: Record<string, string>;
+  ip?: string;
+  language?: string;
+  referrer?: string;
+  screenSize?: string;
+  group?: {
+    id: string;
+    errorType: string;
+    status: string;
+    count: number;
+  };
+}
+
 // Interface untuk user profile yang lengkap
 export interface UserProfile {
   id: string;
@@ -36,6 +72,20 @@ export interface UserProfile {
   };
 }
 
+// Definisikan tipe untuk Source Map
+export interface SourceMap {
+  id: string;
+  release: string;
+  sourceFile: string;
+  minifiedFile: string | null;
+  filename: string;
+  environment: string | null;
+  originalFiles: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Fungsi utility untuk melakukan request ke API
  */
@@ -46,17 +96,38 @@ export async function apiRequest<T>(
   // Ambil token dari localStorage (client-side)
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   
-  // Default headers
-  const headers = {
+  // Gabungkan headers default dengan headers dari options
+  const baseHeaders = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
+  // Tentukan headers final
+  let finalHeaders: HeadersInit;
+
+  // Jika body adalah FormData, filter keluar Content-Type dari baseHeaders
+  if (options.body instanceof FormData) {
+    const filteredHeaders: Record<string, string> = {};
+    for (const key in baseHeaders) {
+      if (Object.prototype.hasOwnProperty.call(baseHeaders, key) && key.toLowerCase() !== 'content-type') {
+        const value = baseHeaders[key as keyof typeof baseHeaders];
+        // Pastikan value bukan undefined sebelum assign
+        if (value !== undefined) {
+          filteredHeaders[key] = value;
+        }
+      }
+    }
+    finalHeaders = filteredHeaders;
+  } else {
+    // Jika bukan FormData, gunakan baseHeaders seperti biasa
+    finalHeaders = baseHeaders;
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
-      headers,
+      headers: finalHeaders, // Gunakan finalHeaders
     });
 
     if (!response.ok) {
@@ -361,6 +432,30 @@ export const ProjectsAPI = {
       body: JSON.stringify(settings),
     });
   },
+
+  // Fungsi baru untuk Source Maps
+  async getSourceMaps(projectId: string): Promise<SourceMap[]> {
+    const response = await apiRequest<{ data: SourceMap[] }>(`/projects/${projectId}/sourcemaps`);
+    return response.data;
+  },
+
+  async uploadSourceMap(projectId: string, formData: FormData): Promise<{ id: string; message: string }> {
+    // Pastikan header Content-Type adalah multipart/form-data
+    const response = await apiRequest<{ id: string; message: string }>(`/projects/${projectId}/sourcemaps/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    return response;
+  },
+
+  async deleteSourceMap(projectId: string, sourceMapId: string): Promise<{ message: string }> {
+    // NOTE: Endpoint backend menggunakan /api/sourcemaps/:id, bukan /api/projects/:projectId/sourcemaps/:id
+    // Mungkin perlu penyesuaian jika ingin konsisten
+    const response = await apiRequest<{ message: string }>(`/sourcemaps/${sourceMapId}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
 };
 
 /**
@@ -370,23 +465,7 @@ export const EventsAPI = {
   // Get events for a project
   getEvents: async (projectId: string) => {
     const response = await apiRequest<{
-      events: Array<{
-        id: string;
-        errorType: string;
-        message: string;
-        timestamp: string;
-        stacktrace: string;
-        userAgent: string;
-        statusCode: number;
-        userContext: UserContext;
-        tags: Tags;
-        group?: {
-          id: string;
-          errorType: string;
-          status: string;
-          count: number;
-        };
-      }>,
+      events: Event[];
       pagination: {
         total: number;
         page: number;
@@ -409,16 +488,8 @@ export const EventsAPI = {
   },
   
   // Send error event directly from frontend
-  sendEvent: async (dsn: string, eventData: {
-    errorType: string;
-    message: string;
-    stacktrace: string;
-    userAgent?: string;
-    statusCode?: number;
-    userContext?: UserContext;
-    tags?: Tags;
-  }) => {
-    return apiRequest<{ success: boolean }>('/events', {
+  sendEvent: async (dsn: string, eventData: Partial<Event>) => {
+    return apiRequest<{ success: boolean, eventId: string }>('/events', {
       method: 'POST',
       headers: {
         'X-DSN': dsn
@@ -462,17 +533,7 @@ export const GroupsAPI = {
   // Get events in a group
   getGroupEvents: async (groupId: string) => {
     const response = await apiRequest<{
-      events: Array<{
-        id: string;
-        errorType: string;
-        message: string;
-        timestamp: string;
-        stacktrace: string;
-        userAgent: string;
-        statusCode: number;
-        userContext: UserContext;
-        tags: Tags;
-      }>,
+      events: Event[];
       pagination: {
         total: number;
         page: number;

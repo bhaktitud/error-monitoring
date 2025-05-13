@@ -5,6 +5,7 @@ import axios from 'axios';
 import { PlanFeatures } from '../types/plan';
 import { ErrorGroupingService } from '../services/errorGroupingService';
 import { NotificationService } from '../services/notificationService';
+import { transformStackTrace } from '../utils/sourcemap';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -30,7 +31,15 @@ router.post('/', async (req, res) => {
     path, 
     query, 
     method, 
-    extraContext 
+    extraContext,
+    release,
+    environment,
+    params,
+    headers,
+    ip,
+    language,
+    referrer,
+    screenSize
   } = req.body;
   
   if (!dsn || !errorType || !message) {
@@ -38,190 +47,204 @@ router.post('/', async (req, res) => {
   }
   
   try {
-    // Cari project berdasarkan DSN
-    const project = await prisma.project.findUnique({ where: { dsn } });
-    if (!project) {
-      return res.status(404).json({ error: 'Project tidak ditemukan' });
-    }
-    
-    // Validasi kuota events bulanan
-    const owner = await prisma.user.findUnique({ 
-      where: { id: project.ownerId }, 
-      include: { plan: true } 
-    });
-    
-    const features = owner?.plan?.features as PlanFeatures | null;
-    const kuota = features?.eventsPerMonth || 1000;
-    
-    const awalBulan = new Date();
-    awalBulan.setDate(1); 
-    awalBulan.setHours(0,0,0,0);
-    
-    const totalEvents = await prisma.event.count({
+    const project = await prisma.project.findUnique({
       where: {
-        projectId: project.id,
-        timestamp: { gte: awalBulan }
+        dsn
       }
     });
-    
-    if (totalEvents >= kuota) {
-      return res.status(403).json({ error: 'Kuota events bulanan Anda sudah habis.' });
+
+    if (!project) {
+      return res.status(404).json({ error: 'DSN tidak valid' });
     }
-    
-    // Gunakan layanan error grouping untuk mengelompokkan error
-    const groupId = await errorGroupingService.groupError({
+
+    // Cek apakah project owner ada dan aktif
+    const projectOwner = await prisma.user.findUnique({
+      where: { id: project.ownerId },
+      include: { plan: true }
+    });
+
+    if (!projectOwner) {
+      return res.status(404).json({ error: 'Project owner tidak ditemukan' });
+    }
+
+    // Transformasi stacktrace jika ada release dan terdapat sourcemap
+    let processedStacktrace = stacktrace;
+    if (release) {
+      try {
+        processedStacktrace = await transformStackTrace(project.id, release, stacktrace);
+      } catch (error) {
+        console.error('Error transforming stacktrace:', error);
+        // Lanjutkan dengan stacktrace asli jika transformasi gagal
+      }
+    }
+
+    // Group error berdasarkan type dan message
+    const errorGroupResult = await errorGroupingService.groupError({
       projectId: project.id,
       errorType,
       message,
-      stacktrace,
-      statusCode,
-      userAgent,
-      userContext,
-      tags,
-      url,
-      browser,
-      os
+      statusCode
     });
-    
-    // Simpan event dengan referensi ke group
+
+    const errorGroup = errorGroupResult.errorGroup;
+    const isNewGroup = errorGroupResult.isNewGroup;
+
+    // Simpan event ke database dengan properti standar
     const event = await prisma.event.create({
       data: {
         projectId: project.id,
+        groupId: errorGroup.id,
         errorType,
         message,
-        stacktrace,
+        stacktrace: processedStacktrace,
         userAgent,
-        groupId,
-        statusCode: statusCode ?? null,
-        userContext: userContext ?? null,
-        tags: tags ?? null,
+        statusCode,
+        userContext,
+        tags,
+        os,
+        osVersion,
+        browser,
+        browserVersion,
+        deviceType,
+        environment,
+        release
       }
     });
-    
-    // Kirim notifikasi (email dan in-app)
-    if (owner) {
+
+    // Perbarui event jika ada properti tambahan
+    if (url || method || path || query || params || headers || ip || language || referrer || screenSize) {
       try {
-        // Email notification
-        await sendErrorNotification(
-          owner.email,
-          project.name,
-          message,
-          errorType,
-          new Date().toLocaleString()
-        );
-        
-        // In-app notification
-        const io = req.app.get('io');
-        if (io) {
-          const notificationService = new NotificationService(io);
-          await notificationService.createNotification({
-            userId: owner.id,
-            type: 'error',
-            title: `Error di ${project.name}`,
-            message: `${errorType}: ${message}`,
-            data: {
-              projectId: project.id,
-              errorGroupId: groupId,
-              error: {
-                errorType,
-                message,
-                environment: tags?.environment || 'production',
-                browser,
-                os,
-                url
-              }
-            }
-          });
-        }
-      } catch (notificationError) {
-        console.error('Error sending notification:', notificationError);
+        // Buat object dengan properti yang perlu diupdate
+        const updatedFields: any = {};
+        if (url) updatedFields.url = url;
+        if (method) updatedFields.method = method;
+        if (path) updatedFields.path = path;
+        if (query) updatedFields.query = query;
+        if (params) updatedFields.params = params;
+        if (headers) updatedFields.headers = headers;
+        if (ip) updatedFields.ip = ip;
+        if (language) updatedFields.language = language;
+        if (referrer) updatedFields.referrer = referrer;
+        if (screenSize) updatedFields.screenSize = screenSize;
+
+        // Update database
+        await prisma.event.update({
+          where: { id: event.id },
+          data: updatedFields
+        });
+      } catch (updateError) {
+        console.error('Error updating event with additional fields:', updateError);
+        // Lanjutkan meskipun gagal update field tambahan
       }
     }
-    
-    // Kirim webhook ke endpoint custom user
-    try {
-      const webhooks = await prisma.webhook.findMany({ 
-        where: { projectId: project.id, enabled: true } 
-      });
-      
-      for (const webhook of webhooks) {
+
+    // Jika grup error baru, kirim notifikasi
+    if (isNewGroup) {
+      // Kirim email notifikasi jika user setting mengizinkan
+      if (projectOwner.notifyEmail) {
+        sendErrorNotification(projectOwner.email, {
+          projectName: project.name,
+          errorType,
+          message,
+          count: 1,
+          url: `${process.env.FRONTEND_URL}/projects/${project.id}/groups/${errorGroup.id}`
+        }).catch(console.error);
+      }
+
+      // Buat notifikasi in-app
+      if (projectOwner.notifyInApp) {
         try {
-          const payload = {
-            projectId: project.id,
-            eventId: event.id,
-            errorGroupId: groupId,
+          await NotificationService.createErrorNotification(
+            projectOwner.id,
+            project.id,
+            errorGroup.id,
             errorType,
-            message,
-            statusCode: statusCode ?? null,
-            timestamp: new Date().toISOString(),
-            userContext: userContext ?? null,
-            tags: tags ?? null,
-            browser,
-            os,
-            url,
-            deviceType
-          };
-          
-          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-          
-          if (webhook.secret) {
-            const signature = crypto.createHmac('sha256', webhook.secret)
-              .update(JSON.stringify(payload))
-              .digest('hex');
-            headers['x-webhook-signature'] = signature;
-          }
-          
-          // Buat log webhook delivery - request
-          const deliveryLog = await prisma.webhookDelivery.create({
-            data: {
-              webhookId: webhook.id,
-              eventId: event.id,
-              requestBody: JSON.stringify(payload),
-              success: false, // Akan diupdate setelah mendapat response
-            },
-          });
-  
-          try {
-            const sentAt = new Date();
-            const response = await axios.post(webhook.url, payload, { headers });
-            const responseAt = new Date();
-            
-            // Update log dengan response
-            await prisma.webhookDelivery.update({
-              where: { id: deliveryLog.id },
+            message
+          );
+        } catch (error) {
+          console.error('Error creating in-app notification:', error);
+        }
+      }
+    }
+
+    // Kirim event ke webhook jika ada
+    const webhooks = await prisma.webhook.findMany({
+      where: {
+        projectId: project.id,
+        enabled: true
+      }
+    });
+
+    for (const webhook of webhooks) {
+      try {
+        const payload = {
+          projectId: project.id,
+          eventId: event.id,
+          errorType,
+          message,
+          statusCode,
+          timestamp: event.timestamp,
+          userContext,
+          tags,
+          groupId: errorGroup.id,
+          url,
+          environment,
+          release
+        };
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+
+        // Tambahkan signature jika webhook memiliki secret
+        if (webhook.secret) {
+          const signature = crypto
+            .createHmac('sha256', webhook.secret)
+            .update(JSON.stringify(payload))
+            .digest('hex');
+
+          headers['x-webhook-signature'] = signature;
+        }
+
+        // Kirim webhook secara asynchronous (tidak menunggu response)
+        axios.post(webhook.url, payload, { headers })
+          .then(async (response) => {
+            // Catat delivery sebagai sukses
+            await prisma.webhookDelivery.create({
               data: {
+                webhookId: webhook.id,
+                eventId: event.id,
+                requestBody: JSON.stringify(payload),
                 responseBody: JSON.stringify(response.data),
                 statusCode: response.status,
                 success: true,
-                responseAt,
-              },
+                responseAt: new Date()
+              }
             });
-          } catch (error: any) {
-            // Update log dengan error
-            await prisma.webhookDelivery.update({
-              where: { id: deliveryLog.id },
+          })
+          .catch(async (error) => {
+            // Catat delivery sebagai gagal
+            await prisma.webhookDelivery.create({
               data: {
-                error: error.message || 'Gagal mengirimkan webhook',
-                statusCode: error.response?.status,
-                success: false,
-                responseBody: error.response ? JSON.stringify(error.response.data) : null,
-                responseAt: new Date(),
-              },
+                webhookId: webhook.id,
+                eventId: event.id,
+                requestBody: JSON.stringify(payload),
+                error: error.message,
+                success: false
+              }
             });
-          }
-        } catch (err) {
-          // Error saat membuat atau mengupdate log
-          console.error('Gagal membuat log webhook:', err);
-        }
+          });
+      } catch (error) {
+        console.error(`Error sending to webhook ${webhook.id}:`, error);
       }
-    } catch (webhookError) {
-      console.error('Error processing webhooks:', webhookError);
     }
-    
-    res.status(201).json({ success: true, eventId: event.id, groupId });
-    
-  } catch (err) {
-    console.error('Error saving event:', err);
+
+    res.status(201).json({ 
+      success: true,
+      eventId: event.id
+    });
+  } catch (error) {
+    console.error('Error creating event:', error);
     res.status(500).json({ error: 'Gagal menyimpan event' });
   }
 });

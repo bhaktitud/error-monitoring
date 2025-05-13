@@ -293,7 +293,7 @@ Jika Anda menghadapi masalah:
 
 ## Referensi
 
-Untuk informasi lebih lanjut, kunjungi [dokumentasi resmi LogRaven](https://lograven.docs.example.com) atau lihat [contoh integrasi](https://github.com/lograven/examples).
+Untuk informasi lebih lanjut, kunjungi [dokumentasi resmi LogRaven](https://lograven.docs.example.com) atau lihat [contoh integrasi](https://github.com/lograven/examples). 
 
 ## Fitur Source Maps
 

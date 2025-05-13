@@ -3,6 +3,7 @@ const commonjs = require('@rollup/plugin-commonjs');
 const typescript = require('@rollup/plugin-typescript');
 const terser = require('@rollup/plugin-terser');
 const json = require('@rollup/plugin-json');
+const nodePolyfills = require('rollup-plugin-polyfill-node');
 
 module.exports = [
   // CommonJS build
@@ -43,13 +44,19 @@ module.exports = [
       format: 'iife',
       name: 'LogRaven',
       sourcemap: true,
+      globals: {
+        'fs': 'fs',
+        'path': 'path'
+      }
     },
     plugins: [
+      nodePolyfills(),
       resolve({ browser: true }),
       commonjs(),
       json(),
       typescript({ tsconfig: './tsconfig.json' }),
       terser(),
     ],
+    external: ['fs', 'path']
   },
 ]; 

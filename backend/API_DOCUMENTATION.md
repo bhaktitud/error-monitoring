@@ -210,13 +210,31 @@ Semua endpoint berikut memerlukan autentikasi dengan header: `Authorization: Bea
     "userAgent": "Browser/Version",
     "statusCode": 500,
     "userContext": { "userId": "123" },
-    "tags": { "version": "1.0.0" }
+    "tags": { "version": "1.0.0" },
+    "os": "Windows",
+    "osVersion": "10",
+    "browser": "Chrome",
+    "browserVersion": "90.0.4430.212",
+    "deviceType": "Desktop",
+    "url": "https://example.com/page",
+    "method": "GET",
+    "path": "/page",
+    "query": { "id": "123" },
+    "params": { "id": "123" },
+    "headers": { "content-type": "application/json" },
+    "ip": "192.168.1.1",
+    "language": "en-US",
+    "referrer": "https://google.com",
+    "screenSize": "1920x1080",
+    "environment": "production",
+    "release": "v1.0.0"
   }
   ```
 - **Response Success**: `201 Created`
   ```json
   {
-    "success": true
+    "success": true,
+    "eventId": "uuid"
   }
   ```
 - **Response Error**: `400`, `404`, `500`
@@ -226,7 +244,8 @@ Semua endpoint berikut memerlukan autentikasi dengan header: `Authorization: Bea
 - **Method**: `GET`
 - **Response Success**: `200 OK`
   ```json
-  [
+  {
+    "events": [
     {
       "id": "uuid",
       "errorType": "TypeError",
@@ -236,9 +255,26 @@ Semua endpoint berikut memerlukan autentikasi dengan header: `Authorization: Bea
       "userAgent": "Browser/Version",
       "statusCode": 500,
       "userContext": { "userId": "123" },
-      "tags": { "version": "1.0.0" }
+        "tags": { "version": "1.0.0" },
+        "os": "Windows",
+        "osVersion": "10",
+        "browser": "Chrome",
+        "browserVersion": "90.0.4430.212",
+        "deviceType": "Desktop",
+        "url": "https://example.com/page",
+        "method": "GET",
+        "path": "/page",
+        "environment": "production",
+        "release": "v1.0.0"
     }
-  ]
+    ],
+    "pagination": {
+      "total": 100,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 10
+    }
+  }
   ```
 - **Response Error**: `500`
 

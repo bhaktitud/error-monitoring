@@ -45,6 +45,39 @@ export class NotificationService {
     this.io = io;
   }
 
+  // Static method untuk membuat notifikasi error tanpa perlu instance
+  static async createErrorNotification(
+    userId: string,
+    projectId: string,
+    errorGroupId: string,
+    errorType: string,
+    errorMessage: string
+  ) {
+    try {
+      const notification = await prisma.notification.create({
+        data: {
+          userId: userId,
+          type: 'error',
+          title: `Error: ${errorType}`,
+          message: errorMessage,
+          data: {
+            projectId,
+            errorGroupId,
+            error: {
+              errorType,
+              message: errorMessage
+            }
+          }
+        }
+      });
+      
+      return notification;
+    } catch (error) {
+      console.error('Error creating error notification:', error);
+      throw error;
+    }
+  }
+
   // Membuat notifikasi baru
   async createNotification(data: {
     userId: string;

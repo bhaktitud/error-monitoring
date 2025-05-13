@@ -1,7 +1,6 @@
 "use client"
 
 import { type LucideIcon } from "lucide-react"
-import Link from "next/link"
 
 import {
   SidebarGroup,
@@ -11,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
 
 export function NavIntegration({
   items,
@@ -21,20 +21,19 @@ export function NavIntegration({
     icon?: LucideIcon
   }[]
 }) {
+  const router = useRouter();
   return (
     <SidebarGroup>
         <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarGroupLabel>Integration</SidebarGroupLabel>
         <SidebarMenu>
             {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton tooltip={item.title}>
-                        {item.icon && <item.icon />}
-                        <Link href={item.url} className="flex items-center">
-                            <span>{item.title}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem key={item.title} onClick={() => router.push(item.url)}>
+                <SidebarMenuButton tooltip={item.title}>
+                  {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             ))}
         </SidebarMenu>
       </SidebarGroupContent>

@@ -8,16 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { FiSave, FiTrash2, FiAlertTriangle, FiCopy, FiArrowLeft, FiLoader } from 'react-icons/fi';
-import { ProjectsAPI } from '@/lib/api';
+import { FiSave, FiTrash2, FiAlertTriangle, FiCopy, FiLoader, FiCpu, FiUploadCloud } from 'react-icons/fi';
+import { ProjectsAPI, SourceMap } from '@/lib/api';
 import { toast } from 'sonner';
 import { 
   Dialog, 
@@ -29,6 +21,8 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UploadSourceMapModal } from '@/components/dashboard/UploadSourceMapModal';
 
 export default function ProjectSettingsPage() {
   const params = useParams();
@@ -52,6 +46,12 @@ export default function ProjectSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sourceMaps, setSourceMaps] = useState<SourceMap[]>([]);
+  const [isLoadingSourceMaps, setIsLoadingSourceMaps] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showDeleteSourceMapDialog, setShowDeleteSourceMapDialog] = useState(false);
+  const [sourceMapToDelete, setSourceMapToDelete] = useState<SourceMap | null>(null);
+  const [isDeletingSourceMap, setIsDeletingSourceMap] = useState(false);
 
   useEffect(() => {
     // Fetch project data
@@ -73,6 +73,26 @@ export default function ProjectSettingsPage() {
     };
 
     fetchProject();
+  }, [projectId]);
+
+  // Fungsi untuk fetch source maps
+  const fetchSourceMaps = async () => {
+    if (!projectId) return;
+    setIsLoadingSourceMaps(true);
+    try {
+      const maps = await ProjectsAPI.getSourceMaps(projectId);
+      setSourceMaps(maps);
+    } catch (error) {
+      console.error('Error fetching source maps:', error);
+      toast.error('Gagal memuat source maps');
+    } finally {
+      setIsLoadingSourceMaps(false);
+    }
+  };
+
+  // useEffect untuk fetch source maps
+  useEffect(() => {
+    fetchSourceMaps();
   }, [projectId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +146,29 @@ export default function ProjectSettingsPage() {
     }
   };
 
+  const openDeleteSourceMapDialog = (sourceMap: SourceMap) => {
+    setSourceMapToDelete(sourceMap);
+    setShowDeleteSourceMapDialog(true);
+  };
+
+  const handleDeleteSourceMap = async () => {
+    if (!sourceMapToDelete) return;
+    
+    setIsDeletingSourceMap(true);
+    try {
+      await ProjectsAPI.deleteSourceMap(projectId, sourceMapToDelete.id);
+      toast.success(`Source map untuk rilis ${sourceMapToDelete.release} berhasil dihapus`);
+      setShowDeleteSourceMapDialog(false);
+      setSourceMapToDelete(null);
+      fetchSourceMaps(); // Refresh list
+    } catch (error) {
+      console.error('Error deleting source map:', error);
+      toast.error('Gagal menghapus source map');
+    } finally {
+      setIsDeletingSourceMap(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout projectId={projectId}>
@@ -148,7 +191,7 @@ export default function ProjectSettingsPage() {
       </div>
 
       <Tabs defaultValue="general">
-        <TabsList className="bg-card border w-full max-w-md p-0 h-auto">
+        <TabsList className="bg-card border w-full max-w-xl p-0 h-auto">
           <TabsTrigger 
             value="general" 
             className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
@@ -160,6 +203,12 @@ export default function ProjectSettingsPage() {
             className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
           >
             SDK
+          </TabsTrigger>
+          <TabsTrigger 
+            value="sourcemaps" 
+            className="flex-1 py-3 rounded-none data-[state=active]:bg-primary/10 data-[state=active]:shadow-none"
+          >
+            <FiCpu className="mr-2" /> Source Maps
           </TabsTrigger>
           <TabsTrigger 
             value="danger" 
@@ -318,6 +367,102 @@ export default function handler(req, res) {
           </Card>
         </TabsContent>
 
+        <TabsContent value="sourcemaps" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Kelola Source Maps</CardTitle>
+                <CardDescription>
+                  Upload dan kelola source maps untuk rilis aplikasi Anda.
+                </CardDescription>
+              </div>
+              <Button onClick={() => setShowUploadModal(true)}>
+                <FiUploadCloud className="mr-2" /> Upload Source Map
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoadingSourceMaps ? (
+                <div className="flex justify-center items-center h-40">
+                  <FiLoader className="animate-spin h-8 w-8 text-primary" />
+                </div>
+              ) : sourceMaps.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  Belum ada source map yang diunggah untuk proyek ini.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rilis</TableHead>
+                      <TableHead>File Sumber</TableHead>
+                      <TableHead>Lingkungan</TableHead>
+                      <TableHead>Tgl Upload</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sourceMaps.map((sm) => (
+                      <TableRow key={sm.id}>
+                        <TableCell className="font-medium">{sm.release}</TableCell>
+                        <TableCell>{sm.sourceFile}</TableCell>
+                        <TableCell>{sm.environment || '-'}</TableCell>
+                        <TableCell>{new Date(sm.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Dialog open={showDeleteSourceMapDialog && sourceMapToDelete?.id === sm.id} onOpenChange={(isOpen) => {
+                            if (!isOpen) {
+                              setShowDeleteSourceMapDialog(false);
+                              setSourceMapToDelete(null);
+                            }
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => openDeleteSourceMapDialog(sm)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <FiTrash2 />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Hapus Source Map</DialogTitle>
+                                <DialogDescription>
+                                  Apakah Anda yakin ingin menghapus source map untuk rilis 
+                                  <span className="font-semibold">{sourceMapToDelete?.release}</span> file 
+                                  <span className="font-mono text-sm">{sourceMapToDelete?.filename}</span>?
+                                  Tindakan ini tidak dapat dibatalkan.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter className="mt-4">
+                                <Button variant="outline" onClick={() => setShowDeleteSourceMapDialog(false)}>
+                                  Batal
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={handleDeleteSourceMap}
+                                  disabled={isDeletingSourceMap}
+                                >
+                                  {isDeletingSourceMap ? (
+                                    <FiLoader className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <FiTrash2 className="mr-2 h-4 w-4" />
+                                  )}
+                                  Hapus Permanen
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="danger" className="space-y-6">
           <Card>
             <CardHeader>
@@ -396,6 +541,14 @@ export default function handler(req, res) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <UploadSourceMapModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+        projectId={projectId} 
+        onUploadSuccess={() => { fetchSourceMaps(); setShowUploadModal(false); }} 
+      />
+
     </DashboardLayout>
   );
 } 

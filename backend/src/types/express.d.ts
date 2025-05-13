@@ -1,2 +1,12 @@
-// Hapus semua konten dari file ini untuk sementara
-// Kita akan menggunakan type assertion sebagai gantinya 
+import { Project } from '@prisma/client';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+      project?: Project;
+    }
+  }
+}
+
+export {}; 

@@ -309,11 +309,11 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
           captureException(
             error instanceof Error ? error : new Error(`Fetch error: ${String(error)}`), 
             { 
-              extraContext: { 
-                networkRequest: 'fetch', 
-                url: typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown',
-                options: args[1] 
-              } 
+            extraContext: { 
+              networkRequest: 'fetch', 
+              url: typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].toString() : 'unknown',
+              options: args[1] 
+            } 
             }
           );
           throw error;
@@ -360,12 +360,12 @@ function init({ dsn, apiUrl, environment, release, sdk = {} }: InitOptions): voi
             }
             
             captureException(error, {
-              extraContext: { 
-                networkRequest: 'xhr', 
+            extraContext: { 
+              networkRequest: 'xhr', 
                 url: this._logRavenUrl?.toString(), 
-                method: this._logRavenMethod 
-              }
-            });
+              method: this._logRavenMethod 
+            }
+          });
           }
         });
 
@@ -420,18 +420,18 @@ function initReactNative({ dsn, apiUrl, environment, release, sdk = {} }: InitOp
     
     if (reactNativeGlobal.ErrorUtils) {
       const originalHandler = reactNativeGlobal.ErrorUtils.getGlobalHandler();
-      
+    
       reactNativeGlobal.ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
-        captureException(error, {
-          extraContext: {
-            reactNative: true,
-            isFatal
-          }
-        });
-        
-        // Juga panggil handler asli
-        originalHandler(error, isFatal);
+      captureException(error, {
+        extraContext: {
+          reactNative: true,
+          isFatal
+        }
       });
+      
+      // Juga panggil handler asli
+      originalHandler(error, isFatal);
+    });
     }
   }
 }

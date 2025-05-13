@@ -48,7 +48,7 @@ describe('Error Monitor SDK', () => {
       expect(() => {
         init({ dsn: '' });
       }).toThrow('DSN is required');
-    });
+  });
 
     it('should set user information correctly', () => {
       const mockUser = {
@@ -59,7 +59,7 @@ describe('Error Monitor SDK', () => {
 
       setUser(mockUser);
       expect(getUser()).toEqual(mockUser);
-    });
+  });
 
     it('should set tags correctly', () => {
       const mockTags = {

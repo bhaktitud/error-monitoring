@@ -2,13 +2,11 @@
   "name": "sdk-example-backend",
   "version": "1.0.1",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@bhaktixdev/error-monitor-sdk": "^0.1.14",
-    "@lograven/sdk": "^0.1.17",
+    "@lograven/sdk": "^0.1.19",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
   }

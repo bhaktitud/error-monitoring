@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
 import { GroupsAPI, ProjectsAPI } from '@/lib/api';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -68,6 +68,9 @@ interface ErrorGroup {
   assignedTo?: string | null;
   statusCode?: number;
   code?: string;
+  hasSpike?: boolean;
+  spikePercentage?: number;
+  spikeTimeframe?: string;
 }
 
 interface ProjectMember {
@@ -99,6 +102,15 @@ export default function ErrorGroupPage() {
   const [error, setError] = useState<string | null>(null);
   const [canAssign, setCanAssign] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+  const [errorSpike, setErrorSpike] = useState<{
+    hasSpike: boolean;
+    percentage: number;
+    timeframe: string;
+  }>({
+    hasSpike: false,
+    percentage: 0,
+    timeframe: '30 menit'
+  });
 
   useEffect(() => {
     const fetchErrorGroup = async () => {
@@ -112,6 +124,7 @@ export default function ErrorGroupPage() {
           throw new Error('Error group not found');
         }
         
+        // Set errorGroup dari data API
         setErrorGroup({
           id: group.id,
           errorType: group.errorType,
@@ -124,6 +137,17 @@ export default function ErrorGroupPage() {
           statusCode: group.statusCode,
           code: group.code
         });
+        
+        // Simulasi data spike deteksi (ini harusnya dari API)
+        // TODO: Ganti dengan data spike dari API ketika sudah diimplementasi
+        // Secara acak simulasikan spike untuk demo
+        if (Math.random() > 0.5) {
+          setErrorSpike({
+            hasSpike: true,
+            percentage: Math.floor(Math.random() * 300) + 100, // 100% - 400%
+            timeframe: '30 menit'
+          });
+        }
         
         setError(null);
       } catch (err) {
@@ -383,6 +407,12 @@ export default function ErrorGroupPage() {
                   {errorGroup.code}
                 </Badge>
               )}
+              {errorSpike.hasSpike && (
+                <Badge variant="destructive" className="ml-2 bg-red-600 animate-pulse">
+                  <FiAlertCircle className="mr-1 h-4 w-4" />
+                  CRITICAL
+                </Badge>
+              )}
             </div>
             
             <div className="flex flex-wrap items-center gap-2">
@@ -430,6 +460,14 @@ export default function ErrorGroupPage() {
                     <div className="grid gap-4">
                       <div>
                         <h2 className="text-xl font-semibold mb-2">{errorGroup.message}</h2>
+                        {errorSpike.hasSpike && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+                            <FiTrendingUp className="mr-2 h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-red-700 text-sm">
+                              🔥 Error ini meningkat <span className="font-bold">{errorSpike.percentage}%</span> dalam {errorSpike.timeframe} terakhir
+                            </span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                           <span className="flex items-center">
                             <FiAlertTriangle className="mr-1 h-4 w-4" />
@@ -439,9 +477,9 @@ export default function ErrorGroupPage() {
                           <span>Pertama: {formatDate(errorGroup.firstSeen)}</span>
                           <span>•</span>
                           <span>Terakhir: {formatDate(errorGroup.lastSeen)}</span>
-              </div>
-            </div>
-          </div>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -603,26 +641,29 @@ export default function ErrorGroupPage() {
                   </div>
                 )}
               </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Error Correlation */}
+                <ErrorCorrelationChart 
+                  projectId={projectId}
+                  errorGroupId={groupId}
+                />
+                
+                {/* User Impact */}
+                <UserImpactMetrics 
+                  projectId={projectId}
+                  errorGroupId={groupId}
+                />
+              </div>
+
           </div>
           
             {/* Sidebar - 1/3 kolom */}
             <div className="space-y-6">
               
-              {/* Error Correlation */}
-              <ErrorCorrelationChart 
-                projectId={projectId}
-                errorGroupId={groupId}
-              />
-              
-              {/* User Impact */}
-              <UserImpactMetrics 
-                projectId={projectId}
-                errorGroupId={groupId}
-              />
-            
               {/* Komentar */}
-              <Card className="overflow-hidden border-none shadow-md">
-                <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+              <Card>
+                <CardHeader className="pb-3">
                   <CardTitle className="text-base font-medium flex items-center">
                     <FiMessageCircle className="mr-2 h-5 w-5 text-primary" />
                     Komentar

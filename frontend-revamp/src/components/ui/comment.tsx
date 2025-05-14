@@ -215,7 +215,7 @@ export const Comment: FC<CommentProps> = ({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <div className="mt-2 text-foreground/90 whitespace-pre-wrap bg-muted/30 p-3 rounded-lg border border-border/40 group-hover:border-primary/20 transition-all duration-300">
+                    <div className="text-sm mt-2 text-foreground/90 whitespace-pre-wrap bg-muted/30 p-3 group-hover:border-primary/20 transition-all duration-300">
                       {content}
                     </div>
                   </motion.div>

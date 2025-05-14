@@ -607,6 +607,32 @@ export const GroupsAPI = {
       body: JSON.stringify({ content }),
     });
   },
+  
+  // Edit a comment
+  editComment: async (groupId: string, commentId: string, content: string) => {
+    return apiRequest<{
+      id: string;
+      content: string;
+      createdAt: string;
+      author: {
+        id: string;
+        user: {
+          id: string;
+          email: string;
+        };
+      };
+    }>(`/groups/${groupId}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  },
+  
+  // Delete a comment
+  deleteComment: async (groupId: string, commentId: string) => {
+    return apiRequest<{ success: boolean; message: string }>(`/groups/${groupId}/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 /**

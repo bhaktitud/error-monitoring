@@ -462,4 +462,83 @@ router.get('/:groupId/comments', authenticateToken, checkGroupAccess, async (req
   }
 });
 
+// Edit komentar pada error group
+router.put('/:groupId/comments/:commentId', authenticateToken, checkGroupAccess, async (req: ExtendedRequest, res: Response) => {
+  try {
+    const { commentId } = req.params;
+    const { content } = req.body;
+    
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Konten komentar tidak boleh kosong' });
+    }
+    
+    if (!req.errorGroup || !req.user) {
+      return res.status(404).json({ error: 'Error group tidak ditemukan atau user tidak terautentikasi' });
+    }
+    
+    // Cari memberId pengguna saat ini
+    const member = await prisma.projectMember.findFirst({
+      where: {
+        projectId: req.errorGroup.projectId,
+        userId: req.user.id
+      }
+    });
+    
+    if (!member) {
+      return res.status(403).json({ error: 'Anda tidak memiliki akses untuk mengedit komentar ini' });
+    }
+    
+    try {
+      const updatedComment = await errorGroupingService.editComment(commentId, content.trim(), member.id);
+      res.json(updatedComment);
+    } catch (err) {
+      // Jika error karena user bukan pemilik komentar
+      if (err instanceof Error && err.message === 'Comment not found or you are not the author') {
+        return res.status(403).json({ error: 'Anda hanya dapat mengedit komentar yang Anda buat' });
+      }
+      throw err;
+    }
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    res.status(500).json({ error: 'Gagal mengedit komentar' });
+  }
+});
+
+// Hapus komentar pada error group
+router.delete('/:groupId/comments/:commentId', authenticateToken, checkGroupAccess, async (req: ExtendedRequest, res: Response) => {
+  try {
+    const { commentId } = req.params;
+    
+    if (!req.errorGroup || !req.user) {
+      return res.status(404).json({ error: 'Error group tidak ditemukan atau user tidak terautentikasi' });
+    }
+    
+    // Cari memberId pengguna saat ini
+    const member = await prisma.projectMember.findFirst({
+      where: {
+        projectId: req.errorGroup.projectId,
+        userId: req.user.id
+      }
+    });
+    
+    if (!member) {
+      return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menghapus komentar ini' });
+    }
+    
+    try {
+      await errorGroupingService.deleteComment(commentId, member.id);
+      res.status(200).json({ success: true, message: 'Komentar berhasil dihapus' });
+    } catch (err) {
+      // Jika error karena user bukan pemilik komentar
+      if (err instanceof Error && err.message === 'Comment not found or you are not the author') {
+        return res.status(403).json({ error: 'Anda hanya dapat menghapus komentar yang Anda buat' });
+      }
+      throw err;
+    }
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Gagal menghapus komentar' });
+  }
+});
+
 export default router; 

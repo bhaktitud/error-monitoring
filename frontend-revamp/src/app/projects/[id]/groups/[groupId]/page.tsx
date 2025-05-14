@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy, FiUsers, FiClock, FiArrowUp, FiArrowDown, FiCheckCircle, FiXCircle, FiArrowRight } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy } from 'react-icons/fi';
 import { GroupsAPI, ProjectsAPI } from '@/lib/api';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -20,9 +20,6 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format, formatDistanceToNow } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { ErrorCorrelationChart } from '@/components/insights/ErrorCorrelationChart';
 import { UserImpactMetrics } from '@/components/insights/UserImpactMetrics';
 
@@ -101,6 +98,7 @@ export default function ErrorGroupPage() {
   const [submittingAssign, setSubmittingAssign] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canAssign, setCanAssign] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
 
   useEffect(() => {
     const fetchErrorGroup = async () => {
@@ -217,6 +215,19 @@ export default function ErrorGroupPage() {
     }
   }, [loading, errorGroup, projectId]);
 
+  useEffect(() => {
+    // Ambil user ID dari token JWT
+    const token = localStorage.getItem('authToken') || '';
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.userId);
+      } catch (error) {
+        console.error('Error parsing JWT token:', error);
+      }
+    }
+  }, []);
+
   const handleStatusChange = async (newStatus: 'open' | 'resolved' | 'ignored') => {
     try {
       await GroupsAPI.changeGroupStatus(groupId, newStatus);
@@ -262,6 +273,40 @@ export default function ErrorGroupPage() {
       setError('Gagal mengirim komentar');
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const handleEditComment = async (commentId: string, updatedContent: string) => {
+    try {
+      const updatedComment = await GroupsAPI.editComment(groupId, commentId, updatedContent);
+      
+      // Update comments state dengan komentar yang sudah diedit
+      setComments(prev => 
+        prev.map(comment => 
+          comment.id === commentId ? updatedComment : comment
+        )
+      );
+      
+      toast.success('Komentar berhasil diperbarui');
+    } catch (err) {
+      console.error('Error editing comment:', err);
+      toast.error('Gagal mengedit komentar');
+      throw err; // Re-throw error untuk dihandle oleh komponen Comment
+    }
+  };
+  
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await GroupsAPI.deleteComment(groupId, commentId);
+      
+      // Hapus komentar dari state
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      
+      toast.success('Komentar berhasil dihapus');
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      toast.error('Gagal menghapus komentar');
+      throw err; // Re-throw error untuk dihandle oleh komponen Comment
     }
   };
 
@@ -576,26 +621,34 @@ export default function ErrorGroupPage() {
               />
             
               {/* Komentar */}
-              <Card>
-                <CardHeader className="pb-3">
+              <Card className="overflow-hidden border-none shadow-md">
+                <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
                   <CardTitle className="text-base font-medium flex items-center">
-                    <FiMessageCircle className="mr-2 h-4 w-4" />
-                  Komentar
+                    <FiMessageCircle className="mr-2 h-5 w-5 text-primary" />
+                    Komentar
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                 {loadingComments ? (
-                  <div className="space-y-4">
-                      <Skeleton className="h-20 w-full" />
-                      <Skeleton className="h-20 w-full" />
+                  <div className="space-y-4 p-4">
+                      <Skeleton className="h-20 w-full rounded-xl" />
+                      <Skeleton className="h-20 w-full rounded-xl" />
                   </div>
                 ) : (
                   <>
-                      <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4">
+                      <div className="p-4 space-y-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent mb-0">
                       {comments.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                          Belum ada komentar.
-                          </p>
+                          <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <div className="bg-muted/30 p-4 rounded-full mb-3">
+                              <FiMessageCircle className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Belum ada komentar.
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Jadilah yang pertama menambahkan komentar.
+                            </p>
+                          </div>
                       ) : (
                           comments.map((comment) => (
                             <Comment 
@@ -604,26 +657,50 @@ export default function ErrorGroupPage() {
                               content={comment.content}
                               createdAt={comment.createdAt}
                               author={comment.author}
+                              currentUserId={currentUserId}
+                              onEdit={handleEditComment}
+                              onDelete={handleDeleteComment}
                             />
                           ))
                       )}
                     </div>
                     
-                      <form onSubmit={handleSubmitComment} className="space-y-2">
-                      <Textarea
-                          placeholder="Tulis komentar..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                          className="min-h-[80px]"
-                      />
-                      <Button 
-                        type="submit" 
-                        disabled={!newComment.trim() || submittingComment}
-                          className="w-full"
-                      >
-                          {submittingComment ? 'Mengirim...' : 'Kirim Komentar'}
-                      </Button>
-                    </form>
+                    <div className="border-t bg-muted/10 p-4">
+                      <form onSubmit={handleSubmitComment} className="space-y-3">
+                        <div className="relative">
+                          <Textarea
+                            placeholder="Tulis komentar..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            className="min-h-[100px] pr-4 bg-background/60 focus:bg-background transition-all duration-200 resize-none border rounded-xl placeholder:text-muted-foreground/70"
+                          />
+                        </div>
+                        <div className="flex justify-end">
+                          <Button 
+                            type="submit" 
+                            disabled={!newComment.trim() || submittingComment}
+                            className="relative overflow-hidden group"
+                          >
+                            <span className="relative z-10 flex items-center">
+                              {submittingComment ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Mengirim...
+                                </>
+                              ) : (
+                                <>
+                                  <FiMessageCircle className="mr-2 h-4 w-4" />
+                                  Kirim Komentar
+                                </>
+                              )}
+                            </span>
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
                   </>
                 )}
               </CardContent>

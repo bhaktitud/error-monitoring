@@ -522,6 +522,60 @@ export class ErrorGroupingService {
     });
   }
   
+  // Metode untuk mengedit komentar pada ErrorGroup
+  async editComment(commentId: string, content: string, authorMemberId: string) {
+    // Pertama, cek apakah komentar dimiliki oleh member tersebut
+    const comment = await prisma.errorGroupComment.findFirst({
+      where: {
+        id: commentId,
+        authorId: authorMemberId
+      }
+    });
+    
+    if (!comment) {
+      throw new Error('Comment not found or you are not the author');
+    }
+    
+    return prisma.errorGroupComment.update({
+      where: { id: commentId },
+      data: { 
+        content
+      },
+      include: {
+        author: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                avatar: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Metode untuk menghapus komentar pada ErrorGroup
+  async deleteComment(commentId: string, authorMemberId: string) {
+    // Pertama, cek apakah komentar dimiliki oleh member tersebut
+    const comment = await prisma.errorGroupComment.findFirst({
+      where: {
+        id: commentId,
+        authorId: authorMemberId
+      }
+    });
+    
+    if (!comment) {
+      throw new Error('Comment not found or you are not the author');
+    }
+    
+    return prisma.errorGroupComment.delete({
+      where: { id: commentId }
+    });
+  }
+  
   // Metode untuk mendapatkan statistik error berdasarkan project
   async getErrorStats(projectId: string, timeframe: 'day' | 'week' | 'month' = 'day') {
     let startDate: Date;

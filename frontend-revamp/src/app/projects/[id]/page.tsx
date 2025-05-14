@@ -3,17 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ErrorCard } from '@/components/ui/error-card';
-import { FiAlertCircle, FiActivity, FiAlertTriangle, FiCheckCircle, FiClock, FiInfo, FiRefreshCw, FiPieChart, FiCpu } from 'react-icons/fi';
+import { FiAlertCircle, FiActivity, FiAlertTriangle, FiCheckCircle, FiClock, FiInfo, FiRefreshCw, FiPieChart, FiCpu, FiZoomIn, FiZoomOut } from 'react-icons/fi';
 import { ProjectsAPI, StatsAPI, EventsAPI } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, Brush } from 'recharts';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface Project {
   id: string;
@@ -42,7 +43,16 @@ interface Event {
 }
 
 // Definisikan komponen chart dengan data dari stats
-const ChartArea = ({ data }: { data: ProjectStats | null }) => {
+const ChartArea = ({ data, onRefresh }: { data: ProjectStats | null, onRefresh: () => Promise<void> }) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [zoom, setZoom] = useState(false);
+
+  const handleLocalRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+  };
+
   // Jika tidak ada data, tampilkan pesan
   if (!data || !data.eventsByHour || data.eventsByHour.length === 0) {
     return (
@@ -57,10 +67,41 @@ const ChartArea = ({ data }: { data: ProjectStats | null }) => {
   return (
     <Card>
       <CardHeader className="px-6 py-4">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <FiActivity className="mr-2 h-5 w-5" />
-          Distribusi Events per Jam
-        </CardTitle>
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <FiActivity className="mr-2 h-5 w-5" />
+            Distribusi Events per Jam
+          </CardTitle>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setZoom(!zoom)}
+            >
+              {zoom ? (
+                <>
+                  <FiZoomOut className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <FiZoomIn className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLocalRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <FiRefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <FiRefreshCw className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="px-6 pb-6">
         <div className="h-64">
@@ -100,6 +141,16 @@ const ChartArea = ({ data }: { data: ProjectStats | null }) => {
                 activeDot={{ r: 6 }}
                 dot={{ r: 4 }}
               />
+              {zoom && (
+                <Brush 
+                  dataKey="hour"
+                  height={30}
+                  stroke="var(--primary)"
+                  fill="var(--background)"
+                  startIndex={0}
+                  endIndex={data.eventsByHour.length - 1}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -109,7 +160,16 @@ const ChartArea = ({ data }: { data: ProjectStats | null }) => {
 };
 
 // Komponen untuk menampilkan distribusi status error groups
-const ErrorGroupsChart = ({ data }: { data: ProjectStats | null }) => {
+const ErrorGroupsChart = ({ data, onRefresh }: { data: ProjectStats | null, onRefresh: () => Promise<void> }) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [zoom, setZoom] = useState(false);
+
+  const handleLocalRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+  };
+
   // Jika tidak ada data, tampilkan pesan
   if (!data) {
     return (
@@ -131,10 +191,41 @@ const ErrorGroupsChart = ({ data }: { data: ProjectStats | null }) => {
   return (
     <Card>
       <CardHeader className="px-6 py-4">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <FiPieChart className="mr-2 h-5 w-5" />
-          Status Error Groups
-        </CardTitle>
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <FiPieChart className="mr-2 h-5 w-5" />
+            Status Error Groups
+          </CardTitle>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setZoom(!zoom)}
+            >
+              {zoom ? (
+                <>
+                  <FiZoomOut className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <FiZoomIn className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLocalRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <FiRefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <FiRefreshCw className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="px-6 pb-6">
         <div className="h-64">
@@ -171,6 +262,14 @@ const ErrorGroupsChart = ({ data }: { data: ProjectStats | null }) => {
                 fill="var(--primary)"
                 radius={[4, 4, 0, 0]}
               />
+              {zoom && (
+                <Brush 
+                  dataKey="name"
+                  height={30}
+                  stroke="var(--primary)"
+                  fill="var(--background)"
+                />
+              )}
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -211,12 +310,35 @@ const DataTable = ({ events }: { events: Event[] }) => (
 );
 
 // Komponen untuk menampilkan penggunaan kuota events
-const UsageChart = ({ data }: { data: { totalEvents: number; quota: number; percent: number } | null }) => {
+const UsageChart = ({ data, onRefresh }: { data: { totalEvents: number; quota: number; percent: number } | null, onRefresh: () => Promise<void> }) => {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleLocalRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+  };
+
   if (!data) {
     return (
       <Card>
-        <CardContent className="h-40 flex items-center justify-center text-muted-foreground">
-          Belum ada data penggunaan untuk ditampilkan
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Penggunaan Events</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLocalRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <FiRefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <FiRefreshCw className="h-4 w-4" />
+            )}
+          </Button>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-32 text-muted-foreground">
+          Belum ada data penggunaan
         </CardContent>
       </Card>
     );
@@ -234,19 +356,42 @@ const UsageChart = ({ data }: { data: { totalEvents: number; quota: number; perc
   return (
     <Card>
       <CardHeader className="px-6 py-4">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <FiCpu className="mr-2 h-5 w-5" />
-          Penggunaan Kuota Events
-        </CardTitle>
-        <CardDescription>
-          {data.totalEvents.toLocaleString()} dari {data.quota.toLocaleString()} events
-        </CardDescription>
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <FiCpu className="mr-2 h-5 w-5" />
+            Penggunaan Kuota Events
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLocalRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <FiRefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <FiRefreshCw className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="px-6 pb-6">
-        <Progress value={data.percent} className="h-4 mb-2" style={{ "--progress-color": color } as React.CSSProperties} />
-        <div className="text-sm font-medium mt-2">
-          {data.percent}% terpakai
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-2xl font-bold">{data.totalEvents}</div>
+          <div className="text-muted-foreground">dari {data.quota.toLocaleString()} events</div>
+          <Badge 
+            variant="outline" 
+            className="ml-auto" 
+            style={{ color, borderColor: color }}
+          >
+            {data.percent}% terpakai
+          </Badge>
         </div>
+        <Progress 
+          value={data.percent} 
+          className="h-2"
+          style={{ "--progress-color": color } as React.CSSProperties}
+        />
       </CardContent>
     </Card>
   );
@@ -376,24 +521,6 @@ export default function ProjectDashboardPage() {
         <div className="flex items-center">
           <h1 className="text-xl font-semibold">Dashboard - {project?.name}</h1>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          {refreshing ? (
-            <>
-              <FiRefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <FiRefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </>
-          )}
-        </Button>
       </div>
 
       {error && (
@@ -473,10 +600,10 @@ export default function ProjectDashboardPage() {
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
-          <UsageChart data={eventsUsage} />
+          <UsageChart data={eventsUsage} onRefresh={handleRefresh} />
           <div className="grid gap-4 md:grid-cols-2">
-            <ChartArea data={stats} />
-            <ErrorGroupsChart data={stats} />
+            <ChartArea data={stats} onRefresh={handleRefresh} />
+            <ErrorGroupsChart data={stats} onRefresh={handleRefresh} />
           </div>
         </TabsContent>
         

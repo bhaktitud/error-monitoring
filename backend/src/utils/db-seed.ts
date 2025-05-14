@@ -1,6 +1,7 @@
 import prisma from '../models/prisma';
 import bcrypt from 'bcrypt';
 import { generateToken, getVerificationTokenExpiry } from './token';
+import crypto from 'crypto';
 
 /**
  * Fungsi untuk mengisi database dengan data testing
@@ -80,6 +81,22 @@ async function seedDatabase() {
     });
     console.log('✅ Admin ditambahkan sebagai member di User Project');
     
+    // Fungsi untuk menghasilkan kode unik untuk error group
+    function generateErrorGroupCode(): string {
+      // Format: ERG-[6 karakter acak]-[timestamp 3 digit]
+      const randomPart = crypto.randomBytes(3).toString('hex');
+      const timestampPart = Math.floor(Date.now() % 1000).toString().padStart(3, '0');
+      return `ERG-${randomPart}-${timestampPart}`;
+    }
+
+    // Fungsi untuk menghasilkan kode unik untuk event
+    function generateEventCode(): string {
+      // Format: EVT-[6 karakter acak]-[timestamp 3 digit]
+      const randomPart = crypto.randomBytes(3).toString('hex');
+      const timestampPart = Math.floor(Date.now() % 1000).toString().padStart(3, '0');
+      return `EVT-${randomPart}-${timestampPart}`;
+    }
+
     // Buat error group untuk admin project
     const adminErrorGroup = await prisma.errorGroup.create({
       data: {
@@ -91,7 +108,8 @@ async function seedDatabase() {
         count: 5,
         firstSeen: new Date(Date.now() - 86400000), // 1 hari yang lalu
         lastSeen: new Date(),
-        statusCode: 500
+        statusCode: 500,
+        code: generateErrorGroupCode()
       }
     });
     console.log('✅ Error group untuk admin project dibuat');
@@ -114,7 +132,8 @@ async function seedDatabase() {
         tags: {
           environment: 'production',
           version: '1.0.0'
-        }
+        },
+        code: generateEventCode()
       }
     });
     console.log('✅ Event untuk admin error group dibuat');
@@ -130,6 +149,23 @@ async function seedDatabase() {
       }
     });
     console.log('✅ Webhook untuk admin project dibuat');
+    
+    // Seed ErrorGroup
+    const errorGroup = await prisma.errorGroup.create({
+      data: {
+        projectId: userProject.id,
+        fingerprint: crypto.createHash('md5').update(`TypeError|Cannot read property of undefined`).digest('hex'),
+        errorType: "TypeError",
+        message: "Cannot read property of undefined",
+        status: "open",
+        count: 3,
+        firstSeen: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 hari yang lalu
+        lastSeen: new Date(),
+        statusCode: 500,
+        code: generateErrorGroupCode()
+      },
+    });
+    console.log('✅ Error group untuk User Project dibuat');
     
     console.log('🎉 Database berhasil diisi dengan data testing!');
   } catch (error) {

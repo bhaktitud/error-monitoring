@@ -808,14 +808,32 @@ export const ExportAPI = {
 export const NotificationAPI = {
   // Get notification settings
   getNotificationSettings: async (projectId: string) => {
-    return apiRequest<{
-      email: boolean;
-      slack: boolean;
-      slackWebhookUrl?: string;
-      notifyOnNewError: boolean;
-      notifyOnResolvedError: boolean;
-      minimumErrorLevel: 'info' | 'warning' | 'error' | 'fatal';
-    }>(`/notifications/projects/${projectId}/settings`);
+    try {
+      const response = await apiRequest<{
+        email: boolean;
+        slack: boolean;
+        slackWebhookUrl?: string;
+        discord?: boolean;
+        discordWebhookUrl?: string;
+        telegram?: boolean;
+        telegramBotToken?: string;
+        telegramChatId?: string;
+        notifyOnNewError: boolean;
+        notifyOnResolvedError: boolean;
+        minimumErrorLevel: 'info' | 'warning' | 'error' | 'fatal';
+      }>(`/notifications/projects/${projectId}/settings`);
+      
+      // Menambahkan properti yang diharapkan frontend jika tidak ada
+      return {
+        ...response,
+        whatsapp: false, // Default ke false jika tidak ada di respons API
+        whatsappNumber: '', // Default ke string kosong jika tidak ada
+        whatsappVerified: false, // Default ke false jika tidak ada
+      };
+    } catch (error) {
+      console.error("Error fetching notification settings:", error);
+      throw error;
+    }
   },
   
   // Update notification settings
@@ -840,13 +858,37 @@ export const NotificationAPI = {
   },
   
   // Test notification
-  testNotification: async (projectId: string, type: 'email' | 'slack') => {
+  testNotification: async (projectId: string, type: 'email' | 'slack' | 'whatsapp') => {
+    // Jika type adalah whatsapp, konversi ke email untuk sementara
+    // karena backend belum mendukung WhatsApp
+    const apiType = type === 'whatsapp' ? 'email' : type;
+    
     return apiRequest<{ success: boolean }>(
       `/notifications/projects/${projectId}/test`,
       {
         method: 'POST',
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({ type: apiType }),
       }
     );
+  },
+  
+  // Mengirim kode verifikasi WhatsApp (simulasi)
+  sendWhatsappVerificationCode: async (projectId: string, phoneNumber: string) => {
+    console.log("Mencoba mengirim kode verifikasi ke:", phoneNumber);
+    // Simulasi API call, gunakan email sementara
+    return apiRequest<{ success: boolean }>(
+      `/notifications/projects/${projectId}/test`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ type: 'email' }),
+      }
+    );
+  },
+  
+  // Memverifikasi kode WhatsApp (simulasi)
+  verifyWhatsappCode: async (projectId: string, phoneNumber: string, code: string) => {
+    console.log("Verifikasi kode:", code, "untuk nomor:", phoneNumber);
+    // Simulasi verifikasi berhasil
+    return true; 
   }
 }; 

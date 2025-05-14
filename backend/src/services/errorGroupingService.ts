@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { ErrorInsightService } from './errorInsightService';
 
 const prisma = new PrismaClient();
+const errorInsightService = new ErrorInsightService();
 
 export class ErrorGroupingService {
   // Method untuk mengelompokkan error dan mengembalikan errorGroup dan isNewGroup
@@ -83,7 +85,10 @@ export class ErrorGroupingService {
             lastSeen: new Date(),
             status: 'open',
             statusCode: errorData.statusCode || null,
-            code: this.generateErrorGroupCode()
+            code: this.generateErrorGroupCode(),
+            userImpactLastHour: 0,
+            userImpactLastDay: 0,
+            userImpactLastWeek: 0
           },
         });
         isNewGroup = true;
@@ -102,6 +107,46 @@ export class ErrorGroupingService {
         statusCode: errorGroup.statusCode,
         code: errorGroup.code
       };
+      
+      // Proses error sequence untuk error correlation
+      try {
+        // Ekstrak userId dan sessionId dari userContext
+        let userId = null;
+        let sessionId = null;
+
+        if (errorData.userContext) {
+          // Extract userId if it exists
+          if (errorData.userContext.userId) {
+            userId = errorData.userContext.userId;
+          }
+          
+          // Extract sessionId if it exists
+          if (errorData.userContext.sessionId) {
+            sessionId = errorData.userContext.sessionId;
+          }
+        }
+        
+        // Catat error sequence secara asynchronous (jangan menunggu hasil)
+        if (userId || sessionId) {
+          errorInsightService.recordErrorSequence(
+            errorData.projectId,
+            userId,
+            errorGroup.id,
+            sessionId
+          ).catch(err => console.error('Failed to record error sequence:', err));
+          
+          // Jika batas waktu tertentu sudah lewat, kalkulasi ulang user impact
+          if (isNewGroup || this.shouldUpdateUserImpact(errorGroup.lastSeen)) {
+            errorInsightService.calculateUserImpact(
+              errorData.projectId, 
+              errorGroup.id
+            ).catch(err => console.error('Failed to calculate user impact:', err));
+          }
+        }
+      } catch (err) {
+        // Jangan gagalkan operasi utama jika insight gagal
+        console.error('Error processing insight data:', err);
+      }
       
       return { errorGroup: result, isNewGroup };
     } catch (error: unknown) {
@@ -547,5 +592,12 @@ export class ErrorGroupingService {
       totalEvents,
       timeframe
     };
+  }
+  
+  // Tentukan apakah perlu update user impact metrics (batasi update untuk menghemat resource)
+  private shouldUpdateUserImpact(lastUpdate: Date): boolean {
+    // Update jika terakhir update lebih dari 1 jam yang lalu
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    return lastUpdate < oneHourAgo;
   }
 } 

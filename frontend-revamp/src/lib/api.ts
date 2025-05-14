@@ -891,4 +891,64 @@ export const NotificationAPI = {
     // Simulasi verifikasi berhasil
     return true; 
   }
+};
+
+/**
+ * Error Insights API endpoints
+ */
+export const ErrorInsightAPI = {
+  // Get error correlations - errors yang sering terjadi sebelum error tertentu
+  getErrorCorrelations: async (projectId: string, errorGroupId: string, timeWindow: '24h' | '7d' | '30d' = '7d') => {
+    return apiRequest<{
+      errorGroupId: string;
+      timeWindow: string;
+      correlations: Array<{
+        fromErrorId: string;
+        fromErrorType: string;
+        fromErrorMessage: string;
+        toErrorId: string;
+        toErrorType: string;
+        toErrorMessage: string;
+        count: number;
+        percentage: number;
+      }>;
+    }>(`/insights/projects/${projectId}/error-correlations?errorGroupId=${errorGroupId}&timeWindow=${timeWindow}`);
+  },
+  
+  // Get user impact metrics - persentase pengguna yang terkena error
+  getUserImpact: async (projectId: string, errorGroupId?: string, timeWindow: '1h' | '24h' | '7d' = '1h') => {
+    let url = `/insights/projects/${projectId}/user-impact?timeWindow=${timeWindow}`;
+    if (errorGroupId) {
+      url += `&errorGroupId=${errorGroupId}`;
+    }
+    
+    return apiRequest<{
+      projectId: string;
+      timeWindow: string;
+      metrics: Array<{
+        errorGroupId: string;
+        errorType: string;
+        message: string;
+        impactLastHour: number;
+        impactLastDay: number;
+        impactLastWeek: number;
+        totalUsersLastHour: number;
+        totalUsersLastDay: number;
+        totalUsersLastWeek: number;
+      }>;
+    }>(url);
+  },
+  
+  // Update active user count untuk kalkulasi impact metrics
+  updateActiveUserCount: async (projectId: string, userCount: number, timeWindow: '1h' | '24h' | '7d' = '1h') => {
+    return apiRequest<{
+      success: boolean;
+      projectId: string;
+      timeWindow: string;
+      userCount: number;
+    }>(`/insights/projects/${projectId}/active-users`, {
+      method: 'POST',
+      body: JSON.stringify({ userCount, timeWindow }),
+    });
+  }
 }; 

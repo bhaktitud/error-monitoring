@@ -8,7 +8,7 @@ import { NotificationService } from '../services/notificationService';
 interface AuthenticatedUser {
   id: string;
   email: string;
-  role: string;
+  role?: string;
 }
 
 // Memperluas tipe Request dari Express

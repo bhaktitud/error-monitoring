@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy, FiUsers, FiClock, FiArrowUp, FiArrowDown, FiCheckCircle, FiXCircle, FiArrowRight } from 'react-icons/fi';
 import { GroupsAPI, ProjectsAPI } from '@/lib/api';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -20,6 +20,11 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, formatDistanceToNow } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { ErrorCorrelationChart } from '@/components/insights/ErrorCorrelationChart';
+import { UserImpactMetrics } from '@/components/insights/UserImpactMetrics';
 
 interface UserContext {
   [key: string]: unknown;
@@ -558,6 +563,17 @@ export default function ErrorGroupPage() {
             {/* Sidebar - 1/3 kolom */}
             <div className="space-y-6">
               
+              {/* Error Correlation */}
+              <ErrorCorrelationChart 
+                projectId={projectId}
+                errorGroupId={groupId}
+              />
+              
+              {/* User Impact */}
+              <UserImpactMetrics 
+                projectId={projectId}
+                errorGroupId={groupId}
+              />
             
               {/* Komentar */}
               <Card>

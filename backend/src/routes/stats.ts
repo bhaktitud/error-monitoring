@@ -8,7 +8,7 @@ const router = Router();
  * Get project statistics
  * GET /stats/projects/:id
  */
-router.get('/stats/projects/:id', authMiddleware, async (req, res) => {
+router.get('/projects/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const timeframe = req.query.timeframe as string || 'day';
@@ -166,7 +166,7 @@ router.get('/stats/projects/:id', authMiddleware, async (req, res) => {
  * Get error distribution by category (browser, os, device)
  * GET /stats/projects/:id/distribution/:category
  */
-router.get('/stats/projects/:id/distribution/:category', authMiddleware, async (req, res) => {
+router.get('/projects/:id/distribution/:category', authMiddleware, async (req, res) => {
   try {
     const { id, category } = req.params;
     

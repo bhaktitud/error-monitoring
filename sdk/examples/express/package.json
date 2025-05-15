@@ -1,0 +1,31 @@
+{
+  "name": "express",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel index.ts --out-dir dist --extensions \".ts\" --source-maps",
+    "start": "npm run build && nodemon dist/index.js",
+    "dev": "nodemon --exec \"npm run build && node dist/index.js\" --ext ts,js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@babel/runtime": "^7.27.1",
+    "@lograven/sdk": "^0.1.44",
+    "@types/express": "^5.0.1",
+    "express": "^4.21.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.27.2",
+    "@babel/core": "^7.27.1",
+    "@babel/plugin-transform-runtime": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-typescript": "^7.27.1",
+    "nodemon": "^3.1.10"
+  }
+}

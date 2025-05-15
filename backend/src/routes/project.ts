@@ -589,6 +589,47 @@ router.delete('/:id/members/:memberId', auth, async (req: any, res) => {
   }
 });
 
+// Update project
+router.patch('/:id', auth, async (req: any, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: 'Nama project wajib diisi' });
+  }
+  
+  try {
+    // Cek apakah user adalah owner atau admin
+    const member = await prisma.projectMember.findFirst({ 
+      where: { 
+        projectId: id, 
+        userId: req.user.userId,
+        role: { in: ['owner', 'admin'] }
+      } 
+    });
+    
+    if (!member) {
+      return res.status(403).json({ error: 'Anda tidak memiliki izin untuk mengubah project ini' });
+    }
+    
+    // Update project
+    const updatedProject = await prisma.project.update({
+      where: { id },
+      data: { name },
+      select: { id: true, name: true, dsn: true }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Project berhasil diperbarui',
+      project: updatedProject
+    });
+  } catch (err) {
+    console.error('Error updating project:', err);
+    res.status(500).json({ error: 'Gagal memperbarui project' });
+  }
+});
+
 // Hapus project
 router.delete('/:id', auth, async (req: any, res) => {
   const { id } = req.params;

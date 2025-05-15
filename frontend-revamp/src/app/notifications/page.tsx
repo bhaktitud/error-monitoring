@@ -198,7 +198,7 @@ export default function NotificationsPage() {
 
       {connectionStatus}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Panel Daftar Notifikasi */}
         <div className="md:col-span-1">
           <Card>

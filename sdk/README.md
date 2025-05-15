@@ -89,8 +89,6 @@ setTags({ feature: 'checkout' });
 addBreadcrumb('ui', 'Clicked submit');
 ```
 
-
-
 ---
 
 Untuk dokumentasi lengkap (React, React Native, Vue, Browser, konfigurasi lanjut), silakan lihat [dokumentasi resmi](https://lograven.docs.example.com).

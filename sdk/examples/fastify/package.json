@@ -1,0 +1,17 @@
+{
+  "name": "lograven-fastify-example",
+  "version": "1.0.0",
+  "description": "Contoh penggunaan LogRaven SDK dengan Fastify",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --experimental-specifier-resolution=node dist/index.js",
+    "dev": "tsc && node --experimental-specifier-resolution=node dist/index.js"
+  },
+  "dependencies": {
+    "fastify": "^4.25.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+} 

@@ -7,10 +7,10 @@ import {
     ArgumentsHost,
     ExceptionFilter,
     HttpException,
-  } from '@nestjs/common';
-  import { Request, Response } from 'express';
-  import { Observable, tap } from 'rxjs';
-  import { addBreadcrumb, setUser } from '../core/context';
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+import { Observable, tap } from 'rxjs';
+import { addBreadcrumb, setUser } from '../core/context';
 import { captureException } from '../core/capture';
   
   @Injectable()
@@ -22,7 +22,7 @@ import { captureException } from '../core/capture';
       const startTime = Date.now();
   
       if ((req as any).user) {
-        setUser(req.user as any);
+        setUser((req as any).user as any);
       }
   
       addBreadcrumb('http', 'Incoming request', {

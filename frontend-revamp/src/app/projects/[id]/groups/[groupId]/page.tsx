@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Comment } from '@/components/ui/comment';
 import { Badge } from '@/components/ui/badge';
-import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
-import { GroupsAPI, ProjectsAPI } from '@/lib/api';
+import { FiArrowLeft, FiCheck, FiEyeOff, FiMessageCircle, FiUser, FiAlertTriangle, FiLoader, FiCopy, FiTrendingUp, FiAlertCircle, FiExternalLink, FiLink } from 'react-icons/fi';
+import { GroupsAPI, ProjectsAPI, IntegrationsAPI } from '@/lib/api';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Select,
@@ -22,6 +22,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { ErrorCorrelationChart } from '@/components/insights/ErrorCorrelationChart';
 import { UserImpactMetrics } from '@/components/insights/UserImpactMetrics';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface UserContext {
   [key: string]: unknown;
@@ -82,6 +85,31 @@ interface ProjectMember {
   };
 }
 
+interface JiraIssue {
+  id: string;
+  jiraIssueKey: string;
+  jiraIssueUrl: string;
+  groupId: string;
+  errorId: string | null;
+  createdAt: string;
+  createdBy: {
+    email: string;
+  };
+}
+
+interface ApiError {
+  message?: string;
+  response?: {
+    data?: {
+      error?: string;
+      details?: {
+        errors?: Record<string, string>;
+      };
+    };
+    status?: number;
+  };
+}
+
 export default function ErrorGroupPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -111,6 +139,22 @@ export default function ErrorGroupPage() {
     percentage: 0,
     timeframe: '30 menit'
   });
+  
+  // State untuk Jira integration
+  const [jiraIssues, setJiraIssues] = useState<JiraIssue[]>([]);
+  const [loadingJiraIssues, setLoadingJiraIssues] = useState(false);
+  const [jiraModalOpen, setJiraModalOpen] = useState(false);
+  const [jiraSummary, setJiraSummary] = useState('');
+  const [jiraDescription, setJiraDescription] = useState('');
+  const [submittingJiraIssue, setSubmittingJiraIssue] = useState(false);
+  const [jiraIssueTypes, setJiraIssueTypes] = useState<Array<{id: string, name: string, iconUrl?: string}>>([]);
+  const [loadingIssueTypes, setLoadingIssueTypes] = useState(false);
+  const [selectedIssueTypeId, setSelectedIssueTypeId] = useState('');
+  const [jiraError, setJiraError] = useState<string | null>(null);
+  
+  // State untuk konfigurasi Jira
+  const [jiraConnected, setJiraConnected] = useState(false);
+  const [loadingJiraConfig, setLoadingJiraConfig] = useState(true);
 
   useEffect(() => {
     const fetchErrorGroup = async () => {
@@ -252,6 +296,24 @@ export default function ErrorGroupPage() {
     }
   }, []);
 
+  // Periksa konfigurasi Jira
+  useEffect(() => {
+    const checkJiraConfig = async () => {
+      try {
+        setLoadingJiraConfig(true);
+        const config = await IntegrationsAPI.getJiraConfig(projectId);
+        setJiraConnected(config.success && config.connected);
+      } catch (err) {
+        console.error('Error checking Jira config:', err);
+        setJiraConnected(false);
+      } finally {
+        setLoadingJiraConfig(false);
+      }
+    };
+    
+    checkJiraConfig();
+  }, [projectId]);
+
   const handleStatusChange = async (newStatus: 'open' | 'resolved' | 'ignored') => {
     try {
       await GroupsAPI.changeGroupStatus(groupId, newStatus);
@@ -321,18 +383,186 @@ export default function ErrorGroupPage() {
   
   const handleDeleteComment = async (commentId: string) => {
     try {
+      setComments(comments => comments.filter(c => c.id !== commentId));
       await GroupsAPI.deleteComment(groupId, commentId);
+      toast.success("Komentar berhasil dihapus");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Gagal menghapus komentar");
       
-      // Hapus komentar dari state
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
-      
-      toast.success('Komentar berhasil dihapus');
-    } catch (err) {
-      console.error('Error deleting comment:', err);
-      toast.error('Gagal menghapus komentar');
-      throw err; // Re-throw error untuk dihandle oleh komponen Comment
+      // Reload comments to restore state
+      try {
+        const reloadedComments = await GroupsAPI.getComments(groupId);
+        setComments(reloadedComments);
+      } catch (err) {
+        console.error("Error reloading comments:", err);
+      }
     }
   };
+
+  // Prepare Jira issue
+  const prepareJiraIssue = (event?: Event) => {
+    if (!errorGroup) return;
+    
+    // Reset state
+    setJiraError(null);
+    setJiraIssueTypes([]);
+    setSelectedIssueTypeId('');
+    
+    const stacktrace = event?.stacktrace || events?.[0]?.stacktrace || '';
+    const userContext = event?.userContext 
+      ? JSON.stringify(event.userContext, null, 2) 
+      : events?.[0]?.userContext 
+        ? JSON.stringify(events[0].userContext, null, 2) 
+        : '';
+    
+    setJiraSummary(`Error pada ${errorGroup.errorType}: ${errorGroup.message}`);
+    
+    const description = `
+*Error Type:* ${errorGroup.errorType}
+*Message:* ${errorGroup.message}
+*Status Code:* ${errorGroup.statusCode || 'N/A'}
+*First Seen:* ${new Date(errorGroup.firstSeen).toLocaleString('id-ID')}
+*Last Seen:* ${new Date(errorGroup.lastSeen).toLocaleString('id-ID')}
+*Occurrence Count:* ${errorGroup.count}
+
+h2. Stacktrace
+{code}
+${stacktrace || 'Tidak ada stacktrace'}
+{code}
+
+${userContext ? `h2. User Context
+{code:json}
+${userContext}
+{code}` : ''}
+
+h2. Link
+[Lihat di LogRaven|${window.location.href}]
+`;
+    
+    setJiraDescription(description);
+    
+    // Load issue types
+    fetchJiraIssueTypes();
+    
+    setJiraModalOpen(true);
+  };
+  
+  // Fetch issue types from project configuration
+  const fetchJiraIssueTypes = async () => {
+    if (!jiraConnected) return;
+    
+    try {
+      setLoadingIssueTypes(true);
+      setJiraError(null);
+      
+      const result = await IntegrationsAPI.getJiraIssueTypes(projectId);
+      
+      if (result.success && result.issueTypes && result.issueTypes.length > 0) {
+        setJiraIssueTypes(result.issueTypes);
+        // Set default issue type (Bug jika ada, atau yang pertama)
+        const bugType = result.issueTypes.find(type => type.name.toLowerCase() === 'bug');
+        setSelectedIssueTypeId(bugType ? bugType.id : result.issueTypes[0].id);
+      } else {
+        setJiraError('Tidak ada tipe issue yang tersedia untuk proyek ini');
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching Jira issue types:', error);
+      const apiError = error as ApiError;
+      setJiraError(apiError.message || 'Gagal mengambil tipe issue Jira');
+    } finally {
+      setLoadingIssueTypes(false);
+    }
+  };
+  
+  // Submit Jira issue
+  const handleCreateJiraIssue = async () => {
+    if (!errorGroup || !jiraConnected) return;
+    
+    try {
+      setSubmittingJiraIssue(true);
+      setJiraError(null);
+      
+      // Validasi input
+      if (!selectedIssueTypeId) {
+        setJiraError('Pilih tipe issue terlebih dahulu');
+        setSubmittingJiraIssue(false);
+        return;
+      }
+      
+      // Get selectedEvent if any, or use the first event
+      const eventId = events.length > 0 ? events[0].id : null;
+      
+      const result = await IntegrationsAPI.createJiraIssue(
+        groupId,
+        projectId,
+        eventId,
+        {
+          summary: jiraSummary,
+          description: jiraDescription,
+          issueTypeId: selectedIssueTypeId
+        }
+      );
+      
+      // Refresh Jira issues
+      fetchJiraIssues();
+      
+      // Close modal and reset form
+      setJiraModalOpen(false);
+      setJiraSummary('');
+      setJiraDescription('');
+      setSelectedIssueTypeId('');
+      setJiraIssueTypes([]);
+      
+      toast.success(`Jira issue ${result.jiraIssue.key} berhasil dibuat!`);
+    } catch (error: unknown) {
+      console.error('Error creating Jira issue:', error);
+      
+      // Ambil pesan error dari response jika ada
+      const apiError = error as ApiError;
+      let errorMessage = 'Gagal membuat Jira issue';
+      if (apiError.message) {
+        errorMessage = apiError.message;
+      } else if (apiError.response && apiError.response.data) {
+        // Handle specific error formats
+        if (apiError.response.data.details && apiError.response.data.details.errors) {
+          const errorDetails = apiError.response.data.details.errors;
+          errorMessage = Object.entries(errorDetails)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join(', ');
+        } else if (apiError.response.data.error) {
+          errorMessage = apiError.response.data.error;
+        }
+      }
+      
+      setJiraError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setSubmittingJiraIssue(false);
+    }
+  };
+  
+  // Fetch Jira issues
+  const fetchJiraIssues = async () => {
+    if (!errorGroup) return;
+    
+    try {
+      setLoadingJiraIssues(true);
+      const issues = await IntegrationsAPI.getJiraIssues(errorGroup.id);
+      setJiraIssues(issues);
+    } catch (error) {
+      console.error('Error fetching Jira issues:', error);
+    } finally {
+      setLoadingJiraIssues(false);
+    }
+  };
+  
+  // Fetch Jira issues when error group loads
+  useEffect(() => {
+    if (!loading && errorGroup) {
+      fetchJiraIssues();
+    }
+  }, [loading, errorGroup]);
 
   if (loading) {
     return (
@@ -661,6 +891,87 @@ export default function ErrorGroupPage() {
             {/* Sidebar - 1/3 kolom */}
             <div className="space-y-6">
               
+              {/* Jira Integration Card */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center">
+                    <FiExternalLink className="mr-2 h-5 w-5 text-primary" />
+                    Integrasi Jira
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {loadingJiraConfig ? (
+                      <div className="flex items-center justify-center p-4">
+                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                        <span className="ml-2 text-sm">Memeriksa konfigurasi...</span>
+                      </div>
+                    ) : jiraConnected ? (
+                      <Button 
+                        className="w-full"
+                        onClick={() => prepareJiraIssue()}
+                      >
+                        Buat Jira Issue
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="bg-muted/40 p-3 text-sm text-center rounded-md">
+                          <p className="text-muted-foreground">Integrasi Jira belum dikonfigurasi</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => router.push(`/projects/${projectId}/settings/integrations`)}
+                        >
+                          <FiLink className="mr-2 h-4 w-4" />
+                          Konfigurasi Jira
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {loadingJiraIssues ? (
+                      <Skeleton className="h-20 w-full" />
+                    ) : jiraIssues.length > 0 ? (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium flex items-center">
+                          <FiExternalLink className="mr-1 h-4 w-4 text-muted-foreground" />
+                          Issue Terkait ({jiraIssues.length}):
+                        </h4>
+                        <ul className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {jiraIssues.map(issue => (
+                            <li key={issue.id} className="flex items-center justify-between text-sm p-2 bg-muted/30 rounded-md hover:bg-muted/50 transition-colors">
+                              <span className="font-medium text-primary">{issue.jiraIssueKey}</span>
+                              <div className="flex items-center">
+                                <span className="text-xs text-muted-foreground mr-2">
+                                  {new Date(issue.createdAt).toLocaleDateString('id-ID')}
+                                </span>
+                                <div className="text-xs text-muted-foreground">
+                                  {issue.createdBy.email.split('@')[0]}
+                                </div>
+                                <a 
+                                  href={issue.jiraIssueUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:text-primary/80 ml-2"
+                                  title="Buka di Jira"
+                                >
+                                  <FiExternalLink className="h-4 w-4" />
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : jiraConnected ? (
+                      <div className="text-sm text-muted-foreground text-center italic py-4 bg-muted/20 rounded-md">
+                        <p>Belum ada issue Jira terkait</p>
+                        <p className="text-xs mt-1">Klik tombol di atas untuk membuat issue baru</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+              
               {/* Komentar */}
               <Card>
                 <CardHeader className="pb-3">
@@ -762,6 +1073,110 @@ export default function ErrorGroupPage() {
           </Button>
         </div>
       )}
+      
+      {/* Jira Issue Dialog */}
+      <Dialog open={jiraModalOpen} onOpenChange={setJiraModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Buat Jira Issue</DialogTitle>
+            <DialogDescription>
+              Buat issue baru di Jira berdasarkan error ini. Pastikan Anda memiliki akses ke Jira project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {jiraError && (
+              <Alert variant="destructive">
+                <AlertDescription>{jiraError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {loadingIssueTypes ? (
+              <div className="flex items-center justify-center p-6">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-2">Memuat tipe issue...</span>
+              </div>
+            ) : (
+              <>
+                {jiraIssueTypes.length > 0 ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="issueType">Tipe Issue</Label>
+                    <Select
+                      value={selectedIssueTypeId}
+                      onValueChange={setSelectedIssueTypeId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih tipe issue" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jiraIssueTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            <div className="flex items-center gap-2">
+                              {type.iconUrl && (
+                                <img src={type.iconUrl} alt={type.name} className="w-4 h-4" />
+                              )}
+                              <span>{type.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Pilih tipe issue yang sesuai dengan konfigurasi proyek Jira Anda
+                    </p>
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertDescription>
+                      Tidak dapat memuat tipe issue. Pastikan konfigurasi Jira Anda sudah benar.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="jiraSummary">Summary</Label>
+                  <Input
+                    id="jiraSummary"
+                    value={jiraSummary}
+                    onChange={(e) => setJiraSummary(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jiraDescription">Description</Label>
+                  <Textarea
+                    id="jiraDescription"
+                    rows={10}
+                    value={jiraDescription}
+                    onChange={(e) => setJiraDescription(e.target.value)}
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Mendukung Jira markdown. Anda dapat mengedit deskripsi sesuai kebutuhan.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJiraModalOpen(false)}>
+              Batal
+            </Button>
+            <Button 
+              onClick={handleCreateJiraIssue} 
+              disabled={loadingIssueTypes || !selectedIssueTypeId || !jiraSummary || submittingJiraIssue || jiraIssueTypes.length === 0}
+            >
+              {submittingJiraIssue ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Membuat Issue...
+                </>
+              ) : 'Buat Issue'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 } 

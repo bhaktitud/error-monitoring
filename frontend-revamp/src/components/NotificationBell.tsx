@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useNotification } from '../hooks/useNotification';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface NotificationData {
   errorGroupId?: string;
@@ -152,6 +153,13 @@ export function NotificationBell() {
             </Button>
           </div>
         </div>
+        
+        <Link href="/notifications" onClick={() => setIsOpen(false)} className="block">
+          <div className="p-2 text-center text-sm text-primary hover:bg-muted transition-colors border-b">
+            Lihat Semua Notifikasi
+          </div>
+        </Link>
+        
         <ScrollArea className="h-[300px]">
           {connectionStatus}
           {errorMessage}

@@ -56,6 +56,7 @@ model Project {
   notificationSettings ProjectNotificationSettings?
   errorSequences       ErrorSequence[]
   activeUserCounts     ActiveUserCount[]
+  jiraConfig           JiraProjectConfig?
 }
 
 model ProjectMember {
@@ -65,6 +66,7 @@ model ProjectMember {
   role                       String
   errorGroupsAssigned        ErrorGroup[]        @relation("ProjectMemberAssignedTo")
   errorGroupCommentsAuthored ErrorGroupComment[] @relation("ProjectMemberCommentAuthor")
+  jiraIssuesCreated          JiraIntegration[]
   project                    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user                       User                @relation(fields: [userId], references: [id])
 }
@@ -107,6 +109,7 @@ model ErrorGroup {
   project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments           ErrorGroupComment[]
   events             Event[]
+  jiraIssues         JiraIntegration[]
   errorSequencesFrom ErrorSequence[]     @relation("ErrorSequenceFrom")
   errorSequencesTo   ErrorSequence[]     @relation("ErrorSequenceTo")
 
@@ -309,4 +312,33 @@ model ActiveUserCount {
 
   @@unique([projectId, timeWindow, timestamp])
   @@index([projectId, timeWindow])
+}
+
+model JiraIntegration {
+  id           String        @id @default(uuid())
+  jiraIssueKey String
+  jiraIssueUrl String
+  groupId      String
+  errorId      String?
+  createdById  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdBy    ProjectMember @relation(fields: [createdById], references: [id])
+  group        ErrorGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([createdById])
+}
+
+model JiraProjectConfig {
+  id          String   @id @default(uuid())
+  projectId   String   @unique
+  baseUrl     String
+  email       String
+  apiToken    String
+  projectKey  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

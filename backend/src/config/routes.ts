@@ -11,6 +11,7 @@ import planRoutes from '../routes/plan';
 import mediaRoutes from '../routes/media';
 import sourceMapRoutes from '../routes/sourceMap';
 import insightsRoutes from '../routes/insights';
+import integrationsRoutes from '../routes/integrations';
 import { createNotificationRoutes } from '../routes/notificationRoutes';
 import { getUserConnectionsStats } from '../services/socketService';
 import { getIpConnectionsStats } from '../middleware/socketRateLimit';
@@ -27,7 +28,7 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api/events', eventRoutes);
   app.use('/api/groups', groupRoutes);
   app.use('/api', webhookRoutes);
-  app.use('/api', statsRoutes);
+  app.use('/api/stats', statsRoutes);
   
   // Notifikasi routes - ada 2 implementasi berbeda
   app.use('/api/notifications', createNotificationRoutes(io)); // Untuk in-app notifications
@@ -36,6 +37,7 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api/plans', planRoutes);
   app.use('/api/media', mediaRoutes);
   app.use('/api/insights', insightsRoutes); // Route baru untuk insights/analytics
+  app.use('/api/integrations', integrationsRoutes); // Route baru untuk integrasi (Jira dll)
   app.use('/', sourceMapRoutes);
 
   // Endpoint untuk memantau koneksi aktif - hanya untuk debugging

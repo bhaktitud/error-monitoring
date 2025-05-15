@@ -13,6 +13,7 @@ import { NavUser } from './ui/nav-user';
 import { NavDashboard } from './ui/nav-dashboard';
 import { NavIntegration } from './ui/nav-integration';
 import { NavProjectManagement } from './ui/nav-projectManagement';
+import { NavNotification } from './ui/nav-notification';
 
 interface AppSidebarProps {
   projectId?: string;
@@ -28,6 +29,7 @@ export function AppSidebar({ projectId, variant = "sidebar", ...props }: AppSide
       </SidebarHeader>
       
       <SidebarContent className="py-2">
+        <NavNotification />
         {
           projectId && (
             <>

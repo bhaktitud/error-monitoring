@@ -46,6 +46,10 @@ router.post('/', async (req, res) => {
     referrer,
     screenSize
   } = req.body;
+
+  console.log('DSN', dsn);
+
+  console.log('Event received', req.body);
   
   if (!dsn || !errorType || !message) {
     return res.status(400).json({ error: 'Data tidak lengkap' });

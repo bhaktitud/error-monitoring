@@ -1,20 +1,16 @@
-import { init, logRavenRequestTracker, logRavenErrorHandler } from '@lograven/sdk';
-import { config } from 'dotenv';
 import express from 'express';
-config();
-
-console.log(process.env.ERROR_MONITOR_DSN)
+import { logRavenRequestTracker, logRavenErrorHandler } from '../../src/adapters/express';
+import { init } from '../../src/core/init';
 
 init({
-  dsn: process.env.ERROR_MONITOR_DSN,
+  dsn: 'your-dsn-here',
   environment: 'development',
   release: 'example-0.1.0',
-  apiUrl: process.env.ERROR_MONITOR_API_URL,
+  apiUrl: 'http://localhost:3000',
 });
 
 const app = express();
 app.use(express.json());
-
 app.use(logRavenRequestTracker());
 
 app.get('/', (_req, res) => {
@@ -27,6 +23,6 @@ app.get('/error', (_req, _res) => {
 
 app.use(logRavenErrorHandler());
 
-app.listen(4000, () => {
-  console.log('Listening on http://localhost:4000');
+app.listen(3000, () => {
+  console.log('Listening on http://localhost:3000');
 });

@@ -420,7 +420,7 @@ export default function ProjectDashboardPage() {
         
         // Ambil statistik proyek
         try {
-          const statsData = await StatsAPI.getProjectStats(projectId);
+          const statsData = await StatsAPI.getProjectStats(projectId, 'week');
           setStats(statsData);
         } catch (statsErr) {
           console.error('Error fetching stats data:', statsErr);
@@ -446,7 +446,7 @@ export default function ProjectDashboardPage() {
         
         // Ambil penggunaan events
         try {
-          const usageData = await EventsAPI.getEventsUsage(projectId);
+          const usageData = await EventsAPI.getEventsUsage(projectId, 'week');
           setEventsUsage(usageData);
         } catch (usageErr) {
           console.error('Error fetching events usage:', usageErr);
@@ -472,14 +472,7 @@ export default function ProjectDashboardPage() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Ambil semua data terbaru
-      const statsData = await StatsAPI.getProjectStats(projectId);
-      setStats(statsData);
-      
-      const eventsData = await EventsAPI.getEvents(projectId);
-      setEvents(eventsData.slice(0, 10));
-      
-      const usageData = await EventsAPI.getEventsUsage(projectId);
+      const usageData = await EventsAPI.getEventsUsage(projectId, 'week');
       setEventsUsage(usageData);
     } catch (err) {
       console.error('Error refreshing data:', err);

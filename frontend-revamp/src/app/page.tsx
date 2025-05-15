@@ -137,7 +137,8 @@ export default function LandingPage() {
   };
 
   const handleDashboard = () => {
-    console.log("Navigasi ke /projects telah dihapus. Tentukan tujuan baru jika diperlukan.");
+
+    router.push('/projects');
   };
 
   // Simple check for client-side

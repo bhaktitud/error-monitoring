@@ -1,6 +1,6 @@
 "use client"
 
-import { Webhook, Bell } from "lucide-react"
+import { Webhook, Bell, Briefcase } from "lucide-react"
 import Link from "next/link"
 
 import {
@@ -31,7 +31,12 @@ export function NavIntegration({
       title: "Notifications",
       url: `/projects/${projectId}/notifications`,
       icon: Bell,
-    }
+    },
+    {
+      title: "Project Management Tools",
+      url: `/projects/${projectId}/settings/integrations`,
+      icon: Briefcase,
+    },
   ]
   
   return (
@@ -49,7 +54,7 @@ export function NavIntegration({
                       className={isActive ? "border-l-2 border-sidebar-primary pl-[calc(0.5rem-1px)]" : ""}
                     >
                       {item.icon && <item.icon className={isActive ? "text-sidebar-primary" : ""} />}
-                      <Link href={item.url} passHref legacyBehavior>
+                      <Link href={item.url} passHref>
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>

@@ -1,59 +1,54 @@
 {
   "name": "@lograven/sdk",
-  "version": "0.1.20",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/index.browser.js",
-  "types": "dist/index.d.ts",
-  "type": "commonjs",
-  "description": "SDK untuk mengirim error ke LogRaven",
-  "keywords": [
-    "lograven",
-    "error monitoring",
-    "sdk"
-  ],
-  "author": "auto-gen",
-  "license": "MIT",
-  "scripts": {
-    "build": "rollup -c",
-    "prepare": "npm run build",
-    "test": "jest --config=jest.all.cjs",
-    "test:watch": "jest --watch --config=jest.all.cjs",
-    "test:coverage": "jest --coverage --config=jest.all.cjs"
-  },
-  "dependencies": {
-    "axios": "^1.6.7",
-    "source-map": "^0.7.4",
-    "tslib": "^2.6.2"
-  },
-  "devDependencies": {
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-typescript": "^7.27.1",
-    "@rollup/plugin-commonjs": "^25.0.0",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.0.0",
-    "@types/express": "^5.0.1",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.17.46",
-    "babel-jest": "^29.7.0",
-    "jest": "^29.7.0",
-    "nock": "^13.5.4",
-    "rollup": "^4.0.0",
-    "rollup-plugin-polyfill-node": "^0.13.0",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "version": "0.1.31",
+  "type": "module",
+  "description": "Universal SDK for error monitoring with support for backend and frontend JavaScript environments.",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.esm.js",
+      "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "browser": "./dist/index.browser.js"
-    }
+      "types": "./dist/types/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bhaktitud/lograven-sdk.git"
+  },
+  "keywords": [
+    "sdk",
+    "error-monitoring",
+    "typescript",
+    "universal",
+    "lograven"
+  ],
+  "author": "Bhakti Budiman Novanda",
+  "license": "MIT",
+  "peerDependencies": {
+    "@nestjs/common": "^9.0.0 || ^10.0.0",
+    "express": "^4.18.0 || ^5.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.1.1",
+    "@rollup/plugin-node-resolve": "^15.2.1",
+    "@rollup/plugin-typescript": "^11.1.2",
+    "@types/express": "^4.17.21",
+    "rollup": "^4.13.0",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

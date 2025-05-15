@@ -480,12 +480,12 @@ export const EventsAPI = {
   },
   
   // Get events usage and quota
-  getEventsUsage: async (projectId: string) => {
+  getEventsUsage: async (projectId: string, timeframe: 'day' | 'week' | 'month' = 'week') => {
     return apiRequest<{
       totalEvents: number;
       quota: number;
       percent: number;
-    }>(`/events/usage/${projectId}`);
+    }>(`/events/usage/${projectId}?timeframe=${timeframe}`);
   },
   
   // Send error event directly from frontend
@@ -976,5 +976,111 @@ export const ErrorInsightAPI = {
       method: 'POST',
       body: JSON.stringify({ userCount, timeWindow }),
     });
+  }
+};
+
+/**
+ * Integrations API endpoints
+ */
+export const IntegrationsAPI = {
+  // Get Jira configuration for a project
+  getJiraConfig: async (projectId: string) => {
+    return apiRequest<{
+      success: boolean;
+      connected: boolean;
+      baseUrl?: string;
+      email?: string;
+      projectKey?: string;
+      hasApiToken?: boolean;
+    }>(`/integrations/jira/config/${projectId}`);
+  },
+  
+  // Save Jira configuration
+  saveJiraConfig: async (
+    projectId: string,
+    data: {
+      baseUrl: string;
+      email: string;
+      apiToken: string;
+      projectKey: string;
+    }
+  ) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>('/integrations/jira/config', {
+      method: 'POST',
+      body: JSON.stringify({
+        projectId,
+        ...data
+      }),
+    });
+  },
+  
+  // Delete Jira configuration
+  deleteJiraConfig: async (projectId: string) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/integrations/jira/config/${projectId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Get available Jira issue types
+  getJiraIssueTypes: async (projectId: string) => {
+    return apiRequest<{
+      success: boolean;
+      issueTypes: Array<{
+        id: string;
+        name: string;
+        description: string;
+        iconUrl: string;
+      }>
+    }>(`/integrations/jira/issuetypes/${projectId}`);
+  },
+
+  // Create Jira issue from error group
+  createJiraIssue: async (
+    groupId: string,
+    projectId: string,
+    errorId: string | null,
+    data: {
+      summary: string;
+      description: string;
+      issueTypeId: string;
+    }
+  ) => {
+    return apiRequest<{
+      success: boolean;
+      jiraIssue: {
+        key: string;
+        url: string;
+        id: string;
+      }
+    }>('/integrations/jira/issues', {
+      method: 'POST',
+      body: JSON.stringify({
+        groupId,
+        projectId,
+        errorId,
+        ...data
+      }),
+    });
+  },
+
+  // Get Jira issues linked to an error group
+  getJiraIssues: async (groupId: string) => {
+    return apiRequest<Array<{
+      id: string;
+      jiraIssueKey: string;
+      jiraIssueUrl: string;
+      groupId: string;
+      errorId: string | null;
+      createdAt: string;
+      createdBy: {
+        email: string;
+      }
+    }>>(`/integrations/jira/issues/${groupId}`);
   }
 }; 

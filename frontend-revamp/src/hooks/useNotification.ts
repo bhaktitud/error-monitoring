@@ -65,6 +65,7 @@ export function useNotification({
       }
 
       const data = await response.json();
+      
       if (Array.isArray(data.notifications)) {
         setNotifications(data.notifications);
       } else {

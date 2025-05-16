@@ -1,10 +1,6 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { Header } from '@/components/ui/header';
-import Footer from '@/components/ui/footer';
-import PageTransition from '@/components/ui/page-transition';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { ProjectsAPI } from '@/lib/api';
 

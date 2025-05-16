@@ -147,7 +147,7 @@ export const Comment: FC<CommentProps> = ({
                   </span>
                 </div>
                 
-                {isOwner && !isEditing && (
+                {!isEditing && isOwner && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">

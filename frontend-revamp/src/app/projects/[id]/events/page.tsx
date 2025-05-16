@@ -5,8 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { EventsAPI } from '@/lib/api';
-import { FiArrowLeft, FiAlertCircle, FiInfo, FiSearch, FiClock } from 'react-icons/fi';
+import { EventAPI } from '@/lib/api/services/event';
+import type { Event } from '@/lib/api/services/types';
+import { FiArrowLeft, FiAlertCircle, FiInfo, FiClock } from 'react-icons/fi';
 import {
   Table,
   TableBody,
@@ -21,28 +22,7 @@ import { id } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 
-// Interface untuk userContext dan tags
-interface UserContext {
-  userId?: string;
-  [key: string]: unknown;
-}
-
-interface Tags {
-  version?: string;
-  [key: string]: unknown;
-}
-
-interface Event {
-  id: string;
-  errorType: string;
-  message: string;
-  timestamp: string;
-  stacktrace: string;
-  userAgent: string;
-  statusCode: number;
-  userContext: UserContext;
-  tags: Tags;
-}
+// Interface untuk userContext dan tags yang sudah dihapus (diganti dengan import dari types.ts)
 
 export default function EventsPage() {
   const params = useParams();
@@ -59,8 +39,8 @@ export default function EventsPage() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const data = await EventsAPI.getEvents(projectId);
-        setEvents(data);
+        const response = await EventAPI.getEvents(projectId);
+        setEvents(response.events);
         setError(null);
       } catch (err) {
         console.error('Error fetching events:', err);
@@ -109,7 +89,7 @@ export default function EventsPage() {
   };
 
   // Extracting browser info from user agent
-  const getBrowserInfo = (userAgent: string) => {
+  const getBrowserInfo = (userAgent?: string) => {
     if (!userAgent) return 'Unknown';
     
     if (userAgent.includes('Chrome')) return 'Chrome';

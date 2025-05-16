@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { FiSearch, FiHelpCircle, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { AuthAPI, UserProfile } from '@/lib/api';
 import { useCookies } from 'next-client-cookies';

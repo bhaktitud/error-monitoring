@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { useNotification } from '../hooks/useNotification';
+import { useNotification } from '@/hooks/useNotification';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { NotificationStatus } from '@/components/ui/notification-status';
 
 interface NotificationData {
   errorGroupId?: string;
@@ -89,30 +90,6 @@ export function NotificationBell() {
     }
   };
 
-  const connectionStatus = !isConnected ? (
-    <div className="p-2 text-xs text-amber-500 bg-amber-50 dark:bg-amber-950 dark:text-amber-400">
-      Koneksi notifikasi sedang terputus, mencoba menghubungkan kembali...
-    </div>
-  ) : null;
-
-  const errorMessage = error ? (
-    <div className="p-2 text-xs text-red-500 bg-red-50 dark:bg-red-950 dark:text-red-400">
-      Error: {error}
-    </div>
-  ) : null;
-
-  const loadingMessage = isLoading ? (
-    <div className="p-4 text-center">
-      <p className="text-sm text-muted-foreground">Memuat notifikasi...</p>
-    </div>
-  ) : null;
-
-  const emptyMessage = !isLoading && notifications.length === 0 ? (
-    <div className="p-4 text-center text-sm text-muted-foreground">
-      Tidak ada notifikasi
-    </div>
-  ) : null;
-
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -161,10 +138,12 @@ export function NotificationBell() {
         </Link>
         
         <ScrollArea className="h-[300px]">
-          {connectionStatus}
-          {errorMessage}
-          {loadingMessage}
-          {emptyMessage}
+          <NotificationStatus 
+            isConnected={isConnected}
+            isLoading={isLoading}
+            error={error}
+            isEmpty={!isLoading && notifications.length === 0}
+          />
           
           {!isLoading && notifications.map(notification => (
             <DropdownMenuItem

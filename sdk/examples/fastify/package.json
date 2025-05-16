@@ -2,16 +2,23 @@
   "name": "lograven-fastify-example",
   "version": "1.0.0",
   "description": "Contoh penggunaan LogRaven SDK dengan Fastify",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "build": "tsc",
-    "start": "node --experimental-specifier-resolution=node dist/index.js",
-    "dev": "tsc && node --experimental-specifier-resolution=node dist/index.js"
+    "build": "babel index.ts --out-dir dist --extensions \".ts,.tsx\"",
+    "start": "node dist/index.js",
+    "dev": "npm run build && node dist/index.js"
   },
   "dependencies": {
+    "@babel/runtime": "^7.24.9",
+    "@lograven/sdk": "^0.1.44",
     "fastify": "^4.25.2"
   },
   "devDependencies": {
+    "@babel/cli": "^7.24.9",
+    "@babel/core": "^7.24.9",
+    "@babel/plugin-transform-runtime": "^7.24.9",
+    "@babel/preset-env": "^7.24.9",
+    "@babel/preset-typescript": "^7.24.9",
     "typescript": "^5.3.3"
   }
-} 
+}

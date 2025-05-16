@@ -50,3 +50,11 @@ node_modules/
 /sdk/dist/
 /sdk/prisma/dev.db
 /sdk/coverage/
+
+# Examples
+/sdk/examples/*/dist
+/sdk/examples/*/node_modules
+/sdk/examples/*/coverage
+/sdk/examples/*/.next
+/sdk/examples/*/.env
+/sdk/examples/*/.env.example

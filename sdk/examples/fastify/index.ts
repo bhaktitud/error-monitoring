@@ -1,11 +1,14 @@
 import Fastify from 'fastify';
-import { init, logRavenFastifyPlugin, logRavenFastifyErrorHandler } from '../../src';
+// Import LogRaven SDK dengan ES modules
+import * as LogRavenSDK from '@lograven/sdk';
+const { init, logRavenFastifyPlugin, logRavenFastifyErrorHandler } = LogRavenSDK;
 
 // Inisialisasi SDK LogRaven
 init({
-  dsn: 'YOUR_DSN_HERE', 
+  dsn: '6369f64f-261b-4b3e-bd7c-309127deaf3a', 
   environment: 'development',
-  release: '1.0.0'
+  release: '1.0.0',
+  apiUrl: "http://localhost:3000"
 });
 
 // Buat instance Fastify
@@ -37,8 +40,8 @@ app.get('/custom-error', {
 // Jalankan server
 const start = async () => {
   try {
-    await app.listen({ port: 3000 });
-    console.log('Server berjalan di http://localhost:3000');
+    await app.listen({ port: 5555 });
+    console.log('Server berjalan di http://localhost:5555');
   } catch (err) {
     app.log.error(err);
     process.exit(1);

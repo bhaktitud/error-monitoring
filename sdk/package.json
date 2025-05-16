@@ -1,6 +1,6 @@
 {
   "name": "@lograven/sdk",
-  "version": "0.1.44",
+  "version": "0.1.45",
   "description": "Universal SDK for error monitoring with support for backend and frontend JavaScript environments.",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

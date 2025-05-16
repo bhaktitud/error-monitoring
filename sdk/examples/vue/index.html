@@ -4,10 +4,97 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LogRaven + Vue 3</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-  <div id="app"></div>
-  
-  <script type="module" src="./main.js"></script>
+  <div id="app">
+    <h1>{{ message }}</h1>
+    <p>{{ description }}</p>
+    <button @click="showAlert">Klik Saya</button>
+    <button @click="triggerError">Buat Error</button>
+  </div>
+
+  <script>
+    // Buat aplikasi Vue
+    const { createApp } = Vue;
+    
+    // Buat LogRaven sederhana untuk testing
+    const LogRaven = {
+      _dsn: '6369f64f-261b-4b3e-bd7c-309127deaf3a',
+      _apiUrl: 'http://localhost:3000',
+      
+      init(options) {
+        this._dsn = options.dsn || this._dsn;
+        this._apiUrl = options.apiUrl || this._apiUrl;
+        console.log('LogRaven diinisialisasi dengan DSN:', this._dsn);
+      },
+      
+      captureException(error, context = {}) {
+        console.log('Error terdeteksi:', error);
+        console.log('Konteks tambahan:', context);
+        
+        // Dalam implementasi asli, ini akan mengirim ke server
+        console.log('Mengirim ke:', this._apiUrl);
+      },
+      
+      installVue(app) {
+        const originalErrorHandler = app.config.errorHandler;
+        
+        app.config.errorHandler = (err, vm, info) => {
+          console.log('Vue error terdeteksi:', err);
+          this.captureException(err, {
+            info,
+            component: vm?.$options?.name || 'unknown'
+          });
+          
+          if (typeof originalErrorHandler === 'function') {
+            originalErrorHandler.call(this, err, vm, info);
+          }
+        };
+        
+        app.config.globalProperties.$logRaven = this;
+        console.log('LogRaven terpasang di Vue');
+      }
+    };
+    
+    // Inisialisasi LogRaven
+    LogRaven.init({
+      dsn: '6369f64f-261b-4b3e-bd7c-309127deaf3a',
+      apiUrl: 'http://localhost:3000'
+    });
+    
+    const app = createApp({
+      data() {
+        return {
+          message: 'Tes Vue dengan LogRaven',
+          description: 'Aplikasi Vue sederhana dengan LogRaven terintegrasi'
+        }
+      },
+      methods: {
+        showAlert() {
+          alert('Tombol diklik!');
+        },
+        triggerError() {
+          try {
+            // Membuat error
+            const obj = null;
+            obj.nonExistentMethod();
+          } catch (error) {
+            // Tangkap dan kirim error ke LogRaven
+            this.$logRaven.captureException(error, {
+              action: 'Tombol Buat Error diklik'
+            });
+            alert('Error berhasil dilaporkan ke LogRaven!');
+          }
+        }
+      }
+    });
+    
+    // Pasang LogRaven ke Vue
+    LogRaven.installVue(app);
+    
+    // Mount aplikasi
+    app.mount('#app');
+  </script>
 </body>
 </html> 

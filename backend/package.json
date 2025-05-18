@@ -1,6 +1,6 @@
 {
   "name": "lograven-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "dist/app.js",
   "scripts": {
     "dev": "ts-node-dev --respawn src/app.ts",
@@ -12,17 +12,21 @@
     "db:reset-and-seed": "npm run db:reset && npm run db:seed",
     "create:dummy-user": "node scripts/create-dummy-user.js",
     "create:tester": "ts-node src/utils/create-dummy-user.ts",
-    "send:test-invite": "node scripts/send-test-invite.js"
+    "send:test-invite": "node scripts/send-test-invite.js",
+    "evaluate:ml-models": "ts-node scripts/evaluate_ml_models.ts",
+    "benchmark:performance": "ts-node scripts/run_performance_benchmark.ts"
   },
   "dependencies": {
     "@imagekit/javascript": "^5.1.0",
     "@prisma/client": "^5.12.0",
+    "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
     "@tensorflow/tfjs-node": "^4.22.0",
     "@types/multer": "^1.4.12",
     "@types/socket.io": "^3.0.2",
     "@types/uuid": "^10.0.0",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.0",
+    "bert-tokenizer": "^1.1.8",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
@@ -30,7 +34,10 @@
     "express-validator": "^7.2.1",
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
+    "ml-kmeans": "^6.0.0",
+    "ml-knn": "^3.0.0",
     "multer": "^1.4.5-lts.2",
+    "node-cache": "^5.1.2",
     "nodemailer": "^7.0.3",
     "rate-limiter-flexible": "^7.1.0",
     "react-hook-form": "^7.56.3",

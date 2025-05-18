@@ -17,6 +17,7 @@ import deploymentRoutes from '../routes/deploymentRoutes';
 import errorPredictionRoutes from '../routes/errorPrediction';
 import recommendationRoutes from '../routes/recommendations.routes';
 import { createNotificationRoutes } from '../routes/notificationRoutes';
+import mlRoutes from '../routes/mlRoutes';
 import { getUserConnectionsStats } from '../services/socketService';
 import { getIpConnectionsStats } from '../middleware/socketRateLimit';
 
@@ -45,6 +46,7 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api', systemContextRoutes); // Route baru untuk analisis konteks sistem
   app.use('/api/deployments', deploymentRoutes); // Route baru untuk deployment dan Git
   app.use('/api/error-predictor', errorPredictionRoutes); // Route baru untuk ML error predictor
+  app.use('/api/ml', mlRoutes); // Route baru untuk ML lanjutan (BERT, ensemble model, clustering)
   app.use('/api', recommendationRoutes); // Route baru untuk rekomendasi solusi
   app.use('/', sourceMapRoutes);
 

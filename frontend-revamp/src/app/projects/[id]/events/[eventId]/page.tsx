@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
+import RootCauseBasicView from '../../../../../components/insights/RootCauseBasicView';
+import ErrorPredictionView from '../../../../../components/insights/ErrorPredictionView';
 
 // Interface untuk userContext dan tags
 interface UserContext {
@@ -323,6 +325,12 @@ export default function EventDetailPage() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Analisis Akar Masalah */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <RootCauseBasicView eventId={event.id} />
+          <ErrorPredictionView eventId={event.id} />
+        </div>
       </div>
     </DashboardLayout>
   );

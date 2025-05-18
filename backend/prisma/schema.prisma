@@ -57,6 +57,7 @@ model Project {
   errorSequences       ErrorSequence[]
   activeUserCounts     ActiveUserCount[]
   jiraConfig           JiraProjectConfig?
+  deployments          Deployment[]
 }
 
 model ProjectMember {
@@ -89,30 +90,32 @@ model ProjectInvite {
 }
 
 model ErrorGroup {
-  id                 String              @id @default(uuid())
+  id                 String                    @id @default(uuid())
   projectId          String
   fingerprint        String
   errorType          String
   message            String
-  count              Int                 @default(1)
-  firstSeen          DateTime            @default(now())
-  lastSeen           DateTime            @default(now())
+  count              Int                       @default(1)
+  firstSeen          DateTime                  @default(now())
+  lastSeen           DateTime                  @default(now())
   statusCode         Int?
   assignedTo         String?
-  status             String              @default("open")
-  updatedAt          DateTime            @updatedAt
-  code               String              @unique
-  userImpactLastHour Float               @default(0)
-  userImpactLastDay  Float               @default(0)
-  userImpactLastWeek Float               @default(0)
-  assignee           ProjectMember?      @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
-  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status             String                    @default("open")
+  updatedAt          DateTime                  @updatedAt
+  code               String                    @unique
+  userImpactLastHour Float                     @default(0)
+  userImpactLastDay  Float                     @default(0)
+  userImpactLastWeek Float                     @default(0)
+  assignee           ProjectMember?            @relation("ProjectMemberAssignedTo", fields: [assignedTo], references: [id])
+  project            Project                   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments           ErrorGroupComment[]
   events             Event[]
   jiraIssues         JiraIntegration[]
-  errorSequencesFrom ErrorSequence[]     @relation("ErrorSequenceFrom")
-  errorSequencesTo   ErrorSequence[]     @relation("ErrorSequenceTo")
+  errorSequencesFrom ErrorSequence[]           @relation("ErrorSequenceFrom")
+  errorSequencesTo   ErrorSequence[]           @relation("ErrorSequenceTo")
   rootCauseAnalyses  RootCauseAnalysis[]
+  deploymentRelations ErrorDeploymentRelation[]
+  errorPredictions   ErrorPrediction[]
 
   @@unique([projectId, fingerprint])
 }
@@ -160,6 +163,7 @@ model Event {
   group          ErrorGroup? @relation(fields: [groupId], references: [id])
   project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   rootCauseAnalysis RootCauseAnalysis?
+  errorPredictions ErrorPrediction[]
 }
 
 model Webhook {
@@ -379,4 +383,121 @@ model RootCauseAnalysis {
 
   @@index([eventId])
   @@index([groupId, status])
+}
+
+// Model untuk prediksi error dari ML model
+model ErrorPrediction {
+  id            String      @id @default(uuid())
+  eventId       String      
+  event         Event       @relation(fields: [eventId], references: [id])
+  groupId       String?
+  errorGroup    ErrorGroup? @relation(fields: [groupId], references: [id])
+  
+  // Hasil prediksi
+  probableCauses Json       @default("[]")
+  
+  // Metadata prediksi
+  predictionTime Int
+  modelVersion   String     @default("1.0.0")
+  
+  // Timestamps
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([eventId])
+  @@index([groupId])
+}
+
+// Model untuk Deployment dan integrasi git
+model Deployment {
+  id            String      @id @default(uuid())
+  projectId     String
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Informasi Deployment
+  version       String      // Versi deployment atau tag
+  environment   String      // production, staging, dev, dsb
+  status        String      @default("success") // success, failed, in_progress
+  
+  // Informasi Git
+  repository    String?     // URL repository atau nama
+  branch        String?     // Branch yang di-deploy
+  commitHash    String?     // Hash commit terbaru di deployment
+  commitMessage String?     // Pesan commit terkait
+  authorName    String?     // Nama author commit
+  authorEmail   String?     // Email author commit
+  
+  // Informasi perubahan
+  changedFiles  Json?       // Array file yang berubah
+  
+  // Analisis error
+  errorCount    Int         @default(0)    // Jumlah error yang terdeteksi setelah deployment
+  relatedErrors ErrorDeploymentRelation[]
+  
+  // Metadata
+  metadata      Json?       // Data tambahan spesifik deployment
+  
+  // Timestamps
+  deployedAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([projectId, environment])
+  @@index([deployedAt])
+  @@index([commitHash])
+}
+
+// Relasi antara Deployment dan ErrorGroup
+model ErrorDeploymentRelation {
+  id            String      @id @default(uuid())
+  deploymentId  String
+  errorGroupId  String
+  deployment    Deployment  @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  errorGroup    ErrorGroup  @relation(fields: [errorGroupId], references: [id], onDelete: Cascade)
+  firstSeenAt   DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+
+  @@unique([deploymentId, errorGroupId])
+  @@index([deploymentId])
+  @@index([errorGroupId])
+}
+
+// Model untuk knowledge base error
+model ErrorKnowledgeBase {
+  id                  String   @id @default(uuid())
+  errorType           String   // Tipe error (SYNTAX_ERROR, RUNTIME_ERROR, dll)
+  pattern             String   // Pattern pesan error
+  keywords            String[] // Kata kunci untuk pencarian
+  solutionTitle       String   // Judul solusi
+  solutionDescription String   // Deskripsi solusi
+  solutionCodeExample String?  // Contoh kode untuk solusi
+  successRate         Float    @default(0.5) // Tingkat keberhasilan solusi (0-1)
+  context             Json?    // Konteks tambahan (framework, library, dsb)
+  source              String   @default("manual") // Sumber data (manual, community, ml)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([errorType])
+  @@index([keywords])
+}
+
+// Model untuk rekomendasi solusi
+model SolutionRecommendation {
+  id             String   @id @default(uuid())
+  errorId        String   // ID dari error yang diberikan rekomendasi
+  title          String   // Judul rekomendasi
+  description    String   // Deskripsi detail rekomendasi
+  codeExample    String?  // Contoh kode untuk solusi
+  confidence     Float    // Tingkat kepercayaan rekomendasi (0-1)
+  source         String   // Sumber rekomendasi (knowledge_base, generic, ml, user_feedback)
+  relevanceScore Float    @default(0.5) // Skor relevansi terhadap error (0-1)
+  isApplied      Boolean  @default(false) // Apakah solusi sudah diterapkan
+  appliedAt      DateTime? // Kapan solusi diterapkan
+  feedback       String?  // Feedback pengguna (helpful, not_helpful)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([errorId])
+  @@index([source])
+  @@index([isApplied])
 }

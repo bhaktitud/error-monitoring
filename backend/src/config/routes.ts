@@ -13,6 +13,9 @@ import sourceMapRoutes from '../routes/sourceMap';
 import insightsRoutes from '../routes/insights';
 import integrationsRoutes from '../routes/integrations';
 import systemContextRoutes from '../routes/systemContext';
+import deploymentRoutes from '../routes/deploymentRoutes';
+import errorPredictionRoutes from '../routes/errorPrediction';
+import recommendationRoutes from '../routes/recommendations.routes';
 import { createNotificationRoutes } from '../routes/notificationRoutes';
 import { getUserConnectionsStats } from '../services/socketService';
 import { getIpConnectionsStats } from '../middleware/socketRateLimit';
@@ -40,6 +43,9 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api/insights', insightsRoutes); // Route baru untuk insights/analytics
   app.use('/api/integrations', integrationsRoutes); // Route baru untuk integrasi (Jira dll)
   app.use('/api', systemContextRoutes); // Route baru untuk analisis konteks sistem
+  app.use('/api/deployments', deploymentRoutes); // Route baru untuk deployment dan Git
+  app.use('/api/error-predictor', errorPredictionRoutes); // Route baru untuk ML error predictor
+  app.use('/api', recommendationRoutes); // Route baru untuk rekomendasi solusi
   app.use('/', sourceMapRoutes);
 
   // Endpoint untuk memantau koneksi aktif - hanya untuk debugging

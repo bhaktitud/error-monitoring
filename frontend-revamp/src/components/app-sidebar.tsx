@@ -13,6 +13,7 @@ import { NavUser } from './ui/nav-user';
 import { NavDashboard } from './ui/nav-dashboard';
 import { NavIntegration } from './ui/nav-integration';
 import { NavProjectManagement } from './ui/nav-projectManagement';
+import { NavRCAAnalytics } from './ui/nav-rcaAnalytics';
 
 interface AppSidebarProps {
   projectId?: string;
@@ -33,6 +34,7 @@ export function AppSidebar({ projectId, variant = "sidebar", ...props }: AppSide
             <>
               <NavDashboard projectId={projectId} />
               <NavErrorManagement projectId={projectId} />
+              <NavRCAAnalytics projectId={projectId} />
               <NavIntegration projectId={projectId} />
               <NavProjectManagement projectId={projectId} />
             </>

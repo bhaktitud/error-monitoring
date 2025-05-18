@@ -87,6 +87,38 @@ export interface SourceMap {
   updatedAt: string;
 }
 
+// Interface untuk SolutionRecommendation
+export interface SolutionRecommendation {
+  id: string;
+  errorId: string;
+  title: string;
+  description: string;
+  codeExample: string | null;
+  confidence: number;
+  source: 'knowledge_base' | 'generic' | 'ml' | 'user_feedback';
+  relevanceScore: number;
+  isApplied: boolean;
+  appliedAt: string | null;
+  feedback: string | null;
+  createdAt: string;
+}
+
+// Interface untuk ErrorKnowledgeBase
+export interface ErrorKnowledgeBase {
+  id: string;
+  errorType: string;
+  pattern: string;
+  keywords: string[];
+  solutionTitle: string;
+  solutionDescription: string;
+  solutionCodeExample: string | null;
+  successRate: number;
+  context: Record<string, unknown> | null;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Fungsi utility untuk melakukan request ke API
  */
@@ -1154,6 +1186,70 @@ export const ErrorInsightAPI = {
 };
 
 /**
+ * Error Predictor API endpoints (ML-based)
+ */
+export const ErrorPredictorAPI = {
+  // Mendapatkan prediksi penyebab error untuk event tertentu
+  getEventPrediction: async (eventId: string) => {
+    return apiRequest<{
+      eventId: string;
+      groupId?: string;
+      probableCauses: Array<{
+        cause: string;
+        probability: number;
+        explanation?: string;
+      }>;
+      predictionTime: number;
+      modelVersion: string;
+      createdAt: string;
+    }>(`/error-predictor/events/${eventId}/prediction`);
+  },
+  
+  // Mendapatkan prediksi penyebab error untuk grup error
+  getGroupPrediction: async (groupId: string) => {
+    return apiRequest<{
+      eventId: string;
+      groupId?: string;
+      probableCauses: Array<{
+        cause: string;
+        probability: number;
+        explanation?: string;
+      }>;
+      predictionTime: number;
+      modelVersion: string;
+      createdAt: string;
+    }>(`/error-predictor/groups/${groupId}/prediction`);
+  },
+  
+  // Melatih model prediksi (admin only)
+  trainModel: async () => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      stats?: {
+        samples: number;
+        epochs: number;
+        trainingTime: number;
+      };
+    }>(`/error-predictor/model/train`, {
+      method: 'POST'
+    });
+  },
+  
+  // Evaluasi model (admin only)
+  evaluateModel: async (testPercentage: number = 0.2) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      metrics?: {
+        accuracy: number;
+        confusionMatrix: number[][];
+      };
+    }>(`/error-predictor/model/evaluate?testPercentage=${testPercentage}`);
+  }
+};
+
+/**
  * Integrations API endpoints
  */
 export const IntegrationsAPI = {
@@ -1257,4 +1353,53 @@ export const IntegrationsAPI = {
       }
     }>>(`/integrations/jira/issues/${groupId}`);
   }
+};
+
+/**
+ * API endpoints untuk rekomendasi solusi
+ */
+export const SolutionAPI = {
+  // Mendapatkan rekomendasi solusi untuk error tertentu
+  getSolutionRecommendations: async (errorId: string) => {
+    return apiRequest<{ data: SolutionRecommendation[] }>(`/errors/${errorId}/recommendations`, {
+      method: 'GET',
+    });
+  },
+
+  // Memberikan feedback terhadap rekomendasi solusi
+  provideSolutionFeedback: async (recommendationId: string, feedback: 'helpful' | 'not_helpful') => {
+    return apiRequest<{ success: boolean; message: string }>(`/recommendations/${recommendationId}/feedback`, {
+      method: 'POST',
+      body: JSON.stringify({ feedback }),
+    });
+  },
+
+  // Menandai solusi sudah diterapkan
+  markSolutionAsApplied: async (recommendationId: string) => {
+    return apiRequest<{ success: boolean; message: string }>(`/recommendations/${recommendationId}/apply`, {
+      method: 'POST',
+    });
+  },
+
+  // Mendapatkan daftar knowledge base error
+  getKnowledgeBase: async (query?: { errorType?: string; search?: string }) => {
+    const queryString = query 
+      ? `?${Object.entries(query)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+          .join('&')}`
+      : '';
+      
+    return apiRequest<{ data: ErrorKnowledgeBase[] }>(`/knowledge-base${queryString}`, {
+      method: 'GET',
+    });
+  },
+};
+
+// Expose all APIs
+export const api = {
+  // Tambahkan API baru ke objek api
+  ...AuthAPI,
+  ...SolutionAPI,
+  // Lainnya tetap ada (EventAPI, ProjectAPI, dsb)
 }; 

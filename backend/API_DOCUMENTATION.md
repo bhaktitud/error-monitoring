@@ -620,4 +620,358 @@ Mencoba mengirim ulang webhook berdasarkan data yang sama seperti pengiriman seb
       "responseAt": "ISO timestamp"
     }
   }
-  ``` 
+  ```
+
+## API Utilitas Tambahan
+
+Dokumentasi berikut mencakup API tambahan untuk fungsionalitas statistik, ekspor data, dan notifikasi.
+
+### Endpoint Statistik
+
+#### Mendapatkan Statistik Proyek
+- **URL**: `/api/stats/projects/:id`
+- **Method**: `GET`
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "total": 1250,
+    "daily": 125,
+    "resolved": 980,
+    "unresolved": 270,
+    "trends": {
+      "lastWeek": [
+        {"date": "2023-10-01", "count": 25},
+        {"date": "2023-10-02", "count": 30}
+      ],
+      "prevWeek": [
+        {"date": "2023-09-24", "count": 20},
+        {"date": "2023-09-25", "count": 15}
+      ]
+    },
+    "topBrowsers": [
+      {"name": "Chrome", "count": 850},
+      {"name": "Firefox", "count": 250}
+    ],
+    "topOS": [
+      {"name": "Windows", "count": 720},
+      {"name": "MacOS", "count": 380}
+    ]
+  }
+  ```
+- **Response Error**: `500`
+
+#### Mendapatkan Distribusi Error
+- **URL**: `/api/stats/projects/:id/distribution/:category`
+- **Method**: `GET`
+- **Parameters**:
+  - `category`: Kategori distribusi (`browser`, `os`, `statusCode`, `environment`)
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "distribution": [
+      {"name": "Chrome", "count": 850, "percentage": 68},
+      {"name": "Firefox", "count": 250, "percentage": 20},
+      {"name": "Safari", "count": 150, "percentage": 12}
+    ],
+    "total": 1250
+  }
+  ```
+- **Response Error**: `400`, `500`
+
+### Endpoint Ekspor
+
+#### Ekspor Error ke CSV
+- **URL**: `/api/export/projects/:id/errors/csv`
+- **Method**: `GET`
+- **Parameters**:
+  - `startDate`: Tanggal mulai (format: `YYYY-MM-DD`)
+  - `endDate`: Tanggal akhir (format: `YYYY-MM-DD`)
+  - `status`: Status error (`all`, `resolved`, `unresolved`)
+- **Response Success**: `200 OK`
+  - Content-Type: `text/csv`
+  - File CSV berisi data error
+- **Response Error**: `500`
+
+#### Ekspor Error ke JSON
+- **URL**: `/api/export/projects/:id/errors/json`
+- **Method**: `GET`
+- **Parameters**:
+  - `startDate`: Tanggal mulai (format: `YYYY-MM-DD`)
+  - `endDate`: Tanggal akhir (format: `YYYY-MM-DD`)
+  - `status`: Status error (`all`, `resolved`, `unresolved`)
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "errors": [
+      {
+        "id": "uuid",
+        "errorType": "TypeError",
+        "message": "Cannot read property of undefined",
+        "timestamp": "2023-10-01T10:30:00Z",
+        "statusCode": 500,
+        "browser": "Chrome",
+        "os": "Windows",
+        "url": "https://example.com/page"
+      }
+    ],
+    "meta": {
+      "total": 150,
+      "startDate": "2023-10-01",
+      "endDate": "2023-10-07",
+      "status": "all"
+    }
+  }
+  ```
+- **Response Error**: `500`
+
+### Endpoint Notifikasi
+
+#### Mendapatkan Pengaturan Notifikasi
+- **URL**: `/api/notifications/projects/:id/settings`
+- **Method**: `GET`
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "email": {
+      "enabled": true,
+      "recipients": ["user@example.com"],
+      "threshold": 5,
+      "frequency": "daily"
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": "",
+      "channel": "",
+      "threshold": 10
+    },
+    "discord": {
+      "enabled": false,
+      "webhookUrl": "",
+      "threshold": 10
+    }
+  }
+  ```
+- **Response Error**: `500`
+
+#### Memperbarui Pengaturan Notifikasi
+- **URL**: `/api/notifications/projects/:id/settings`
+- **Method**: `PATCH`
+- **Body**:
+  ```json
+  {
+    "email": {
+      "enabled": true,
+      "recipients": ["user@example.com", "admin@example.com"],
+      "threshold": 10,
+      "frequency": "realtime"
+    }
+  }
+  ```
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "success": true,
+    "settings": {
+      "email": {
+        "enabled": true,
+        "recipients": ["user@example.com", "admin@example.com"],
+        "threshold": 10,
+        "frequency": "realtime"
+      },
+      "slack": {
+        "enabled": false,
+        "webhookUrl": "",
+        "channel": "",
+        "threshold": 10
+      },
+      "discord": {
+        "enabled": false,
+        "webhookUrl": "",
+        "threshold": 10
+      }
+    }
+  }
+  ```
+- **Response Error**: `400`, `500`
+
+#### Menguji Notifikasi
+- **URL**: `/api/notifications/projects/:id/test`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "channel": "email",
+    "recipient": "user@example.com"
+  }
+  ```
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "success": true,
+    "message": "Notifikasi test berhasil dikirim"
+  }
+  ```
+- **Response Error**: `400`, `500`
+
+## Error Insights API
+
+### Mendapatkan Analisis Akar Masalah untuk Event
+- **URL**: `/api/insights/events/:eventId/root-cause`
+- **Method**: `GET`
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "eventId": "uuid",
+    "groupId": "uuid",
+    "analyzedAt": "timestamp",
+    "probableCauses": [
+      {
+        "cause": "Unhandled Exception",
+        "probability": 0.8,
+        "explanation": "Error terjadi pada TypeError: Cannot read property of undefined"
+      }
+    ],
+    "recommendations": [
+      {
+        "action": "Review Code",
+        "priority": "high",
+        "description": "Periksa kode di lokasi error: main.js:42",
+        "codeExample": "// Contoh perbaikan (opsional)"
+      }
+    ],
+    "relatedDeployments": ["deployment-uuid-1", "deployment-uuid-2"],
+    "detailedAnalysis": {
+      "stackFrames": [
+        {
+          "fileName": "main.js",
+          "lineNumber": 42,
+          "columnNumber": 3,
+          "functionName": "processData",
+          "isSourceMapped": false
+        }
+      ],
+      "systemConditions": {
+        "browser": "Chrome",
+        "os": "Windows",
+        "device": "Desktop"
+      },
+      "relatedEvents": ["event-uuid-1", "event-uuid-2"]
+    },
+    "status": "completed",
+    "processingTime": 235,
+    "version": 1
+  }
+  ```
+- **Response Error**: `404`, `403`, `500`
+
+### Mendapatkan Analisis Akar Masalah untuk Grup Error
+- **URL**: `/api/insights/groups/:groupId/root-cause`
+- **Method**: `GET`
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "eventId": "uuid",
+    "groupId": "uuid",
+    "analyzedAt": "timestamp",
+    "probableCauses": [
+      {
+        "cause": "Unhandled Exception",
+        "probability": 0.8,
+        "explanation": "Error terjadi pada TypeError: Cannot read property of undefined"
+      }
+    ],
+    "recommendations": [
+      {
+        "action": "Review Code",
+        "priority": "high",
+        "description": "Periksa kode di lokasi error: main.js:42",
+        "codeExample": "// Contoh perbaikan (opsional)"
+      }
+    ],
+    "relatedDeployments": ["deployment-uuid-1", "deployment-uuid-2"],
+    "detailedAnalysis": {
+      "stackFrames": [
+        {
+          "fileName": "main.js",
+          "lineNumber": 42,
+          "columnNumber": 3,
+          "functionName": "processData",
+          "isSourceMapped": false
+        }
+      ],
+      "systemConditions": {
+        "browser": "Chrome",
+        "os": "Windows",
+        "device": "Desktop"
+      },
+      "relatedEvents": ["event-uuid-1", "event-uuid-2"]
+    },
+    "status": "completed",
+    "processingTime": 235,
+    "version": 1,
+    "group": {
+      "id": "group-uuid",
+      "errorType": "TypeError",
+      "message": "Cannot read property of undefined",
+      "count": 42,
+      "status": "open"
+    }
+  }
+  ```
+- **Response Error**: `404`, `403`, `500`
+
+### Mendapatkan Korelasi Error (Coming Soon)
+- **URL**: `/api/insights/projects/:projectId/error-correlations`
+- **Method**: `GET`
+- **Parameters**:
+  - `errorGroupId`: ID grup error untuk analisis (opsional)
+  - `timeWindow`: Jendela waktu untuk analisis (`24h`, `7d`, `30d`, default: `7d`)
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "projectId": "uuid",
+    "errorGroupId": "uuid",
+    "timeWindow": "7d",
+    "correlations": [
+      {
+        "fromErrorId": "uuid",
+        "fromErrorType": "TypeError",
+        "fromErrorMessage": "Cannot read property of undefined",
+        "toErrorId": "uuid",
+        "toErrorType": "ReferenceError",
+        "toErrorMessage": "x is not defined",
+        "count": 15,
+        "percentage": 75
+      }
+    ]
+  }
+  ```
+- **Response Error**: `403`, `500`
+
+### Mendapatkan Dampak Error pada Pengguna (Coming Soon)
+- **URL**: `/api/insights/projects/:projectId/user-impact`
+- **Method**: `GET`
+- **Parameters**:
+  - `errorGroupId`: ID grup error untuk analisis (opsional)
+  - `timeWindow`: Jendela waktu untuk analisis (`1h`, `24h`, `7d`, default: `24h`)
+- **Response Success**: `200 OK`
+  ```json
+  {
+    "projectId": "uuid",
+    "timeWindow": "24h",
+    "metrics": [
+      {
+        "errorGroupId": "uuid",
+        "errorType": "TypeError",
+        "message": "Cannot read property of undefined",
+        "impactLastHour": 0.12,
+        "impactLastDay": 0.08,
+        "impactLastWeek": 0.03,
+        "totalUsersLastHour": 150,
+        "totalUsersLastDay": 2500,
+        "totalUsersLastWeek": 12000
+      }
+    ]
+  }
+  ```
+- **Response Error**: `403`, `500` 

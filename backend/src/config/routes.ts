@@ -12,6 +12,7 @@ import mediaRoutes from '../routes/media';
 import sourceMapRoutes from '../routes/sourceMap';
 import insightsRoutes from '../routes/insights';
 import integrationsRoutes from '../routes/integrations';
+import systemContextRoutes from '../routes/systemContext';
 import { createNotificationRoutes } from '../routes/notificationRoutes';
 import { getUserConnectionsStats } from '../services/socketService';
 import { getIpConnectionsStats } from '../middleware/socketRateLimit';
@@ -38,6 +39,7 @@ export function setupRoutes(app: Application, io: Server): void {
   app.use('/api/media', mediaRoutes);
   app.use('/api/insights', insightsRoutes); // Route baru untuk insights/analytics
   app.use('/api/integrations', integrationsRoutes); // Route baru untuk integrasi (Jira dll)
+  app.use('/api', systemContextRoutes); // Route baru untuk analisis konteks sistem
   app.use('/', sourceMapRoutes);
 
   // Endpoint untuk memantau koneksi aktif - hanya untuk debugging

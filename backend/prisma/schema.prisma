@@ -112,6 +112,7 @@ model ErrorGroup {
   jiraIssues         JiraIntegration[]
   errorSequencesFrom ErrorSequence[]     @relation("ErrorSequenceFrom")
   errorSequencesTo   ErrorSequence[]     @relation("ErrorSequenceTo")
+  rootCauseAnalyses  RootCauseAnalysis[]
 
   @@unique([projectId, fingerprint])
 }
@@ -158,6 +159,7 @@ model Event {
   code           String      @unique
   group          ErrorGroup? @relation(fields: [groupId], references: [id])
   project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rootCauseAnalysis RootCauseAnalysis?
 }
 
 model Webhook {
@@ -341,4 +343,40 @@ model JiraProjectConfig {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// Model untuk Root Cause Analysis
+model RootCauseAnalysis {
+  id            String      @id @default(uuid())
+  eventId       String      @unique
+  event         Event       @relation(fields: [eventId], references: [id])
+  groupId       String
+  errorGroup    ErrorGroup  @relation(fields: [groupId], references: [id])
+  analyzedAt    DateTime    @default(now())
+  
+  // Kemungkinan penyebab
+  probableCauses Json       @default("[]")
+  
+  // Rekomendasi perbaikan
+  recommendations Json       @default("[]")
+  
+  // Deployment terkait
+  relatedDeployments String[] @default([])
+  
+  // Analisis detail
+  stackFrames     Json       @default("[]")
+  systemConditions Json       @default("{}")
+  relatedEvents   String[]   @default([])
+  
+  // Status dan metadata
+  status          String      @default("pending")
+  processingTime  Int?
+  version         Int         @default(1)
+  
+  // Timestamps
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([eventId])
+  @@index([groupId, status])
 }

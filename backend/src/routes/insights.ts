@@ -2,6 +2,12 @@ import express from 'express';
 import prisma from '../models/prisma';
 import { authMiddleware } from '../utils/auth';
 import { ErrorInsightService } from '../services/errorInsightService';
+import { 
+  getEventRootCause, 
+  getGroupRootCause,
+  getSimilarErrors,
+  getCoOccurringErrors
+} from '../controllers/insightsController';
 
 const router = express.Router();
 const errorInsightService = new ErrorInsightService();
@@ -159,5 +165,345 @@ router.post('/projects/:id/active-users', authMiddleware, verifyProjectAccess, a
     res.status(500).json({ error: 'Failed to update active user count' });
   }
 });
+
+/**
+ * @route   GET /api/insights/events/:eventId/root-cause
+ * @desc    Mendapatkan analisis akar masalah untuk event tertentu
+ * @access  Private
+ */
+router.get('/events/:eventId/root-cause', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { eventId } = req.params;
+    
+    // Mengambil projectId dari event untuk verifikasi akses
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { projectId: true }
+    });
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event tidak ditemukan' });
+    }
+    
+    // Verifikasi akses ke project
+    const projectId = event.projectId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek apakah user adalah owner atau member
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.ownerId === userId) {
+      return next(); // Owner, lanjutkan
+    }
+
+    // Cek membership
+    const membership = await prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: 'No access to this project' });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error in route middleware:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}, getEventRootCause);
+
+/**
+ * @route   GET /api/insights/groups/:groupId/root-cause
+ * @desc    Mendapatkan analisis akar masalah untuk grup error
+ * @access  Private
+ */
+router.get('/groups/:groupId/root-cause', authMiddleware, async (req: any, res, next) => {
+  // Authentication middleware hampir sama dengan endpoint event
+  try {
+    const { groupId } = req.params;
+    
+    // Verify project access melalui grup
+    const group = await prisma.errorGroup.findUnique({
+      where: { id: groupId },
+      select: { projectId: true }
+    });
+    
+    if (!group) {
+      return res.status(404).json({ error: 'Grup error tidak ditemukan' });
+    }
+    
+    // Check if user has access to this project
+    const projectId = group.projectId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek apakah user adalah owner atau member
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.ownerId === userId) {
+      return next(); // Owner, lanjutkan
+    }
+
+    // Cek membership
+    const membership = await prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: 'No access to this project' });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error in route middleware:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}, getGroupRootCause);
+
+/**
+ * @route   GET /api/insights/projects/:projectId/error-correlations
+ * @desc    Mendapatkan korelasi antara error (placeholder untuk tahap selanjutnya)
+ * @access  Private
+ */
+router.get('/projects/:projectId/error-correlations', authMiddleware, async (req: any, res) => {
+  try {
+    const { projectId } = req.params;
+    const { errorGroupId, timeWindow } = req.query;
+    
+    // Verify project access
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek akses ke project
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    if (project.ownerId !== req.user.id) {
+      const membership = await prisma.projectMember.findFirst({
+        where: {
+          projectId,
+          userId: req.user.id,
+        },
+      });
+      
+      if (!membership) {
+        return res.status(403).json({ error: 'Akses ditolak' });
+      }
+    }
+    
+    // Placeholder response untuk tahap 1
+    // Ini akan diimplementasikan di tahap berikutnya
+    res.json({
+      projectId,
+      errorGroupId: errorGroupId || null,
+      timeWindow: timeWindow || '7d',
+      correlations: [],
+      message: 'Fitur ini akan diimplementasikan di tahap berikutnya'
+    });
+  } catch (error) {
+    console.error('Error in getErrorCorrelations:', error);
+    res.status(500).json({ error: 'Gagal menganalisis korelasi error' });
+  }
+});
+
+/**
+ * @route   GET /api/insights/projects/:projectId/user-impact
+ * @desc    Mendapatkan metrik dampak error pada pengguna (placeholder untuk tahap selanjutnya)
+ * @access  Private
+ */
+router.get('/projects/:projectId/user-impact', authMiddleware, async (req: any, res) => {
+  try {
+    const { projectId } = req.params;
+    const { errorGroupId, timeWindow } = req.query;
+    
+    // Verify project access
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek akses ke project
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    if (project.ownerId !== req.user.id) {
+      const membership = await prisma.projectMember.findFirst({
+        where: {
+          projectId,
+          userId: req.user.id,
+        },
+      });
+      
+      if (!membership) {
+        return res.status(403).json({ error: 'Akses ditolak' });
+      }
+    }
+    
+    // Placeholder response untuk tahap 1
+    // Ini akan diimplementasikan di tahap berikutnya
+    res.json({
+      projectId,
+      timeWindow: timeWindow || '24h',
+      metrics: [],
+      message: 'Fitur ini akan diimplementasikan di tahap berikutnya'
+    });
+  } catch (error) {
+    console.error('Error in getUserImpact:', error);
+    res.status(500).json({ error: 'Gagal menganalisis dampak pengguna' });
+  }
+});
+
+/**
+ * @route   GET /api/insights/events/:eventId/similar
+ * @desc    Mendapatkan error yang mirip dengan event tertentu
+ * @access  Private
+ */
+router.get('/events/:eventId/similar', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { eventId } = req.params;
+    
+    // Mengambil projectId dari event untuk verifikasi akses
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { projectId: true }
+    });
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event tidak ditemukan' });
+    }
+    
+    // Verifikasi akses ke project
+    const projectId = event.projectId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek apakah user adalah owner atau member
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.ownerId === userId) {
+      return next(); // Owner, lanjutkan
+    }
+
+    // Cek membership
+    const membership = await prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: 'No access to this project' });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error in route middleware:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}, getSimilarErrors);
+
+/**
+ * @route   GET /api/insights/groups/:groupId/co-occurring
+ * @desc    Mendapatkan error yang sering terjadi bersamaan dengan grup error tertentu
+ * @access  Private
+ */
+router.get('/groups/:groupId/co-occurring', authMiddleware, async (req: any, res, next) => {
+  try {
+    const { groupId } = req.params;
+    
+    // Verify project access melalui grup
+    const group = await prisma.errorGroup.findUnique({
+      where: { id: groupId },
+      select: { projectId: true }
+    });
+    
+    if (!group) {
+      return res.status(404).json({ error: 'Grup error tidak ditemukan' });
+    }
+    
+    // Check if user has access to this project
+    const projectId = group.projectId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Cek apakah user adalah owner atau member
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.ownerId === userId) {
+      return next(); // Owner, lanjutkan
+    }
+
+    // Cek membership
+    const membership = await prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: 'No access to this project' });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error in route middleware:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}, getCoOccurringErrors);
 
 export default router; 

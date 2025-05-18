@@ -450,9 +450,7 @@ export const ProjectsAPI = {
   },
 
   async deleteSourceMap(projectId: string, sourceMapId: string): Promise<{ message: string }> {
-    // NOTE: Endpoint backend menggunakan /api/sourcemaps/:id, bukan /api/projects/:projectId/sourcemaps/:id
-    // Mungkin perlu penyesuaian jika ingin konsisten
-    const response = await apiRequest<{ message: string }>(`/sourcemaps/${sourceMapId}`, {
+    const response = await apiRequest<{ message: string }>(`/projects/${projectId}/sourcemaps/${sourceMapId}`, {
       method: 'DELETE',
     });
     return response;
@@ -923,10 +921,113 @@ export const NotificationAPI = {
  * Error Insights API endpoints
  */
 export const ErrorInsightAPI = {
-  // Get error correlations - errors yang sering terjadi sebelum error tertentu
-  getErrorCorrelations: async (projectId: string, errorGroupId: string, timeWindow: '24h' | '7d' | '30d' = '7d') => {
+  // Mendapatkan analisis akar masalah untuk event tertentu
+  getEventRootCause: async (eventId: string) => {
     return apiRequest<{
-      errorGroupId: string;
+      id: string;
+      eventId: string;
+      groupId: string;
+      analyzedAt: string;
+      probableCauses: Array<{
+        cause: string;
+        probability: number;
+        explanation: string;
+      }>;
+      recommendations: Array<{
+        action: string;
+        priority: 'high' | 'medium' | 'low';
+        description: string;
+        codeExample?: string;
+      }>;
+      relatedDeployments: string[];
+      detailedAnalysis: {
+        stackFrames: Array<{
+          fileName: string;
+          lineNumber: number;
+          columnNumber?: number;
+          functionName?: string;
+          isSourceMapped: boolean;
+          originalFileName?: string;
+          originalLineNumber?: number;
+          originalColumnNumber?: number;
+          sourceCode?: string;
+        }>;
+        systemConditions: Record<string, unknown>;
+        relatedEvents: string[];
+      };
+      status: 'pending' | 'processing' | 'completed' | 'failed';
+      processingTime?: number;
+      version: number;
+    }>(`/insights/events/${eventId}/root-cause`);
+  },
+  
+  // Mendapatkan analisis akar masalah untuk grup error
+  getGroupRootCause: async (groupId: string) => {
+    return apiRequest<{
+      id: string;
+      eventId: string;
+      groupId: string;
+      analyzedAt: string;
+      probableCauses: Array<{
+        cause: string;
+        probability: number;
+        explanation: string;
+      }>;
+      recommendations: Array<{
+        action: string;
+        priority: 'high' | 'medium' | 'low';
+        description: string;
+        codeExample?: string;
+      }>;
+      relatedDeployments: string[];
+      detailedAnalysis: {
+        stackFrames: Array<{
+          fileName: string;
+          lineNumber: number;
+          columnNumber?: number;
+          functionName?: string;
+          isSourceMapped: boolean;
+          originalFileName?: string;
+          originalLineNumber?: number;
+          originalColumnNumber?: number;
+          sourceCode?: string;
+        }>;
+        systemConditions: Record<string, unknown>;
+        relatedEvents: string[];
+      };
+      status: 'pending' | 'processing' | 'completed' | 'failed';
+      processingTime?: number;
+      version: number;
+      group: {
+        id: string;
+        errorType: string;
+        message: string;
+        count: number;
+        status: string;
+      };
+    }>(`/insights/groups/${groupId}/root-cause`);
+  },
+  
+  // Mendapatkan korelasi antar error
+  getErrorCorrelations: async (projectId: string, options?: { 
+    errorGroupId?: string;
+    timeWindow?: '24h' | '7d' | '30d';
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    if (options?.errorGroupId) {
+      queryParams.append('errorGroupId', options.errorGroupId);
+    }
+    
+    if (options?.timeWindow) {
+      queryParams.append('timeWindow', options.timeWindow);
+    }
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    
+    return apiRequest<{
+      projectId: string;
+      errorGroupId: string | null;
       timeWindow: string;
       correlations: Array<{
         fromErrorId: string;
@@ -938,15 +1039,25 @@ export const ErrorInsightAPI = {
         count: number;
         percentage: number;
       }>;
-    }>(`/insights/projects/${projectId}/error-correlations?errorGroupId=${errorGroupId}&timeWindow=${timeWindow}`);
+    }>(`/insights/projects/${projectId}/error-correlations${queryString}`);
   },
   
-  // Get user impact metrics - persentase pengguna yang terkena error
-  getUserImpact: async (projectId: string, errorGroupId?: string, timeWindow: '1h' | '24h' | '7d' = '1h') => {
-    let url = `/insights/projects/${projectId}/user-impact?timeWindow=${timeWindow}`;
-    if (errorGroupId) {
-      url += `&errorGroupId=${errorGroupId}`;
+  // Mendapatkan dampak error pada pengguna
+  getUserImpact: async (projectId: string, options?: {
+    errorGroupId?: string;
+    timeWindow?: '1h' | '24h' | '7d';
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    if (options?.errorGroupId) {
+      queryParams.append('errorGroupId', options.errorGroupId);
     }
+    
+    if (options?.timeWindow) {
+      queryParams.append('timeWindow', options.timeWindow);
+    }
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     
     return apiRequest<{
       projectId: string;
@@ -962,7 +1073,7 @@ export const ErrorInsightAPI = {
         totalUsersLastDay: number;
         totalUsersLastWeek: number;
       }>;
-    }>(url);
+    }>(`/insights/projects/${projectId}/user-impact${queryString}`);
   },
   
   // Update active user count untuk kalkulasi impact metrics
@@ -976,7 +1087,70 @@ export const ErrorInsightAPI = {
       method: 'POST',
       body: JSON.stringify({ userCount, timeWindow }),
     });
-  }
+  },
+  
+  // Mendapatkan error yang mirip dengan error tertentu
+  findSimilarErrors: async (eventId: string, options?: { 
+    threshold?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    if (options?.threshold !== undefined) {
+      queryParams.append('threshold', options.threshold.toString());
+    }
+    
+    if (options?.limit !== undefined) {
+      queryParams.append('limit', options.limit.toString());
+    }
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    
+    return apiRequest<{
+      eventId: string;
+      similarErrors: Array<{
+        errorId: string;
+        groupId: string;
+        errorType: string;
+        message: string;
+        similarityScore: number;
+        commonFrames: number;
+        timestamp: string;
+      }>;
+      total: number;
+    }>(`/insights/events/${eventId}/similar${queryString}`);
+  },
+  
+  // Mendapatkan error yang sering terjadi bersamaan dengan error tertentu
+  findCoOccurringErrors: async (groupId: string, options?: { 
+    timeWindow?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    if (options?.timeWindow !== undefined) {
+      queryParams.append('timeWindow', options.timeWindow.toString());
+    }
+    
+    if (options?.limit !== undefined) {
+      queryParams.append('limit', options.limit.toString());
+    }
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    
+    return apiRequest<{
+      groupId: string;
+      timeWindowMinutes: number;
+      coOccurringErrors: Array<{
+        groupId: string;
+        errorType: string;
+        message: string;
+        count: number;
+        percentage: number;
+      }>;
+      total: number;
+    }>(`/insights/groups/${groupId}/co-occurring${queryString}`);
+  },
 };
 
 /**
